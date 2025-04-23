@@ -36,3 +36,16 @@ spring:
 logging.level:
   org.hibernate.SQL: debug
   org.hibernate.type: trace
+
+springdoc:
+  packages-to-scan: com.stayswap
+  swagger-ui: #http://localhost:8080/swagger-ui/index.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+    doc-expansion: none
+  api-docs:
+    path: /api-docs/json
+    groups:
+      enabled: true
+  cache:
+    disabled: true
