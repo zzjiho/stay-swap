@@ -1,0 +1,62 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.4.4'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.stayswap'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// jpa
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	// web
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+
+	// thymeleaf
+	implementation 'nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect'
+	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+	// validation
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+	//spring-doc
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-starter-webmvc-ui', version: '2.3.0'
+	implementation group: 'commons-codec', name: 'commons-codec', version: '1.15'
+	testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+
+	// lombok
+	testAnnotationProcessor 'org.projectlombok:lombok'
+	testImplementation 'org.projectlombok:lombok'
+
+	// mysql
+	runtimeOnly 'com.mysql:mysql-connector-j'
+
+	//JWT
+	implementation 'io.jsonwebtoken:jjwt:0.12.3'
+
+	// xml문서와 java객체 간 매핑 자동화
+	implementation 'javax.xml.bind:jaxb-api:2.3.1'
+
+	// aws S3
+	implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.12.619'
+
+	// test
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
