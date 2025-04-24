@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StaySwap - 집을 교환하고 새로운 경험을 만나세요</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/home.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div th:replace="~{layout/layout :: header}"></div>
+
+<main>
+    <div class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1 class="hero-title">집을 교환하고 새로운 경험을 만나세요</h1>
+                    <p class="hero-description">
+                        StaySwap은 여행자들이 서로의 집을 교환하여 현지인처럼 여행할 수 있는 서비스입니다.
+                        호텔보다 넓은 공간에서, 현지인의 경험과 함께 특별한 여행을 즐겨보세요.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="/listings" class="btn btn-primary btn-lg">
+                            숙소 탐색하기
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                        <a href="/host/listings/new" class="btn btn-outline btn-lg">
+                            내 집 등록하기
+                        </a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="/images/hero-image.jpg" alt="아늑한 집 내부">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="features">
+        <div class="container">
+            <div class="features-header">
+                <div class="features-tag">서비스 특징</div>
+                <h2 class="features-title">왜 StaySwap인가요?</h2>
+                <p class="features-description">
+                    단순한 숙소 교환을 넘어 현지인의 경험과 시간까지 교환할 수 있는 특별한 서비스
+                </p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+                    <h3 class="feature-title">LiveLocal 경험</h3>
+                    <p class="feature-description">
+                        호스트가 추천하는 현지 맛집, 명소, 액티비티를 경험해보세요.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <h3 class="feature-title">TimeBank 서비스</h3>
+                    <p class="feature-description">
+                        서로의 시간과 재능을 교환하여 더 풍부한 여행을 만들어보세요.
+                    </p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <h3 class="feature-title">구독제 혜택</h3>
+                    <p class="feature-description">
+                        다양한 구독 플랜으로 더 많은 교환 기회와 프리미엄 혜택을 누리세요.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

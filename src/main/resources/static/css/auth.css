@@ -1,0 +1,117 @@
+/* 로그인/회원가입 페이지 스타일 */
+
+/* 메인 컨테이너 */
+.auth-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 3rem 1rem;
+}
+
+/* 인증 카드 */
+.auth-card {
+    background-color: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    padding: 2.5rem;
+}
+
+/* 헤더 스타일 */
+.auth-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.auth-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.75rem;
+}
+
+.auth-description {
+    font-size: 1rem;
+    color: #666;
+}
+
+/* 소셜 로그인 컨테이너 */
+.social-login-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+/* 소셜 버튼 스타일 */
+.social-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid #ddd;
+}
+
+.social-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.social-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.75rem;
+    object-fit: contain;
+}
+
+.google-login {
+    background-color: #fff;
+    color: #333;
+}
+
+.kakao-login {
+    background-color: #fee500;
+    color: #333;
+}
+
+.naver-login {
+    background-color: #03c75a;
+    color: #fff;
+}
+
+/* 정보 텍스트 */
+.auth-info {
+    text-align: center;
+    font-size: 0.875rem;
+    color: #666;
+    line-height: 1.5;
+}
+
+.info-link {
+    color: #4361ee;
+    text-decoration: none;
+}
+
+.info-link:hover {
+    text-decoration: underline;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 576px) {
+    .auth-card {
+        padding: 1.5rem;
+    }
+
+    .auth-title {
+        font-size: 1.5rem;
+    }
+
+    .social-button {
+        padding: 0.875rem;
+        font-size: 0.9375rem;
+    }
+}

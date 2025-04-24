@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구독 플랜 - StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/subscription.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div th:replace="~{layout/layout :: header}"></div>
+
+<main>
+    <section class="subscription-section">
+        <div class="container">
+            <div class="subscription-header">
+                <h1 class="subscription-title">구독 플랜</h1>
+                <p class="subscription-description">
+                    다양한 구독 플랜으로 더 많은 교환 기회와 프리미엄 혜택을 누려보세요.
+                </p>
+            </div>
+
+            <div class="subscription-content">
+                <div class="subscription-plans">
+                    <div class="plan-card">
+                        <div class="plan-header">
+                            <h2 class="plan-name">Free</h2>
+                            <p class="plan-description">기본 교환 서비스</p>
+                        </div>
+                        <div class="plan-price">
+                            <span class="price">₩0</span>
+                            <span class="period">/월</span>
+                        </div>
+                        <ul class="plan-features">
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>월 1회 교환 가능</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>기본 검색 기능</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>기본 프로필</span>
+                            </li>
+                            <li class="plan-feature disabled">
+                                <i class="fas fa-times"></i>
+                                <span>LiveLocal 경험</span>
+                            </li>
+                            <li class="plan-feature disabled">
+                                <i class="fas fa-times"></i>
+                                <span>TimeBank 서비스</span>
+                            </li>
+                            <li class="plan-feature disabled">
+                                <i class="fas fa-times"></i>
+                                <span>우선 응답</span>
+                            </li>
+                            <li class="plan-feature disabled">
+                                <i class="fas fa-times"></i>
+                                <span>VIP 고객 지원</span>
+                            </li>
+                        </ul>
+                        <button class="btn btn-outline btn-block" id="free-plan-btn">현재 플랜</button>
+                    </div>
+
+                    <div class="plan-card plan-popular">
+                        <div class="popular-badge">인기</div>
+                        <div class="plan-header">
+                            <h2 class="plan-name">Standard</h2>
+                            <p class="plan-description">더 많은 교환 기회</p>
+                        </div>
+                        <div class="plan-price">
+                            <span class="price">₩9,900</span>
+                            <span class="period">/월</span>
+                        </div>
+                        <ul class="plan-features">
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>월 3회 교환 가능</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>고급 검색 필터</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>프로필 배지</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>LiveLocal 경험</span>
+                            </li>
+                            <li class="plan-feature disabled">
+                                <i class="fas fa-times"></i>
+                                <span>TimeBank 서비스</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>우선 응답</span>
+                            </li>
+                            <li class="plan-feature disabled">
+                                <i class="fas fa-times"></i>
+                                <span>VIP 고객 지원</span>
+                            </li>
+                        </ul>
+                        <button class="btn btn-primary btn-block" id="standard-plan-btn">구독하기</button>
+                    </div>
+
+                    <div class="plan-card">
+                        <div class="plan-header">
+                            <h2 class="plan-name">Premium</h2>
+                            <p class="plan-description">무제한 교환 서비스</p>
+                        </div>
+                        <div class="plan-price">
+                            <span class="price">₩19,900</span>
+                            <span class="period">/월</span>
+                        </div>
+                        <ul class="plan-features">
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>무제한 교환</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>모든 검색 기능</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>프리미엄 프로필</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>LiveLocal 경험</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>TimeBank 서비스</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>우선 응답</span>
+                            </li>
+                            <li class="plan-feature">
+                                <i class="fas fa-check"></i>
+                                <span>VIP 고객 지원</span>
+                            </li>
+                        </ul>
+                        <button class="btn btn-outline btn-block" id="premium-plan-btn">구독하기</button>
+                    </div>
+                </div>
+
+                <div class="subscription-features">
+                    <h2 class="features-title">구독 혜택 비교</h2>
+                    <div class="features-table-container">
+                        <table class="features-table">
+                            <thead>
+                            <tr>
+                                <th>기능</th>
+                                <th>Free</th>
+                                <th>Standard</th>
+                                <th>Premium</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <tr>
+                                <td>월 교환 횟수</td>
+                                <td>1회</td>
+                                <td>3회</td>
+                                <td>무제한</td>
+                            </tr>
+                            <tr>
+                                <td>초기 포인트</td>
+                                <td>500 P</td>
+                                <td>1,500 P</td>
+                                <td>3,000 P</td>
+                            </tr>
+                            <tr>
+                                <td>월 추가 포인트</td>
+                                <td>100 P</td>
+                                <td>300 P</td>
+                                <td>500 P</td>
+                            </tr>
+                            <tr>
+                                <td>LiveLocal 경험</td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>TimeBank 서비스</td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>프로필 배지</td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>우선 응답</td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>VIP 고객 지원</td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                            </tr>
+                            <tr>
+                                <td>숙소 등록 수</td>
+                                <td>1개</td>
+                                <td>3개</td>
+                                <td>무제한</td>
+                            </tr>
+                            <tr>
+                                <td>고급 검색 필터</td>
+                                <td><i class="fas fa-times"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                                <td><i class="fas fa-check"></i></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="subscription-faq">
+                    <h2 class="faq-title">자주 묻는 질문</h2>
+                    <div class="faq-list">
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>구독은 언제든지 취소할 수 있나요?</h3>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>네, 언제든지 구독을 취소할 수 있습니다. 취소 시 다음 결제일까지 서비스를 이용할 수 있으며, 추가 요금은 발생하지 않습니다. 프로필 설정에서 구독 관리 메뉴를 통해 쉽게 취소할 수 있습니다.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>구독 플랜은 언제든지 변경할 수 있나요?</h3>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>네, 언제든지 구독 플랜을 업그레이드하거나 다운그레이드할 수 있습니다. 업그레이드 시 즉시 새로운 혜택이 적용되며, 다운그레이드 시 다음 결제일부터 새로운 플랜이 적용됩니다.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>포인트는 어떻게 사용하나요?</h3>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>포인트는 다른 사용자의 숙소를 예약할 때 사용됩니다. 각 숙소마다 1박당 필요한 포인트가 다르며, 예약 시 해당 포인트가 차감됩니다. 포인트는 매월 구독 플랜에 따라 자동으로 충전되며, 추가 포인트는 별도로 구매할 수도 있습니다.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>LiveLocal 경험과 TimeBank 서비스는 무엇인가요?</h3>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>LiveLocal 경험은 호스트가 제공하는 현지 맛집, 명소, 액티비티 등의 추천 정보와 가이드입니다. TimeBank 서비스는 호스트가 제공하는 언어 교환, 요리 수업 등의 개인 서비스로, 시간과 재능을 교환할 수 있는 기회를 제공합니다. 두 서비스 모두 추가 포인트로 이용할 수 있습니다.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>결제 방법은 어떻게 되나요?</h3>
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                            <div class="faq-answer">
+                                <p>신용카드, 체크카드, 계좌이체, 간편결제(카카오페이, 네이버페이 등) 등 다양한 결제 방법을 지원합니다. 구독은 매월 자동으로 결제되며, 결제 내역은 프로필의 결제 내역 메뉴에서 확인할 수 있습니다.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<div th:replace="~{layout/footer :: footer}"></div>
+<script th:src="@{/js/main.js}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // 현재 사용자의 구독 정보 가져오기
+        fetchSubscriptionInfo();
+
+        // FAQ 아코디언
+        const faqItems = document.querySelectorAll('.faq-item');
+
+        faqItems.forEach(item => {
+            const question = item.querySelector('.faq-question');
+            const answer = item.querySelector('.faq-answer');
+
+            question.addEventListener('click', function() {
+                // 다른 모든 FAQ 항목 닫기
+                faqItems.forEach(otherItem => {
+                    if (otherItem !== item) {
+                        otherItem.querySelector('.faq-answer').style.display = 'none';
+                        otherItem.querySelector('.faq-question i').classList.remove('fa-chevron-up');
+                        otherItem.querySelector('.faq-question i').classList.add('fa-chevron-down');
+                    }
+                });
+
+                // 현재 FAQ 항목 토글
+                if (answer.style.display === 'block') {
+                    answer.style.display = 'none';
+                    question.querySelector('i').classList.remove('fa-chevron-up');
+                    question.querySelector('i').classList.add('fa-chevron-down');
+                } else {
+                    answer.style.display = 'block';
+                    question.querySelector('i').classList.remove('fa-chevron-down');
+                    question.querySelector('i').classList.add('fa-chevron-up');
+                }
+            });
+        });
+
+        // 구독 버튼 이벤트 리스너
+        document.getElementById('standard-plan-btn').addEventListener('click', function() {
+            subscribeToPlane('standard');
+        });
+
+        document.getElementById('premium-plan-btn').addEventListener('click', function() {
+            subscribeToPlane('premium');
+        });
+    });
+
+    // 구독 정보 가져오기
+    function fetchSubscriptionInfo() {
+        // 실제 구현 시 API 호출
+        // fetch('/api/user/subscription')
+        //     .then(response => response.json())
+        //     .then(data => updateSubscriptionUI(data))
+        //     .catch(error => {
+        //         console.error('Error:', error);
+        //     });
+
+        // 테스트용 더미 데이터
+        const dummySubscription = {
+            plan: 'free',
+            nextBillingDate: null,
+            points: 500
+        };
+
+        updateSubscriptionUI(dummySubscription);
+    }
+
+    // 구독 UI 업데이트
+    function updateSubscriptionUI(subscription) {
+        const freePlanBtn = document.getElementById('free-plan-btn');
+        const standardPlanBtn = document.getElementById('standard-plan-btn');
+        const premiumPlanBtn = document.getElementById('premium-plan-btn');
+
+        // 버튼 텍스트 및 상태 업데이트
+        switch (subscription.plan) {
+            case 'free':
+                freePlanBtn.textContent = '현재 플랜';
+                freePlanBtn.disabled = true;
+                standardPlanBtn.textContent = '구독하기';
+                premiumPlanBtn.textContent = '구독하기';
+                break;
+            case 'standard':
+                freePlanBtn.textContent = '다운그레이드';
+                standardPlanBtn.textContent = '현재 플랜';
+                standardPlanBtn.disabled = true;
+                premiumPlanBtn.textContent = '업그레이드';
+                break;
+            case 'premium':
+                freePlanBtn.textContent = '다운그레이드';
+                standardPlanBtn.textContent = '다운그레이드';
+                premiumPlanBtn.textContent = '현재 플랜';
+                premiumPlanBtn.disabled = true;
+                break;
+        }
+    }
+
+    // 구독 신청
+    function subscribeToPlane(plan) {
+        // 로그인 상태 확인
+        const isLoggedIn = false; // 실제 구현 시 로그인 상태 확인 로직 필요
+
+        if (!isLoggedIn) {
+            alert('로그인이 필요한 서비스입니다.');
+            window.location.href = '/auth?redirect=/subscription';
+            return;
+        }
+
+        // 실제 구현 시 API 호출
+        // fetch('/api/user/subscription', {
+        //     method: 'POST',
+        //     headers: { 'Content-Type': 'application/json' },
+        //     body: JSON.stringify({ plan })
+        // })
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         if (data.success) {
+        //             alert(`${getPlanName(plan)} 구독이 완료되었습니다.`);
+        //             fetchSubscriptionInfo(); // 구독 정보 다시 로드
+        //         } else {
+        //             alert(data.message || '구독 신청에 실패했습니다.');
+        //         }
+        //     })
+        //     .catch(error => {
+        //         console.error('Error:', error);
+        //         alert('구독 신청 중 오류가 발생했습니다.');
+        //     });
+
+        alert(`${getPlanName(plan)} 구독 API 호출 예정`);
+    }
+
+    // 플랜 이름 가져오기
+    function getPlanName(plan) {
+        switch (plan) {
+            case 'free':
+                return 'Free';
+            case 'standard':
+                return 'Standard';
+            case 'premium':
+                return 'Premium';
+            default:
+                return plan;
+        }
+    }
+</script>
+</body>
+</html>

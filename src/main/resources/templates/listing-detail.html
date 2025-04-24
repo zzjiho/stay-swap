@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${listing != null ? listing.title + ' - StaySwap' : '숙소 상세 - StaySwap'}">서울 강남 모던 아파트 - StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/listing-detail.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<!-- 헤더 포함 -->
+<div th:replace="~{layout/layout :: header}"></div>
+
+<main class="listing-detail-container">
+    <!-- 목록으로 돌아가기 -->
+    <div class="back-to-listings">
+        <a th:href="@{/listings}" class="back-link">
+            <i class="fas fa-arrow-left"></i> 목록으로 돌아가기
+        </a>
+    </div>
+
+    <!-- 숙소 제목 -->
+    <h1 id="listing-title" class="listing-title" th:text="${listing != null ? listing.title : '서울 강남 모던 아파트'}">서울 강남 모던 아파트</h1>
+
+    <!-- 평점 및 위치 -->
+    <div class="listing-meta">
+        <div class="listing-rating">
+            <i class="fas fa-star"></i>
+            <span id="listing-rating" th:text="${listing != null ? listing.rating : '4.9'}">4.9</span>
+            <span id="listing-reviews" th:text="${listing != null ? '(' + listing.reviews + ')' : '(28)'}">
+                    (28)
+                </span>
+        </div>
+        <div class="listing-location">
+            <i class="fas fa-map-marker-alt"></i>
+            <span id="listing-location" th:text="${listing != null ? listing.location : '서울 강남구'}">서울 강남구</span>
+        </div>
+        <div class="listing-actions">
+            <button class="action-btn">
+                <i class="fas fa-share"></i> 공유
+            </button>
+            <button class="action-btn">
+                <i class="far fa-heart"></i> 저장
+            </button>
+        </div>
+    </div>
+
+    <!-- 갤러리 -->
+    <div class="gallery-container">
+        <div class="gallery-main">
+            <img id="gallery-main-image" src="/images/listing-detail-1.jpg" alt="숙소 이미지"
+                 th:src="${listing != null && !#lists.isEmpty(listing.images) ? listing.images[0] : '/images/listing-detail-1.jpg'}"
+                 th:alt="${listing != null ? listing.title : '숙소 이미지'}">
+        </div>
+        <div class="gallery-nav">
+            <button class="gallery-prev">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="gallery-next">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+        <div id="gallery-dots" class="gallery-dots">
+            <!-- 동적으로 생성됨 -->
+        </div>
+    </div>
+
+    <!-- 메인 콘텐츠 -->
+    <div class="listing-info">
+        <!-- 왼쪽 컬럼: 숙소 정보 -->
+        <div class="listing-main">
+            <!-- 호스트 정보 -->
+            <div class="host-section">
+                <h2 id="host-name-title" class="section-title"
+                    th:text="${listing != null && listing.host != null ? listing.host.name + '님이 호스팅하는 숙소' : '김민수님이 호스팅하는 숙소'}">
+                    김민수님이 호스팅하는 숙소
+                </h2>
+                <div class="host-info">
+                    <img id="host-image" class="host-image" src="/images/host-1.jpg" alt="호스트 이미지"
+                         th:src="${listing != null && listing.host != null ? listing.host.image : '/images/host-1.jpg'}"
+                         th:alt="${listing != null && listing.host != null ? listing.host.name : '호스트'} + ' 이미지'">
+                    <div class="host-details">
+                        <h3 id="host-detail-name" class="host-name"
+                            th:text="${listing != null && listing.host != null ? listing.host.name : '김민수'}">
+                            김민수
+                        </h3>
+                        <div class="host-meta">
+                                <span id="host-joined"
+                                      th:text="${listing != null && listing.host != null ? listing.host.joinedYear + '년에 가입' : '2020년에 가입'}">
+                                    2020년에 가입
+                                </span>
+                            <span id="host-reviews"
+                                  th:text="${listing != null ? '후기 ' + listing.reviews + '개' : '후기 28개'}">
+                                    후기 28개
+                                </span>
+                            <span id="host-response-rate"
+                                  th:text="${listing != null && listing.host != null ? '응답률: ' + listing.host.responseRate + '%' : '응답률: 98%'}">
+                                    응답률: 98%
+                                </span>
+                        </div>
+                        <div id="superhost-badge" class="superhost-badge"
+                             th:classappend="${listing != null && listing.host != null && listing.host.isSuperhost ? '' : 'hidden'}">
+                            <i class="fas fa-award"></i> 슈퍼호스트
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 특징 배지 -->
+            <div id="listing-features" class="listing-features">
+                    <span class="badge badge-outline" th:each="feature : ${listing != null ? listing.features : {'LiveLocal', '무료 주차', '반려동물 동반 가능'}}">
+                        <span th:text="${feature}">LiveLocal</span>
+                    </span>
+            </div>
+
+            <!-- 숙소 설명 -->
+            <div class="description-section">
+                <h2 class="section-title">숙소 정보</h2>
+                <p id="listing-description" class="listing-description"
+                   th:text="${listing != null ? listing.description : '강남역에서 도보 5분 거리에 위치한 모던한 아파트입니다. 편리한 교통과 함께 강남의 중심에서 현지인처럼 생활해보세요. 주변에는 다양한 맛집과 쇼핑몰이 있어 편리합니다.'}">
+                    강남역에서 도보 5분 거리에 위치한 모던한 아파트입니다. 편리한 교통과 함께 강남의 중심에서 현지인처럼 생활해보세요. 주변에는 다양한 맛집과 쇼핑몰이 있어 편리합니다.
+                </p>
+            </div>
+
+            <!-- 편의시설 -->
+            <div class="amenities-section">
+                <h2 class="section-title">편의시설</h2>
+                <div id="amenities-container" class="amenities-container">
+                    <div class="amenity" th:each="amenity : ${listing != null ? listing.amenities : {'무선 인터넷', '에어컨', '세탁기', '주방', '헤어드라이어', '다리미', '냉장고', '전자레인지', 'TV'}}">
+                        <i class="fas fa-check"></i>
+                        <span th:text="${amenity}">무선 인터넷</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 예약 옵션 탭 -->
+            <div class="booking-options-section">
+                <h2 class="section-title">예약 옵션</h2>
+                <div class="booking-tabs">
+                    <div class="booking-tab active">기본 교환</div>
+                    <div class="booking-tab">LiveLocal</div>
+                    <div class="booking-tab">TimeBank</div>
+                </div>
+                <div class="booking-tab-panes">
+                    <!-- 기본 교환 탭 -->
+                    <div class="booking-tab-pane active">
+                        <p>기본 교환은 숙소 포인트만으로 교환하는 방식입니다. 추가 옵션을 선택하지 않으면 기본 교환으로 진행됩니다.</p>
+                    </div>
+
+                    <!-- LiveLocal 탭 -->
+                    <div class="booking-tab-pane" id="livelocal-container">
+                        <!-- 동적으로 생성됨 -->
+                    </div>
+
+                    <!-- TimeBank 탭 -->
+                    <div class="booking-tab-pane" id="timebank-container">
+                        <!-- 동적으로 생성됨 -->
+                    </div>
+                </div>
+                <button id="options-apply-btn" class="btn btn-secondary">옵션 적용하기</button>
+            </div>
+        </div>
+
+        <!-- 오른쪽 컬럼: 예약 사이드바 -->
+        <div class="booking-sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-title">교환 요약</div>
+                <div class="sidebar-rating">
+                    <i class="fas fa-star"></i>
+                    <span id="sidebar-rating" th:text="${listing != null ? listing.rating : '4.9'}">4.9</span>
+                    <span th:text="${listing != null ? '· 후기 ' + listing.reviews + '개' : '· 후기 28개'}">· 후기 28개</span>
+                </div>
+            </div>
+            <div class="sidebar-points" id="summary-points"
+                 th:text="${listing != null ? listing.points + ' 포인트' : '500 포인트'}">
+                500 포인트
+            </div>
+            <div class="booking-form">
+                <div class="form-group">
+                    <label class="form-label">체크인</label>
+                    <input type="date" class="form-control" min="2023-01-01">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">체크아웃</label>
+                    <input type="date" class="form-control" min="2023-01-02">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">게스트</label>
+                    <select class="form-control">
+                        <option value="1">1명</option>
+                        <option value="2">2명</option>
+                        <option value="3">3명</option>
+                        <option value="4">4명</option>
+                    </select>
+                </div>
+            </div>
+            <div class="booking-summary">
+                <h3 class="summary-title">요금 세부 정보</h3>
+                <div class="summary-item">
+                    <span>기본 교환 포인트</span>
+                    <span id="listing-points" th:text="${listing != null ? listing.points + ' P' : '500 P'}">500 P</span>
+                </div>
+                <div class="summary-item">
+                    <span>LiveLocal 경험</span>
+                    <span>0 P</span>
+                </div>
+                <div class="summary-item">
+                    <span>TimeBank 서비스</span>
+                    <span>0 P</span>
+                </div>
+                <div class="summary-total">
+                    <span>총 포인트</span>
+                    <span id="total-points" th:text="${listing != null ? listing.points + ' P' : '500 P'}">500 P</span>
+                </div>
+            </div>
+            <button id="exchange-request-btn" class="btn btn-primary btn-block">교환 요청하기</button>
+        </div>
+    </div>
+</main>
+
+<!-- 푸터 포함 -->
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<!-- JavaScript -->
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/listing-detail.js}"></script>
+</body>
+</html>

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>숙소 등록 - StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/listing-form.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<!-- 헤더 포함 -->
+<div th:replace="~{layout/layout :: header}"></div>
+
+<main class="listing-form-container">
+    <div class="form-header">
+        <h1 class="form-title">숙소 등록하기</h1>
+        <p class="form-subtitle">당신의 공간을 다른 사람들과 교환해보세요</p>
+    </div>
+
+    <div class="form-progress">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-steps">
+            <div class="progress-step active" data-step="1">
+                <div class="step-number">1</div>
+                <div class="step-label">기본 정보</div>
+            </div>
+            <div class="progress-step" data-step="2">
+                <div class="step-number">2</div>
+                <div class="step-label">위치 및 특징</div>
+            </div>
+            <div class="progress-step" data-step="3">
+                <div class="step-number">3</div>
+                <div class="step-label">사진 및 설명</div>
+            </div>
+            <div class="progress-step" data-step="4">
+                <div class="step-number">4</div>
+                <div class="step-label">교환 옵션</div>
+            </div>
+            <div class="progress-step" data-step="5">
+                <div class="step-number">5</div>
+                <div class="step-label">검토 및 등록</div>
+            </div>
+        </div>
+    </div>
+
+    <form id="listing-form" class="listing-form">
+        <!-- 1단계: 기본 정보 -->
+        <div class="form-step active" id="step-1">
+            <h2 class="step-title">기본 정보</h2>
+            <p class="step-description">숙소의 기본 정보를 입력해주세요.</p>
+
+            <div class="form-group">
+                <label for="listing-title" class="form-label">숙소 이름</label>
+                <input type="text" id="listing-title" name="title" class="form-control" placeholder="예: 서울 강남 모던 아파트" required>
+                <div class="form-hint">게스트들이 쉽게 기억할 수 있는 이름을 입력해주세요.</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">숙소 유형</label>
+                <div class="radio-group">
+                    <label class="radio-card">
+                        <input type="radio" name="property-type" value="apartment" checked>
+                        <div class="radio-card-content">
+                            <i class="fas fa-building"></i>
+                            <span>아파트</span>
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="property-type" value="house">
+                        <div class="radio-card-content">
+                            <i class="fas fa-home"></i>
+                            <span>주택</span>
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="property-type" value="villa">
+                        <div class="radio-card-content">
+                            <i class="fas fa-hotel"></i>
+                            <span>빌라</span>
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="property-type" value="other">
+                        <div class="radio-card-content">
+                            <i class="fas fa-ellipsis-h"></i>
+                            <span>기타</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">숙소 크기</label>
+                <div class="input-group">
+                    <input type="number" id="listing-size" name="size" class="form-control" min="1" placeholder="0" required>
+                    <span class="input-group-text">평</span>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="listing-bedrooms" class="form-label">침실 수</label>
+                    <select id="listing-bedrooms" name="bedrooms" class="form-control" required>
+                        <option value="">선택해주세요</option>
+                        <option value="1">1개</option>
+                        <option value="2">2개</option>
+                        <option value="3">3개</option>
+                        <option value="4">4개</option>
+                        <option value="5">5개 이상</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="listing-beds" class="form-label">침대 수</label>
+                    <select id="listing-beds" name="beds" class="form-control" required>
+                        <option value="">선택해주세요</option>
+                        <option value="1">1개</option>
+                        <option value="2">2개</option>
+                        <option value="3">3개</option>
+                        <option value="4">4개</option>
+                        <option value="5">5개 이상</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="listing-bathrooms" class="form-label">욕실 수</label>
+                    <select id="listing-bathrooms" name="bathrooms" class="form-control" required>
+                        <option value="">선택해주세요</option>
+                        <option value="1">1개</option>
+                        <option value="2">2개</option>
+                        <option value="3">3개</option>
+                        <option value="4">4개 이상</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="listing-guests" class="form-label">최대 수용 인원</label>
+                <select id="listing-guests" name="guests" class="form-control" required>
+                    <option value="">선택해주세요</option>
+                    <option value="1">1명</option>
+                    <option value="2">2명</option>
+                    <option value="3">3명</option>
+                    <option value="4">4명</option>
+                    <option value="5">5명</option>
+                    <option value="6">6명 이상</option>
+                </select>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-primary next-step">다음 단계</button>
+            </div>
+        </div>
+
+        <!-- 2단계: 위치 및 특징 -->
+        <div class="form-step" id="step-2">
+            <h2 class="step-title">위치 및 특징</h2>
+            <p class="step-description">숙소의 위치와 특징을 입력해주세요.</p>
+
+            <div class="form-group">
+                <label for="listing-address" class="form-label">주소</label>
+                <input type="text" id="listing-address" name="address" class="form-control" placeholder="예: 서울특별시 강남구 테헤란로 123" required>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="listing-city" class="form-label">도시</label>
+                    <input type="text" id="listing-city" name="city" class="form-control" placeholder="예: 서울" required>
+                </div>
+                <div class="form-group">
+                    <label for="listing-district" class="form-label">지역구</label>
+                    <input type="text" id="listing-district" name="district" class="form-control" placeholder="예: 강남구" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">편의시설</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="wifi">
+                        <span>무선 인터넷</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="aircon">
+                        <span>에어컨</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="washer">
+                        <span>세탁기</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="kitchen">
+                        <span>주방</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="hairdryer">
+                        <span>헤어드라이어</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="iron">
+                        <span>다리미</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="fridge">
+                        <span>냉장고</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="microwave">
+                        <span>전자레인지</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="amenities" value="tv">
+                        <span>TV</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">특징</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="features" value="parking">
+                        <span>무료 주차</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="features" value="pets">
+                        <span>반려동물 동반 가능</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="features" value="smoking">
+                        <span>흡연 가능</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="features" value="elevator">
+                        <span>엘리베이터</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="features" value="balcony">
+                        <span>발코니/테라스</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">이전 단계</button>
+                <button type="button" class="btn btn-primary next-step">다음 단계</button>
+            </div>
+        </div>
+
+        <!-- 3단계: 사진 및 설명 -->
+        <div class="form-step" id="step-3">
+            <h2 class="step-title">사진 및 설명</h2>
+            <p class="step-description">숙소의 사진과 설명을 입력해주세요.</p>
+
+            <div class="form-group">
+                <label class="form-label">숙소 사진</label>
+                <div class="image-upload-container">
+                    <div class="image-upload-area" id="image-upload-area">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>이미지를 드래그하거나 클릭하여 업로드하세요</p>
+                        <span>최대 10장, 파일당 5MB 이하</span>
+                        <input type="file" id="image-upload" name="images" multiple accept="image/*" class="image-upload-input">
+                    </div>
+                    <div class="image-preview-container" id="image-preview-container"></div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="listing-description" class="form-label">숙소 설명</label>
+                <textarea id="listing-description" name="description" class="form-control" rows="5" placeholder="숙소에 대한 상세한 설명을 입력해주세요." required></textarea>
+                <div class="form-hint">최소 100자 이상 작성해주세요.</div>
+            </div>
+
+            <div class="form-group">
+                <label for="listing-rules" class="form-label">숙소 이용 규칙</label>
+                <textarea id="listing-rules" name="rules" class="form-control" rows="3" placeholder="숙소 이용 시 주의사항이나 규칙을 입력해주세요."></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">이전 단계</button>
+                <button type="button" class="btn btn-primary next-step">다음 단계</button>
+            </div>
+        </div>
+
+        <!-- 4단계: 교환 옵션 -->
+        <div class="form-step" id="step-4">
+            <h2 class="step-title">교환 옵션</h2>
+            <p class="step-description">숙소 교환에 대한 옵션을 설정해주세요.</p>
+
+            <div class="form-group">
+                <label for="listing-points" class="form-label">교환 포인트</label>
+                <div class="input-group">
+                    <input type="number" id="listing-points" name="points" class="form-control" min="100" placeholder="0" required>
+                    <span class="input-group-text">P</span>
+                </div>
+                <div class="form-hint">숙소 크기, 위치, 편의시설 등을 고려하여 적절한 포인트를 설정해주세요.</div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">교환 유형</label>
+                <div class="checkbox-group">
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="exchange-types" value="basic" checked>
+                        <span>기본 교환</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="exchange-types" value="livelocal">
+                        <span>LiveLocal</span>
+                    </label>
+                    <label class="checkbox-item">
+                        <input type="checkbox" name="exchange-types" value="timebank">
+                        <span>TimeBank</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="exchange-option-section" id="livelocal-section">
+                <h3 class="section-subtitle">LiveLocal 경험 제공</h3>
+                <p class="section-description">현지인만 알 수 있는 특별한 경험을 제공해보세요.</p>
+
+                <div class="experience-list" id="experience-list">
+                    <div class="experience-item">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">경험 제목</label>
+                                <input type="text" name="experience-title[]" class="form-control" placeholder="예: 강남 맛집 투어">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">소요 시간</label>
+                                <div class="input-group">
+                                    <input type="number" name="experience-duration[]" class="form-control" min="1" placeholder="0">
+                                    <span class="input-group-text">시간</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">추가 포인트</label>
+                                <div class="input-group">
+                                    <input type="number" name="experience-points[]" class="form-control" min="0" placeholder="0">
+                                    <span class="input-group-text">P</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">경험 설명</label>
+                            <textarea name="experience-description[]" class="form-control" rows="2" placeholder="경험에 대한 설명을 입력해주세요."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline" id="add-experience-btn">
+                    <i class="fas fa-plus"></i> 경험 추가
+                </button>
+            </div>
+
+            <div class="exchange-option-section" id="timebank-section">
+                <h3 class="section-subtitle">TimeBank 서비스 제공</h3>
+                <p class="section-description">당신의 시간과 재능을 공유해보세요.</p>
+
+                <div class="service-list" id="service-list">
+                    <div class="service-item">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">서비스 제목</label>
+                                <input type="text" name="service-title[]" class="form-control" placeholder="예: 한국어 회화 레슨">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">소요 시간</label>
+                                <div class="input-group">
+                                    <input type="number" name="service-duration[]" class="form-control" min="1" placeholder="0">
+                                    <span class="input-group-text">시간</span>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">추가 포인트</label>
+                                <div class="input-group">
+                                    <input type="number" name="service-points[]" class="form-control" min="0" placeholder="0">
+                                    <span class="input-group-text">P</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">서비스 설명</label>
+                            <textarea name="service-description[]" class="form-control" rows="2" placeholder="서비스에 대한 설명을 입력해주세요."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline" id="add-service-btn">
+                    <i class="fas fa-plus"></i> 서비스 추가
+                </button>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">이전 단계</button>
+                <button type="button" class="btn btn-primary next-step">다음 단계</button>
+            </div>
+        </div>
+
+        <!-- 5단계: 검토 및 등록 -->
+        <div class="form-step" id="step-5">
+            <h2 class="step-title">검토 및 등록</h2>
+            <p class="step-description">입력한 정보를 확인하고 숙소를 등록해주세요.</p>
+
+            <div class="review-section">
+                <h3 class="review-title">숙소 정보</h3>
+                <div class="review-content" id="review-basic-info"></div>
+            </div>
+
+            <div class="review-section">
+                <h3 class="review-title">위치 및 특징</h3>
+                <div class="review-content" id="review-location-features"></div>
+            </div>
+
+            <div class="review-section">
+                <h3 class="review-title">사진 및 설명</h3>
+                <div class="review-content" id="review-photos-description"></div>
+            </div>
+
+            <div class="review-section">
+                <h3 class="review-title">교환 옵션</h3>
+                <div class="review-content" id="review-exchange-options"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="checkbox-item">
+                    <input type="checkbox" id="terms-agree" name="terms-agree" required>
+                    <span>이용약관 및 개인정보 처리방침에 동의합니다.</span>
+                </label>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary prev-step">이전 단계</button>
+                <button type="submit" class="btn btn-primary" id="submit-listing">숙소 등록하기</button>
+            </div>
+        </div>
+    </form>
+</main>
+
+<!-- 푸터 포함 -->
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<!-- JavaScript -->
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/listing-form.js}"></script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<header class="header">
+    <div class="container">
+        <div class="header-content">
+            <a href="/" class="logo">
+                <i class="fas fa-home"></i>
+                <span>StaySwap</span>
+            </a>
+            <nav class="main-nav">
+                <a href="/listings" class="nav-link">숙소 찾기</a>
+                <a href="/host/listings/new" class="nav-link">숙소 등록</a>
+                <a href="/my/exchanges" class="nav-link">교환 관리</a>
+            </nav>
+            <div class="user-actions">
+                <div id="user-profile" style="display: none;">
+                    <a href="/profile" class="avatar-link">
+                        <div class="avatar">
+                            <img id="profile-image" src="/placeholder.svg" alt="프로필">
+                            <span id="profile-initial">사</span>
+                        </div>
+                    </a>
+                </div>
+                <div id="auth-buttons">
+                    <a href="/auth" class="btn btn-outline">로그인</a>
+<!--                    <a href="/auth?tab=register" class="btn btn-primary">회원가입</a>-->
+                </div>
+            </div>
+        </div>
+    </div>
+</header>
+
+<main>
+    <!-- 각 페이지의 내용이 여기에 들어갑니다 -->
+</main>
+
+<!--<footer class="footer">-->
+<!--    <div class="container">-->
+<!--        <div class="footer-content">-->
+<!--            <div class="copyright">© 2025 StaySwap. All rights reserved.</div>-->
+<!--            <div class="footer-links">-->
+<!--                <a href="#" class="footer-link">이용약관</a>-->
+<!--                <a href="#" class="footer-link">개인정보처리방침</a>-->
+<!--            </div>-->
+<!--        </div>-->
+<!--    </div>-->
+<!--</footer>-->
+
+<script th:src="@{/js/main.js}"></script>
+<script>
+    // 사용자 인증 상태에 따라 UI 업데이트
+    function updateAuthUI(user) {
+        const userProfile = document.getElementById('user-profile');
+        const authButtons = document.getElementById('auth-buttons');
+        const profileImage = document.getElementById('profile-image');
+        const profileInitial = document.getElementById('profile-initial');
+
+        if (user) {
+            userProfile.style.display = 'block';
+            authButtons.style.display = 'none';
+
+            if (user.profileImage) {
+                profileImage.src = user.profileImage;
+                profileImage.style.display = 'block';
+                profileInitial.style.display = 'none';
+            } else {
+                profileImage.style.display = 'none';
+                profileInitial.style.display = 'block';
+                profileInitial.textContent = user.name.charAt(0);
+            }
+        } else {
+            userProfile.style.display = 'none';
+            authButtons.style.display = 'flex';
+        }
+    }
+
+    // API에서 사용자 정보 가져오기
+    function fetchUserInfo() {
+        // 실제 구현 시 API 호출
+        // fetch('/api/user')
+        //     .then(response => response.json())
+        //     .then(user => updateAuthUI(user))
+        //     .catch(() => updateAuthUI(null));
+
+        // 테스트용 더미 데이터
+        const user = null; // 로그인 안 된 상태
+        // const user = { name: '홍길동', profileImage: null }; // 로그인 된 상태
+        updateAuthUI(user);
+    }
+
+    // 페이지 로드 시 사용자 정보 가져오기
+    document.addEventListener('DOMContentLoaded', fetchUserInfo);
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>교환 관리 - StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/exchanges.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<!-- 헤더 포함 -->
+<div th:replace="~{layout/layout :: header}"></div>
+
+<main class="exchanges-container">
+    <h1 class="page-title">교환 관리</h1>
+
+    <!-- 예약 유형 탭 -->
+    <div class="booking-type-tabs">
+        <button class="booking-type-tab active" data-type="guest">
+            <i class="fas fa-suitcase"></i> 게스트로 예약
+        </button>
+        <button class="booking-type-tab" data-type="host">
+            <i class="fas fa-home"></i> 호스트로 예약
+        </button>
+    </div>
+
+    <!-- 상태 필터 -->
+    <div class="status-filters">
+        <button class="status-filter active" data-status="all">전체</button>
+        <button class="status-filter" data-status="pending">대기중</button>
+        <button class="status-filter" data-status="confirmed">확정됨</button>
+        <button class="status-filter" data-status="completed">완료됨</button>
+        <button class="status-filter" data-status="cancelled">취소됨</button>
+    </div>
+
+    <!-- 교환 목록 -->
+    <div class="exchange-list">
+        <!-- 교환 항목 (게스트로 예약) -->
+        <div class="exchange-item" data-type="guest" data-status="confirmed">
+            <div class="exchange-status confirmed">확정됨</div>
+            <div class="exchange-content">
+                <div class="exchange-image">
+                    <img src="/images/listing-detail-1.jpg" alt="서울 강남 모던 아파트">
+                </div>
+                <div class="exchange-details">
+                    <h3 class="exchange-title">서울 강남 모던 아파트</h3>
+                    <div class="exchange-host">
+                        <img src="/images/host-1.jpg" alt="호스트 이미지" class="host-avatar">
+                        <span>호스트: 김민수</span>
+                    </div>
+                    <div class="exchange-date">
+                        <i class="far fa-calendar"></i>
+                        <span>2025년 6월 15일 - 2025년 6월 18일</span>
+                    </div>
+                    <div class="exchange-points">
+                        <i class="fas fa-coins"></i>
+                        <span>500 포인트</span>
+                    </div>
+                </div>
+                <div class="exchange-actions">
+                    <button class="btn btn-primary">상세 보기</button>
+                    <button class="btn btn-outline">메시지 보내기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 교환 항목 (게스트로 예약) -->
+        <div class="exchange-item" data-type="guest" data-status="pending">
+            <div class="exchange-status pending">대기중</div>
+            <div class="exchange-content">
+                <div class="exchange-image">
+                    <img src="/images/listing-detail-2.jpg" alt="부산 해운대 오션뷰 콘도">
+                </div>
+                <div class="exchange-details">
+                    <h3 class="exchange-title">부산 해운대 오션뷰 콘도</h3>
+                    <div class="exchange-host">
+                        <img src="/images/host-2.jpg" alt="호스트 이미지" class="host-avatar">
+                        <span>호스트: 이지은</span>
+                    </div>
+                    <div class="exchange-date">
+                        <i class="far fa-calendar"></i>
+                        <span>2025년 7월 10일 - 2025년 7월 15일</span>
+                    </div>
+                    <div class="exchange-points">
+                        <i class="fas fa-coins"></i>
+                        <span>700 포인트</span>
+                    </div>
+                </div>
+                <div class="exchange-actions">
+                    <button class="btn btn-primary">상세 보기</button>
+                    <button class="btn btn-outline">취소 요청</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 교환 항목 (호스트로 예약) -->
+        <div class="exchange-item" data-type="host" data-status="confirmed" style="display: none;">
+            <div class="exchange-status confirmed">확정됨</div>
+            <div class="exchange-content">
+                <div class="exchange-image">
+                    <img src="/images/listing-detail-3.jpg" alt="내 숙소">
+                </div>
+                <div class="exchange-details">
+                    <h3 class="exchange-title">내 숙소</h3>
+                    <div class="exchange-guest">
+                        <img src="/images/user-1.jpg" alt="게스트 이미지" class="guest-avatar">
+                        <span>게스트: 박지훈</span>
+                    </div>
+                    <div class="exchange-date">
+                        <i class="far fa-calendar"></i>
+                        <span>2025년 8월 5일 - 2025년 8월 10일</span>
+                    </div>
+                    <div class="exchange-points">
+                        <i class="fas fa-coins"></i>
+                        <span>600 포인트</span>
+                    </div>
+                </div>
+                <div class="exchange-actions">
+                    <button class="btn btn-primary">상세 보기</button>
+                    <button class="btn btn-outline">메시지 보내기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 페이지네이션 -->
+    <div class="pagination">
+        <button class="pagination-prev" disabled>
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        <div class="pagination-pages">
+            <button class="pagination-page active">1</button>
+            <button class="pagination-page">2</button>
+            <button class="pagination-page">3</button>
+        </div>
+        <button class="pagination-next">
+            <i class="fas fa-chevron-right"></i>
+        </button>
+    </div>
+</main>
+
+<!-- 푸터 포함 -->
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<!-- JavaScript -->
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/exchanges.js}"></script>
+</body>
+</html>
