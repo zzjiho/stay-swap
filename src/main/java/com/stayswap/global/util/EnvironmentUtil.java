@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.global.util;
+package com.stayswap.global.util;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.env.Environment;

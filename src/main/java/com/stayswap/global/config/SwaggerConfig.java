@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.global.config;
+package com.stayswap.global.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;

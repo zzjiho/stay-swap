@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.global.util;
+package com.stayswap.global.util;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;

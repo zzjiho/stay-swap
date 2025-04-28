@@ -1,6 +1,6 @@
-package com.stayswap.stayswap.global.error.exception;
+package com.stayswap.global.error.exception;
 
-import com.stayswap.stayswap.global.code.ErrorCode;
+import com.stayswap.global.code.ErrorCode;
 import lombok.Getter;
 
 /**

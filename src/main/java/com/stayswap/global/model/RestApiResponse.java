@@ -1,6 +1,6 @@
-package com.stayswap.stayswap.global.model;
+package com.stayswap.global.model;
 
-import com.stayswap.stayswap.global.code.ErrorCode;
+import com.stayswap.global.code.ErrorCode;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

@@ -1,7 +1,7 @@
-package com.stayswap.stayswap.global.error.exception;
+package com.stayswap.global.error.exception;
 
 
-import com.stayswap.stayswap.global.code.ErrorCode;
+import com.stayswap.global.code.ErrorCode;
 
 /**
  * 강제로 404 반환할때 사용.

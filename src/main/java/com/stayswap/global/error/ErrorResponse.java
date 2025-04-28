@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.global.error;
+package com.stayswap.global.error;
 
 
 import lombok.Builder;

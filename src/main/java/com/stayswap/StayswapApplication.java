@@ -1,4 +1,4 @@
-package com.stayswap.stayswap;
+package com.stayswap;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

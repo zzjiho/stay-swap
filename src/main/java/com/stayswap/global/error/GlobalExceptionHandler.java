@@ -1,8 +1,8 @@
-package com.stayswap.stayswap.global.error;
+package com.stayswap.global.error;
 
 
-import com.stayswap.stayswap.global.error.exception.BusinessException;
-import com.stayswap.stayswap.global.error.exception.CustomRunTimeException;
+import com.stayswap.global.error.exception.BusinessException;
+import com.stayswap.global.error.exception.CustomRunTimeException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

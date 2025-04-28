@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.page;
+package com.stayswap.page;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

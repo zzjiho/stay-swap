@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.global.error.exception;
+package com.stayswap.global.error.exception;
 
 /**
  * 기존 404 not found 와 별개로

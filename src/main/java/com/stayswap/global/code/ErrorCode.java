@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.global.code;
+package com.stayswap.global.code;
 
 import lombok.Getter;
 import org.springframework.http.HttpStatusCode;

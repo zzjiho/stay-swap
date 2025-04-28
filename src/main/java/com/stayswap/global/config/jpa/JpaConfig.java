@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.global.config.jpa;
+package com.stayswap.global.config.jpa;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;

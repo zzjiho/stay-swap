@@ -1,4 +1,4 @@
-package com.stayswap.stayswap.api.healthcheck;
+package com.stayswap.api.healthcheck;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.models.responses.ApiResponse;
