@@ -7,6 +7,8 @@ import lombok.*;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class HouseImage {
 
@@ -22,4 +24,13 @@ public class HouseImage {
     @ManyToOne
     @JoinColumn(name = "house_id", nullable = false)
     private House house;
+
+    public static HouseImage newHouseImg(String url, String path, House house) {
+        return HouseImage.builder()
+                .imageUrl(url)
+                .path(path)
+                .house(house)
+                .build();
+    }
+
 }

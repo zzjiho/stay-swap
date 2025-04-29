@@ -6,11 +6,16 @@ spring:
     pathmatch:
       matching-strategy: ant_path_matcher #Swagger3.x.x 버전 간 호환 이슈 때문에 기입
 
+  s3:
+    accessKey: iWJHwA99cpgWkzTLkUT2
+    secretKey: 3sipxjALDZBpIXXr8KY00SmfVaTWLK6mPQHbFswI
+    bucket: tripj-bucket
+
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3307/stayswap?serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
-    username:
-    password:
+    username: root
+    password: root
 
   jpa:
     hibernate:

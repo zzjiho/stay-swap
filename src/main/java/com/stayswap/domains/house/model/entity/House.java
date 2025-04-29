@@ -3,12 +3,12 @@ package com.stayswap.domains.house.model.entity;
 import com.stayswap.domains.common.entity.BaseEntity;
 import com.stayswap.domains.user.model.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Entity
+@Builder
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class House extends BaseEntity {
 
@@ -54,4 +54,22 @@ public class House extends BaseEntity {
     @OneToOne(cascade = CascadeType.ALL)
     private HouseOption houseOption;
 
+    public static House newHouse(String title, String description, String type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, String district, Boolean petsAllowed) {
+        return House.builder()
+                .title(title)
+                .description(description)
+                .type(type)
+                .size(size)
+                .bedrooms(bedrooms)
+                .bed(bed)
+                .bathrooms(bathrooms)
+                .maxGuests(maxGuests)
+                .address(address)
+                .city(city)
+                .district(district)
+                .petsAllowed(petsAllowed)
+                .isActive(true)
+                .build();
+
+    }
 }
