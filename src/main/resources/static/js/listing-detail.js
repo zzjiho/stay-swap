@@ -383,7 +383,7 @@ function requestExchange(listingId) {
 
     // 임시 구현 (API 연동 전)
     alert('교환 요청이 성공적으로 전송되었습니다.');
-    window.location.href = '/my/exchanges';
+    window.location.href = '/page/exchanges';
 }
 
 // 옵션 적용 처리
