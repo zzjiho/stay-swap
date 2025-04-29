@@ -1,0 +1,35 @@
+package com.stayswap.domains.review.model.entity;
+
+import com.stayswap.domains.common.entity.BaseEntity;
+import com.stayswap.domains.swap.model.entity.Swap;
+import com.stayswap.domains.user.model.entity.User;
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+
+@Entity
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Review extends BaseEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "review_id")
+    private Long id;
+
+    @Column(nullable = false)
+    private Integer rating;
+
+    @Column(columnDefinition = "TEXT")
+    private String comment;
+
+    @ManyToOne
+    @JoinColumn(name = "swap_id", nullable = false)
+    private Swap swap;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+}
