@@ -1,49 +1,238 @@
 /* 히어로 섹션 */
 .hero {
-    padding: 3rem 0 4rem;
-    background: linear-gradient(to bottom, #E6FFFA, #FFFFFF);
+    position: relative;
+    height: 800px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    background-image: url('/images/hero2.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 1;
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 2;
 }
 
 .hero-content {
-    display: grid;
-    gap: 2rem;
+    position: relative;
+    z-index: 3;
+    max-width: 800px;
+    padding: 0 1rem;
+    margin: 0 auto;
+    text-align: center;
 }
 
 .hero-title {
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: 700;
     line-height: 1.2;
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .hero-description {
-    font-size: 1.125rem;
-    color: var(--text-light);
+    font-size: 1.25rem;
     margin-bottom: 2rem;
+    opacity: 0.9;
 }
 
 .hero-actions {
     display: flex;
-    flex-direction: column;
+    justify-content: center;
     gap: 1rem;
 }
 
-.hero-image {
-    aspect-ratio: 16 / 9;
-    border-radius: var(--radius);
+/* 이용 방법 섹션 */
+.how-to-use {
+    padding: 5rem 0;
+    background-color: white;
+}
+
+.section-title {
+    font-size: 2rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 3rem;
+    color: var(--text-color);
+}
+
+.steps-container {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.step-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    max-width: 300px;
+}
+
+.step-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background-color: #EEF2FF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+}
+
+.step-icon i {
+    font-size: 2rem;
+    color: #4F46E5;
+}
+
+.step-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    width: 100%;
+}
+
+.step-description {
+    color: var(--text-light);
+    line-height: 1.6;
+    width: 100%;
+}
+
+/* 추천 숙소 섹션 */
+.recommended {
+    padding: 5rem 0;
+    background-color: var(--background-light);
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.view-more {
+    display: flex;
+    align-items: center;
+    color: #4F46E5;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: color 0.2s ease;
+}
+
+.view-more i {
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    transition: transform 0.2s ease;
+}
+
+.view-more:hover {
+    color: #4338CA;
+}
+
+.view-more:hover i {
+    transform: translateX(3px);
+}
+
+.property-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.property-card {
+    background-color: white;
+    border-radius: 0.75rem;
     overflow: hidden;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.property-card:hover {
+    transform: translateY(-5px);
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
-.hero-image img {
+.property-image {
+    position: relative;
+    height: 200px;
+    overflow: hidden;
+}
+
+.property-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.property-card:hover .property-image img {
+    transform: scale(1.05);
+}
+
+.property-rating {
+    position: absolute;
+    top: 0.75rem;
+    right: 0.75rem;
+    background-color: white;
+    color: var(--text-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.property-rating i {
+    color: #F59E0B;
+    margin-right: 0.25rem;
+}
+
+.property-content {
+    padding: 1.5rem;
+}
+
+.property-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
+}
+
+.property-location {
+    color: var(--text-light);
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.btn-block {
+    display: block;
+    width: 100%;
+    text-align: center;
 }
 
 /* 특징 섹션 */
 .features {
-    padding: 4rem 0;
+    padding: 5rem 0;
+    background-color: white;
 }
 
 .features-header {
@@ -55,8 +244,8 @@
 .features-tag {
     display: inline-block;
     padding: 0.25rem 0.75rem;
-    background-color: #E6FFFA;
-    color: var(--primary);
+    background-color: #EEF2FF;
+    color: #4F46E5;
     font-size: 0.875rem;
     font-weight: 500;
     border-radius: var(--radius);
@@ -64,9 +253,10 @@
 }
 
 .features-title {
-    font-size: 1.875rem;
+    font-size: 2rem;
     font-weight: 700;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
 }
 
 .features-description {
@@ -76,11 +266,21 @@
 
 .features-grid {
     display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 2rem;
 }
 
 .feature-card {
-    padding: 1.5rem;
+    padding: 2rem;
+    background-color: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--shadow-md);
 }
 
 .feature-icon {
@@ -89,10 +289,10 @@
     justify-content: center;
     width: 3rem;
     height: 3rem;
-    border-radius: 9999px;
-    background-color: #E6FFFA;
-    color: var(--primary);
-    margin-bottom: 1rem;
+    border-radius: 50%;
+    background-color: #EEF2FF;
+    color: #4F46E5;
+    margin-bottom: 1.5rem;
 }
 
 .feature-icon i {
@@ -102,37 +302,120 @@
 .feature-title {
     font-size: 1.25rem;
     font-weight: 600;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: var(--text-color);
 }
 
 .feature-description {
     color: var(--text-light);
+    line-height: 1.6;
+}
+
+/* 버튼 스타일 */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    transition: var(--transition);
+    border: 1px solid transparent;
+    background-color: transparent;
+    color: var(--text-color);
+}
+
+.btn-primary {
+    background-color: #4F46E5;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: #4338CA;
+}
+
+.btn-outline {
+    border-color: white;
+    background-color: transparent;
+    /*color: white;*/
+}
+
+.btn-outline:hover:not(:disabled) {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1.125rem;
+}
+
+/* 전체 컨테이너 정렬 개선 */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    box-sizing: border-box;
+}
+
+/* 텍스트 정렬 일관성 유지 */
+h1, h2, h3, p {
+    margin-top: 0;
 }
 
 /* 반응형 스타일 */
-@media (min-width: 640px) {
-    .hero-actions {
-        flex-direction: row;
-    }
-}
-
-@media (min-width: 768px) {
-    .hero-title {
-        font-size: 2.5rem;
+@media (max-width: 1024px) {
+    .property-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 
     .features-grid {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(2, 1fr);
     }
 }
 
-@media (min-width: 1024px) {
-    .hero-content {
-        grid-template-columns: 1fr 1fr;
-        align-items: center;
+@media (max-width: 768px) {
+    .hero-title {
+        font-size: 2rem;
     }
 
-    .hero-title {
-        font-size: 3rem;
+    .hero-description {
+        font-size: 1rem;
+    }
+
+    .hero-actions {
+        flex-direction: column;
+    }
+
+    .steps-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 3rem;
+    }
+
+    .step-item {
+        max-width: 100%;
+    }
+
+    .property-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+    .features-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }

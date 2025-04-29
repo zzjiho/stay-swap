@@ -12,32 +12,126 @@
 <div th:replace="~{layout/layout :: header}"></div>
 
 <main>
+    <!-- 히어로 섹션 -->
     <div class="hero">
+        <div class="hero-overlay"></div>
         <div class="container">
             <div class="hero-content">
-                <div class="hero-text">
-                    <h1 class="hero-title">집을 교환하고 새로운 경험을 만나세요</h1>
-                    <p class="hero-description">
-                        StaySwap은 여행자들이 서로의 집을 교환하여 현지인처럼 여행할 수 있는 서비스입니다.
-                        호텔보다 넓은 공간에서, 현지인의 경험과 함께 특별한 여행을 즐겨보세요.
-                    </p>
-                    <div class="hero-actions">
-                        <a href="/page/listings" class="btn btn-primary btn-lg">
-                            숙소 탐색하기
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
-                        <a href="/page/new" class="btn btn-outline btn-lg">
-                            내 집 등록하기
-                        </a>
-                    </div>
-                </div>
-                <div class="hero-image">
-                    <img src="/images/hero-image.jpg" alt="아늑한 집 내부">
+                <h1 class="hero-title">숙소를 교환하고 새로운 경험을 만들어보세요</h1>
+                <p class="hero-description">
+                    StaySwap과 함께 전 세계 다양한 숙소를 교환하며 특별한 여행을 경험하세요
+                </p>
+                <div class="hero-actions">
+                    <a href="/page/listings" class="btn btn-primary btn-lg">
+                        숙소 찾기
+                    </a>
+<!--                    <a href="/page/new" class="btn btn-outline btn-lg">-->
+<!--                        숙소 등록하기-->
+<!--                    </a>-->
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- 이용 방법 섹션 -->
+    <div class="how-to-use">
+        <div class="container">
+            <h2 class="section-title">이용 방법</h2>
+
+            <div class="steps-container">
+                <div class="step-item">
+                    <div class="step-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h3 class="step-title">1. 숙소 등록</h3>
+                    <p class="step-description">
+                        당신의 숙소를 등록하고 교환 가능한 날짜와 조건을 설정하세요.
+                    </p>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h3 class="step-title">2. 교환 요청</h3>
+                    <p class="step-description">
+                        마음에 드는 숙소를 찾아 교환 요청을 보내고 호스트와 조건을 협의하세요.
+                    </p>
+                </div>
+
+                <div class="step-item">
+                    <div class="step-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="step-title">3. 안전한 교환</h3>
+                    <p class="step-description">
+                        StaySwap의 안전 보장 시스템으로 안전하게 숙소를 교환하고 특별한 여행을 즐기세요.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 추천 숙소 섹션 -->
+    <div class="recommended">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">추천 숙소</h2>
+                <a href="/page/listings" class="view-more">
+                    더 보기 <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="property-grid">
+                <!-- 숙소 카드 1 -->
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="/images/seoul-apartment.jpg" alt="서울 강남 모던 아파트">
+                        <div class="property-rating">
+                            <i class="fas fa-star"></i> 4.9 (128)
+                        </div>
+                    </div>
+                    <div class="property-content">
+                        <h3 class="property-title">서울 강남 모던 아파트</h3>
+                        <p class="property-location">서울 강남구</p>
+                        <a href="/page/property/1" class="btn btn-primary btn-block">자세히 보기</a>
+                    </div>
+                </div>
+
+                <!-- 숙소 카드 2 -->
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="/images/jeju-villa.jpg" alt="제주도 바다 전망 빌라">
+                        <div class="property-rating">
+                            <i class="fas fa-star"></i> 4.8 (95)
+                        </div>
+                    </div>
+                    <div class="property-content">
+                        <h3 class="property-title">제주도 바다 전망 빌라</h3>
+                        <p class="property-location">제주 서귀포시</p>
+                        <a href="/page/property/2" class="btn btn-primary btn-block">자세히 보기</a>
+                    </div>
+                </div>
+
+                <!-- 숙소 카드 3 -->
+                <div class="property-card">
+                    <div class="property-image">
+                        <img src="/images/busan-condo.jpg" alt="부산 해운대 오션뷰 콘도">
+                        <div class="property-rating">
+                            <i class="fas fa-star"></i> 4.7 (76)
+                        </div>
+                    </div>
+                    <div class="property-content">
+                        <h3 class="property-title">부산 해운대 오션뷰 콘도</h3>
+                        <p class="property-location">부산 해운대구</p>
+                        <a href="/page/property/3" class="btn btn-primary btn-block">자세히 보기</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 특징 섹션 -->
     <div class="features">
         <div class="container">
             <div class="features-header">
