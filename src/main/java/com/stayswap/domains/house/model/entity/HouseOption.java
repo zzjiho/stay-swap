@@ -1,17 +1,17 @@
 package com.stayswap.domains.house.model.entity;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
 @Entity
+@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class HouseOption {
 
     @Id
-    @Column(name = "house_id")
+    @Column(name = "house_option_id")
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
@@ -33,6 +33,6 @@ public class HouseOption {
     private boolean hasElevator;
     private String otherFeatures;
 
-    @OneToOne(mappedBy = "houseOption")
-    private House house;
+//    @OneToOne(mappedBy = "houseOption")
+//    private House house;
 }

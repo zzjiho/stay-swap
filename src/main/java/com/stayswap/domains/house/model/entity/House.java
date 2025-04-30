@@ -1,16 +1,20 @@
 package com.stayswap.domains.house.model.entity;
 
-import com.stayswap.domains.common.entity.BaseEntity;
+import com.stayswap.domains.common.entity.BaseTimeEntity;
+import com.stayswap.domains.house.constant.HouseType;
 import com.stayswap.domains.user.model.entity.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import static jakarta.persistence.CascadeType.*;
+import static jakarta.persistence.FetchType.*;
 
 @Entity
+@Builder
 @Getter
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class House extends BaseEntity {
+public class House extends BaseTimeEntity {
 
     @Id
     @Column(name = "house_id")
@@ -23,7 +27,11 @@ public class House extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    private String type;
+    @Column(columnDefinition = "TEXT")
+    private String rule;
+
+    @Enumerated(EnumType.STRING)
+    private HouseType houseType;
 
     private Float size;
 
@@ -51,7 +59,29 @@ public class House extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(fetch = LAZY, cascade = ALL)
+    @JoinColumn(name = "house_option_id")
     private HouseOption houseOption;
 
+    public static House newHouse(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, String district, Boolean petsAllowed, User user, HouseOption houseOption) {
+        return House.builder()
+                .title(title)
+                .description(description)
+                .rule(rule)
+                .houseType(type)
+                .size(size)
+                .bedrooms(bedrooms)
+                .bed(bed)
+                .bathrooms(bathrooms)
+                .maxGuests(maxGuests)
+                .address(address)
+                .city(city)
+                .district(district)
+                .petsAllowed(petsAllowed)
+                .isActive(true)
+                .user(user)
+                .houseOption(houseOption)
+                .build();
+
+    }
 }
