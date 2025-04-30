@@ -9,10 +9,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestPart;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -28,20 +25,17 @@ public class HouseController {
 
     @Operation(
             summary = "숙소 등록 API",
-            description = "숙소를 등록합니다."
+            description = "숙소를 등록합니다." +
+                    " 숙소 등록 시, 이미지 파일을 함께 최대 10장 업로드할 수 있습니다."
     )
     @PostMapping("")
     public RestApiResponse<CreateHouseResponse> createHouse(
-            @Valid @RequestPart CreateHouseRequest request,
+            @RequestParam("userId") Long userId,
+            @Valid @RequestPart(value = "request") CreateHouseRequest request,
             @RequestPart(required = false, value = "images") List<MultipartFile> images,
             BindingResult bindingResult) throws IOException {
 
         return RestApiResponse.success(
-                houseService.createHouse(request, images));
+                houseService.createHouse(userId, request, images));
     }
-
-
-
-
-
 }

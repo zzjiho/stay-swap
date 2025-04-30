@@ -3,8 +3,7 @@ package com.stayswap.global.code;
 import lombok.Getter;
 import org.springframework.http.HttpStatusCode;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.*;
 
 @Getter
 public enum ErrorCode {
@@ -13,7 +12,10 @@ public enum ErrorCode {
 
     // 400
     INVALID_UPLOAD_FILE_EXTENSION(BAD_REQUEST, false , "BR001", "잘못된 파일 확장자입니다."),
-    INVALID_FILE_COUNT_TOO_MANY(BAD_REQUEST, false , "BR002", "업로드 가능한 파일 개수를 초과했습니다.");
+    INVALID_FILE_COUNT_TOO_MANY(BAD_REQUEST, false , "BR002", "업로드 가능한 파일 개수를 초과했습니다."),
+
+    NOT_EXISTS_USER(NOT_FOUND, false, "NF001", "존재하지 않는 회원입니다.");
+
 
 
     private final HttpStatusCode statusCode;
