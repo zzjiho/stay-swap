@@ -44,6 +44,14 @@ public class HouseImgService {
             throw new InvalidException(INVALID_FILE_COUNT_TOO_MANY);
         }
     }
-
-
+    
+    /**
+     * 이미지 삭제
+     */
+    public void deleteHouseImages(House house) {
+        List<HouseImage> images = houseImageRepository.findByHouse(house);
+        if (!images.isEmpty()) {
+            houseImageRepository.deleteAll(images);
+        }
+    }
 }

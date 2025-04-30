@@ -1,12 +1,15 @@
 package com.stayswap.domains.house.service;
 
 import com.stayswap.domains.house.model.dto.request.CreateHouseRequest;
+import com.stayswap.domains.house.model.dto.request.UpdateHouseRequest;
 import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
+import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
 import com.stayswap.domains.user.model.entity.User;
 import com.stayswap.domains.user.repository.UserRepository;
 import com.stayswap.global.code.ErrorCode;
+import com.stayswap.global.error.exception.ForbiddenException;
 import com.stayswap.global.error.exception.NotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -42,5 +45,29 @@ public class HouseService {
         }
 
         return CreateHouseResponse.of(savedHouse);
+    }
+    
+    // 숙소 수정
+    public UpdateHouseResponse updateHouse(Long houseId, Long userId, @Valid UpdateHouseRequest request, List<MultipartFile> images) throws IOException {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+                
+        House house = houseRepository.findById(houseId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
+                
+        if (!house.getUser().getId().equals(userId)) {
+            throw new ForbiddenException(NOT_AUTHORIZED);
+        }
+        
+        request.updateEntity(house);
+        
+        if (images != null) {
+            houseImgService.validateImgCount(images, 10L);
+            houseImgService.deleteHouseImages(house);
+            houseImgService.uploadHouseImg(house, images);
+        }
+        
+        return UpdateHouseResponse.of(house);
     }
 }
