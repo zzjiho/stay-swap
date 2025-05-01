@@ -46,7 +46,7 @@ public class HouseController {
             description = "숙소 정보를 수정합니다." +
                     " 숙소 수정 시, 이미지 파일을 함께 최대 10장 업로드할 수 있습니다."
     )
-    @PutMapping("/{houseId}")
+    @PostMapping("/{houseId}")
     public RestApiResponse<UpdateHouseResponse> updateHouse(
             @PathVariable("houseId") Long houseId,
             @RequestParam("userId") Long userId,

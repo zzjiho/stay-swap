@@ -32,7 +32,9 @@ public class HouseService {
     private final UserRepository userRepository;
 
     // 숙소 등록
-    public CreateHouseResponse createHouse(Long userId, @Valid CreateHouseRequest request, List<MultipartFile> images) throws IOException {
+    public CreateHouseResponse createHouse(Long userId,
+                                           @Valid CreateHouseRequest request,
+                                           List<MultipartFile> images) throws IOException {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
@@ -48,7 +50,9 @@ public class HouseService {
     }
     
     // 숙소 수정
-    public UpdateHouseResponse updateHouse(Long houseId, Long userId, @Valid UpdateHouseRequest request, List<MultipartFile> images) throws IOException {
+    public UpdateHouseResponse updateHouse(Long houseId, Long userId,
+                                           @Valid UpdateHouseRequest request,
+                                           List<MultipartFile> images) throws IOException {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
@@ -62,10 +66,11 @@ public class HouseService {
         
         request.updateEntity(house);
         
-        if (images != null) {
-            houseImgService.validateImgCount(images, 10L);
-            houseImgService.deleteHouseImages(house);
-            houseImgService.uploadHouseImg(house, images);
+        if (images != null || (request.getDeleteImageIds() != null && !request.getDeleteImageIds().isEmpty())) {
+            if (images != null) {
+                houseImgService.validateImgCount(images, 10L);
+            }
+            houseImgService.updateSelectiveImg(house, request.getDeleteImageIds(), images);
         }
         
         return UpdateHouseResponse.of(house);

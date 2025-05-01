@@ -6,6 +6,8 @@ import com.stayswap.domains.house.model.entity.HouseOption;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Builder
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -50,6 +52,9 @@ public class UpdateHouseRequest {
 
     @Schema(description = "반려동물 허용 여부", example = "true")
     private Boolean petsAllowed;
+    
+    @Schema(description = "삭제할 이미지 ID 목록", example = "[1, 2, 3]")
+    private List<Long> deleteImageIds;
     
     @Schema(description = "숙소 옵션 정보")
     private HouseOptionRequest options;
