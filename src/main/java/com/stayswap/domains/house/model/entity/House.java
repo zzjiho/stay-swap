@@ -82,6 +82,27 @@ public class House extends BaseTimeEntity {
                 .user(user)
                 .houseOption(houseOption)
                 .build();
-
+    }
+    
+    public void update(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, 
+                      Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, 
+                      String district, Boolean petsAllowed, HouseOption houseOption) {
+        this.title = title;
+        this.description = description;
+        this.rule = rule;
+        this.houseType = type;
+        this.size = size;
+        this.bedrooms = bedrooms;
+        this.bed = bed;
+        this.bathrooms = bathrooms;
+        this.maxGuests = maxGuests;
+        this.address = address;
+        this.city = city;
+        this.district = district;
+        this.petsAllowed = petsAllowed;
+        
+        if (houseOption != null) {
+            this.houseOption = houseOption;
+        }
     }
 }
