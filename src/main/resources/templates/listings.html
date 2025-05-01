@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>숙소 탐색 - StaySwap</title>
+    <title>숙소 찾기 - StaySwap</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <link rel="stylesheet" th:href="@{/css/listings.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -14,56 +14,128 @@
 <main>
     <section class="listings-section">
         <div class="container">
-            <div class="listings-header">
-                <h1 class="listings-title">숙소 탐색</h1>
-                <div class="view-toggle">
-                    <div class="toggle-buttons">
-                        <button class="toggle-button active" data-view="list">
-                            <i class="fas fa-list"></i>
-                            목록
-                        </button>
-                        <button class="toggle-button" data-view="map">
-                            <i class="fas fa-map-marker-alt"></i>
-                            지도
-                        </button>
+            <h1 class="section-title">숙소 찾기</h1>
+
+            <!-- 검색 및 필터 섹션 -->
+            <div class="search-filter-box">
+                <!-- 검색 입력 -->
+                <div class="search-row">
+                    <div class="search-input-wrapper">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-query" placeholder="지역, 숙소명으로 검색" class="search-input">
+                    </div>
+                    <button class="search-button">검색</button>
+                </div>
+
+                <!-- 필터 옵션 -->
+                <div class="filter-options">
+                    <div class="filter-group">
+                        <label class="filter-label">위치</label>
+                        <select id="location-filter" class="filter-select">
+                            <option value="">모든 지역</option>
+                            <option value="서울">서울</option>
+                            <option value="부산">부산</option>
+                            <option value="제주">제주</option>
+                            <option value="강원">강원</option>
+                            <option value="인천">인천</option>
+                        </select>
+                    </div>
+
+<!--                    <div class="filter-group">-->
+<!--                        <label class="filter-label">가격 범위 (포인트)</label>-->
+<!--                        <div class="price-slider-container">-->
+<!--                            <input type="range" id="price-slider" min="0" max="1000" value="1000" class="price-slider">-->
+<!--                            <div class="price-range">-->
+<!--                                <span>0 P</span>-->
+<!--                                <span id="price-value">1000 P</span>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                    </div>-->
+
+                    <div class="filter-group">
+                        <label class="filter-label">숙소 유형</label>
+                        <select id="bedroom-filter" class="filter-select">
+                            <option value="">전체</option>
+                            <option value="1">아파트</option>
+                            <option value="2">주택</option>
+                            <option value="3">빌라</option>
+                            <option value="4">오피스텔</option>
+                        </select>
+                    </div>
+
+                    <div class="filter-group">
+                        <label class="filter-label">날짜</label>
+                        <input type="date" id="date-filter" class="filter-select">
                     </div>
                 </div>
-            </div>
 
-            <div class="search-bar">
-                <div class="search-input">
-                    <i class="fas fa-search"></i>
-                    <input type="text" id="search-query" placeholder="지역, 도시 또는 주소 검색" class="form-input">
-                </div>
-                <div class="search-filters">
-                    <button class="btn btn-outline btn-filter" id="date-filter">
-                        <i class="fas fa-calendar"></i>
-                        날짜
-                    </button>
-                    <button class="btn btn-outline btn-filter" id="more-filters">
-                        <i class="fas fa-filter"></i>
-                        필터
-                    </button>
-                </div>
-            </div>
-
-            <div class="listings-content">
-                <div class="view-pane active" id="list-view">
-                    <div class="listings-grid" id="listings-container">
-                        <!-- 숙소 카드는 JavaScript로 동적 생성됩니다   id="listings-container">
-                        <!-- 숙소 카드는 JavaScript로 동적 생성됩니다 -->
-                    </div>
-                </div>
-
-                <div class="view-pane" id="map-view">
-                    <div class="map-container">
-                        <div class="map-placeholder">
-                            <i class="fas fa-map-marked-alt"></i>
-                            <h3>지도 뷰</h3>
-                            <p>지도에서 숙소 위치를 확인하세요</p>
+                <!-- 편의시설 필터 -->
+                <div class="amenities-filter">
+                    <h3 class="amenities-title">편의시설</h3>
+                    <div class="amenities-grid">
+                        <div class="amenity-item">
+                            <input type="checkbox" id="wifi" class="amenity-checkbox">
+                            <label for="wifi" class="amenity-label">와이파이</label>
+                        </div>
+                        <div class="amenity-item">
+                            <input type="checkbox" id="aircon" class="amenity-checkbox">
+                            <label for="aircon" class="amenity-label">에어컨</label>
+                        </div>
+                        <div class="amenity-item">
+                            <input type="checkbox" id="kitchen" class="amenity-checkbox">
+                            <label for="kitchen" class="amenity-label">주방</label>
+                        </div>
+                        <div class="amenity-item">
+                            <input type="checkbox" id="washer" class="amenity-checkbox">
+                            <label for="washer" class="amenity-label">세탁기</label>
+                        </div>
+                        <div class="amenity-item">
+                            <input type="checkbox" id="pool" class="amenity-checkbox">
+                            <label for="pool" class="amenity-label">수영장</label>
+                        </div>
+                        <div class="amenity-item">
+                            <input type="checkbox" id="parking" class="amenity-checkbox">
+                            <label for="parking" class="amenity-label">주차장</label>
+                        </div>
+                        <div class="amenity-item">
+                            <input type="checkbox" id="gym" class="amenity-checkbox">
+                            <label for="gym" class="amenity-label">헬스장</label>
+                        </div>
+                        <div class="amenity-item">
+                            <input type="checkbox" id="bbq" class="amenity-checkbox">
+                            <label for="bbq" class="amenity-label">바베큐</label>
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- 검색 결과 헤더 -->
+            <div class="results-header">
+                <div class="results-count">
+                    <span id="listings-count">0</span>개의 숙소
+                </div>
+                <div class="sort-options">
+                    <select id="sort-select" class="sort-select">
+                        <option value="recommended">추천순</option>
+                        <option value="price_low">가격 낮은순</option>
+                        <option value="price_high">가격 높은순</option>
+                        <option value="rating">평점순</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 숙소 목록 -->
+            <div class="listings-grid" id="listings-container">
+                <!-- 숙소 카드는 JavaScript로 동적 생성됩니다 -->
+                <div class="listing-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>숙소를 불러오는 중입니다...</p>
+                </div>
+            </div>
+
+            <!-- 페이지네이션 -->
+            <div class="pagination" id="pagination">
+                <!-- 페이지네이션은 JavaScript로 동적 생성됩니다 -->
             </div>
         </div>
     </section>
@@ -71,159 +143,6 @@
 
 <div th:replace="~{layout/footer :: footer}"></div>
 <script th:src="@{/js/main.js}"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // 숙소 데이터 가져오기
-        fetchListings();
-
-        // 검색 기능
-        const searchInput = document.getElementById('search-query');
-        searchInput.addEventListener('input', debounce(function() {
-            fetchListings(searchInput.value);
-        }, 500));
-
-        // 필터 버튼 이벤트
-        document.getElementById('date-filter').addEventListener('click', function() {
-            alert('날짜 필터 기능은 준비 중입니다.');
-        });
-
-        document.getElementById('more-filters').addEventListener('click', function() {
-            alert('추가 필터 기능은 준비 중입니다.');
-        });
-    });
-
-    // API에서 숙소 목록 가져오기
-    function fetchListings(query = '') {
-        // 실제 구현 시 API 호출
-        // fetch(`/api/listings?query=${encodeURIComponent(query)}`)
-        //     .then(response => response.json())
-        //     .then(data => renderListings(data))
-        //     .catch(error => {
-        //         console.error('Error:', error);
-        //         alert('숙소 목록을 불러오는 중 오류가 발생했습니다.');
-        //     });
-
-        // 테스트용 더미 데이터
-        const dummyListings = [
-            {
-                id: 1,
-                title: '서울 강남 모던 아파트',
-                image: '/images/listing1.jpg',
-                location: '서울 강남구',
-                rating: 4.9,
-                features: ['LiveLocal', 'TimeBank'],
-                points: 500,
-                host: {
-                    name: '김민수',
-                    image: '/images/host1.jpg'
-                }
-            },
-            {
-                id: 2,
-                title: '제주 바다 전망 빌라',
-                image: '/images/listing2.jpg',
-                location: '제주 서귀포시',
-                rating: 4.8,
-                features: ['LiveLocal'],
-                points: 700,
-                host: {
-                    name: '이지은',
-                    image: '/images/host2.jpg'
-                }
-            },
-            {
-                id: 3,
-                title: '부산 해운대 오션뷰 콘도',
-                image: '/images/listing3.jpg',
-                location: '부산 해운대구',
-                rating: 4.7,
-                features: ['TimeBank'],
-                points: 600,
-                host: {
-                    name: '박준호',
-                    image: '/images/host3.jpg'
-                }
-            }
-        ];
-
-        // 검색어가 있으면 필터링
-        const filteredListings = query
-            ? dummyListings.filter(listing =>
-                listing.title.includes(query) ||
-                listing.location.includes(query)
-            )
-            : dummyListings;
-
-        renderListings(filteredListings);
-    }
-
-    // 숙소 목록 렌더링
-    function renderListings(listings) {
-        const container = document.getElementById('listings-container');
-        container.innerHTML = '';
-
-        if (listings.length === 0) {
-            container.innerHTML = '<div class="no-results">검색 결과가 없습니다.</div>';
-            return;
-        }
-
-        listings.forEach(listing => {
-            const card = document.createElement('div');
-            card.className = 'listing-card';
-
-            card.innerHTML = `
-                    <a href="/page/listings/${listing.id}" class="listing-link">
-                        <div class="listing-image">
-                            <img src="${listing.image}" alt="${listing.title}">
-                        </div>
-                        <div class="listing-content">
-                            <div class="listing-header">
-                                <h3 class="listing-title">${listing.title}</h3>
-                                <div class="listing-rating">
-                                    <span>${listing.rating}</span>
-                                    <i class="fas fa-star"></i>
-                                </div>
-                            </div>
-                            <div class="listing-location">
-                                <i class="fas fa-map-marker-alt"></i>
-                                <span>${listing.location}</span>
-                            </div>
-                            <div class="listing-features">
-                                ${listing.features.map(feature =>
-                `<span class="badge badge-outline">${feature}</span>`
-            ).join('')}
-                            </div>
-                            <div class="listing-footer">
-                                <div class="listing-price">
-                                    <span>${listing.points} P</span>
-                                </div>
-                                <div class="listing-host">
-                                    <div class="avatar">
-                                        <img src="${listing.host.image}" alt="${listing.host.name}">
-                                    </div>
-                                    <span>${listing.host.name}</span>
-                                </div>
-                            </div>
-                        </div>
-                    </a>
-                `;
-
-            container.appendChild(card);
-        });
-    }
-
-    // 디바운스 함수
-    function debounce(func, wait) {
-        let timeout;
-        return function() {
-            const context = this;
-            const args = arguments;
-            clearTimeout(timeout);
-            timeout = setTimeout(() => {
-                func.apply(context, args);
-            }, wait);
-        };
-    }
-</script>
+<script th:src="@{/js/listings.js}"></script>
 </body>
 </html>
