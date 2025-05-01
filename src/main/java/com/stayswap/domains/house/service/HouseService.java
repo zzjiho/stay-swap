@@ -1,8 +1,10 @@
 package com.stayswap.domains.house.service;
 
 import com.stayswap.domains.house.model.dto.request.CreateHouseRequest;
+import com.stayswap.domains.house.model.dto.request.HouseSearchRequest;
 import com.stayswap.domains.house.model.dto.request.UpdateHouseRequest;
 import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
+import com.stayswap.domains.house.model.dto.response.HouseListResponse;
 import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
@@ -13,6 +15,8 @@ import com.stayswap.global.error.exception.ForbiddenException;
 import com.stayswap.global.error.exception.NotFoundException;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -74,5 +78,11 @@ public class HouseService {
         }
         
         return UpdateHouseResponse.of(house);
+    }
+
+    // 숙소 조회
+    @Transactional(readOnly = true)
+    public Page<HouseListResponse> getHouseList(HouseSearchRequest request, Pageable pageable) {
+        return houseRepository.getHouseList(request, pageable);
     }
 }
