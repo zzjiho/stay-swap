@@ -1,12 +1,15 @@
 package com.stayswap.domains.swap.model.entity;
 
 import com.stayswap.domains.common.entity.BaseEntity;
+import com.stayswap.domains.common.entity.BaseTimeEntity;
 import com.stayswap.domains.house.model.entity.House;
+import com.stayswap.domains.swap.constant.SwapStatus;
+import com.stayswap.domains.swap.constant.SwapType;
 import com.stayswap.domains.user.model.entity.User;
+import com.stayswap.domains.swap.model.dto.response.SwapResponse;
+import com.stayswap.domains.swap.model.dto.response.StayResponse;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -14,7 +17,9 @@ import java.time.LocalDateTime;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Swap extends BaseEntity {
+@AllArgsConstructor
+@Builder
+public class Swap extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,11 +32,11 @@ public class Swap extends BaseEntity {
     @Column(name = "end_date", nullable = false)
     private LocalDate endDate;
 
-    @Column(nullable = false)
-    private String status; // pending, accepted, rejected, canceled, completed
+    @Enumerated(EnumType.STRING)
+    private SwapStatus swapStatus;
 
-    @Column(nullable = false)
-    private String swapType;
+    @Enumerated(EnumType.STRING)
+    private SwapType swapType;
 
     @Column(columnDefinition = "TEXT")
     private String message;
@@ -40,7 +45,7 @@ public class Swap extends BaseEntity {
     private LocalDateTime responseAt;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "requester_id", nullable = false)
     private User requester;
 
     @ManyToOne
@@ -50,5 +55,4 @@ public class Swap extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "house_id", nullable = false)
     private House house;
-
 }

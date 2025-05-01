@@ -19,10 +19,13 @@ public enum ErrorCode {
     NOT_EXISTS_USER(NOT_FOUND, false, "NF001", "존재하지 않는 회원입니다."),
     NOT_EXISTS_HOUSE(NOT_FOUND, false, "NF002", "존재하지 않는 숙소입니다."),
 
+    CANNOT_SWAP_WITH_OWN_HOUSE(BAD_REQUEST, false, "NF003", "자신의 숙소와는 교환할 수 없습니다."),
+
     /**
      * 403
      */
-    NOT_AUTHORIZED(FORBIDDEN, false, "F001", "권한이 없습니다.");
+    NOT_AUTHORIZED(FORBIDDEN, false, "F001", "권한이 없습니다."),
+    NOT_MY_HOUSE(FORBIDDEN, false, "F002", "자신의 숙소만 교환 가능합니다.");
 
 
 
