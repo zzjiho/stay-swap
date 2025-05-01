@@ -1,434 +1,420 @@
-document.addEventListener('DOMContentLoaded', function() {
-    // URL에서 숙소 ID 가져오기
-    const urlParams = new URLSearchParams(window.location.search);
-    const listingId = urlParams.get('id');
+$(document).ready(function() {
+    // 탭 전환 기능
+    $('.booking-tab').on('click', function() {
+        const tabIndex = $(this).index();
 
-    if (!listingId) {
-        // ID가 없으면 목록 페이지로 리다이렉트 (실제 구현 시)
-        // window.location.href = '/listings';
-        // return;
+        // 탭 활성화
+        $('.booking-tab').removeClass('active');
+        $(this).addClass('active');
 
-        // 테스트를 위해 기본 ID 사용
-        console.log('숙소 ID가 없습니다. 기본 데이터를 사용합니다.');
-    }
-
-    // 숙소 상세 정보 불러오기
-    fetchListingDetail(listingId || '1');
-
-    // 예약 탭 기능
-    const bookingTabs = document.querySelectorAll('.booking-tab');
-    const bookingTabPanes = document.querySelectorAll('.booking-tab-pane');
-
-    bookingTabs.forEach((tab, index) => {
-        tab.addEventListener('click', function() {
-            // 탭 활성화 상태 변경
-            bookingTabs.forEach(t => t.classList.remove('active'));
-            this.classList.add('active');
-
-            // 탭 패널 활성화 상태 변경
-            bookingTabPanes.forEach(pane => pane.classList.remove('active'));
-            bookingTabPanes[index].classList.add('active');
-        });
+        // 탭 내용 활성화
+        $('.booking-tab-pane').removeClass('active');
+        $('.booking-tab-pane').eq(tabIndex).addClass('active');
     });
 
-    // 갤러리 네비게이션 기능
-    const galleryPrev = document.querySelector('.gallery-prev');
-    const galleryNext = document.querySelector('.gallery-next');
-    const galleryDots = document.getElementById('gallery-dots');
+    // 갤러리 기능
+    const images = [
+        '/images/listing-detail-1.jpg',
+        '/images/listing-detail-2.jpg',
+        '/images/listing-detail-3.jpg',
+        '/images/listing-detail-4.jpg',
+        '/images/listing-detail-5.jpg'
+    ];
 
-    if (galleryPrev && galleryNext) {
-        galleryPrev.addEventListener('click', function() {
-            navigateGallery('prev');
-        });
+    let currentImageIndex = 0;
 
-        galleryNext.addEventListener('click', function() {
-            navigateGallery('next');
+    // 갤러리 도트 생성
+    function createGalleryDots() {
+        const dotsContainer = $('#gallery-dots');
+        dotsContainer.empty();
+
+        images.forEach((_, index) => {
+            const dot = $('<div>').addClass('gallery-dot');
+            if (index === currentImageIndex) {
+                dot.addClass('active');
+            }
+
+            dot.on('click', function() {
+                showImage(index);
+            });
+
+            dotsContainer.append(dot);
         });
     }
 
-    // 교환 요청 버튼 이벤트 리스너
-    const exchangeRequestBtn = document.getElementById('exchange-request-btn');
-    if (exchangeRequestBtn) {
-        exchangeRequestBtn.addEventListener('click', function() {
-            requestExchange(listingId || '1');
-        });
+    // 이미지 표시
+    function showImage(index) {
+        if (index < 0) {
+            index = images.length - 1;
+        } else if (index >= images.length) {
+            index = 0;
+        }
+
+        currentImageIndex = index;
+        $('#gallery-main-image').attr('src', images[index]);
+
+        // 도트 활성화 상태 업데이트
+        $('.gallery-dot').removeClass('active');
+        $('.gallery-dot').eq(index).addClass('active');
     }
 
-    // 옵션 적용 버튼 이벤트 리스너
-    const optionsApplyBtn = document.getElementById('options-apply-btn');
-    if (optionsApplyBtn) {
-        optionsApplyBtn.addEventListener('click', function() {
-            applyOptions();
-        });
-    }
-});
-
-// 숙소 상세 정보 불러오기
-function fetchListingDetail(listingId) {
-    // API 호출 (실제 구현 시)
-    // fetch(`/api/listings/${listingId}`)
-    //     .then(response => response.json())
-    //     .then(data => {
-    //         renderListingDetail(data);
-    //     })
-    //     .catch(error => {
-    //         console.error('Error:', error);
-    //         alert('숙소 정보를 불러오는 데 실패했습니다.');
-    //     });
-
-    // 임시 데이터 (API 연동 전)
-    setTimeout(() => {
-        const mockListing = {
-            id: listingId,
-            title: '서울 강남 모던 아파트',
-            description: '강남역에서 도보 5분 거리에 위치한 모던한 아파트입니다. 편리한 교통과 함께 강남의 중심에서 현지인처럼 생활해보세요. 주변에는 다양한 맛집과 쇼핑몰이 있어 편리합니다.',
-            location: '서울 강남구',
-            rating: 4.9,
-            reviews: 28,
-            points: 500,
-            features: ['LiveLocal', '무료 주차', '반려동물 동반 가능'],
-            images: [
-                '/images/listing-detail-1.jpg',
-                '/images/listing-detail-2.jpg',
-                '/images/listing-detail-3.jpg',
-                '/images/listing-detail-4.jpg',
-                '/images/listing-detail-5.jpg'
-            ],
-            amenities: [
-                '무선 인터넷',
-                '에어컨',
-                '세탁기',
-                '주방',
-                '헤어드라이어',
-                '다리미',
-                '냉장고',
-                '전자레인지',
-                'TV'
-            ],
-            host: {
-                name: '김민수',
-                image: '/images/host-1.jpg',
-                joinedYear: 2020,
-                responseRate: 98,
-                isSuperhost: true
-            },
-            liveLocalExperiences: [
-                {
-                    id: 1,
-                    title: '강남 맛집 투어',
-                    description: '현지인만 아는 강남의 숨은 맛집들을 소개해드립니다.',
-                    duration: 3,
-                    points: 100
-                },
-                {
-                    id: 2,
-                    title: '한강 자전거 투어',
-                    description: '한강을 따라 자전거를 타며 서울의 아름다운 경치를 감상해보세요.',
-                    duration: 2,
-                    points: 80
-                }
-            ],
-            timeBankServices: [
-                {
-                    id: 1,
-                    title: '한국어 회화 레슨',
-                    description: '기초적인 한국어 회화를 가르쳐드립니다.',
-                    duration: 1,
-                    points: 50
-                },
-                {
-                    id: 2,
-                    title: '서울 지하철 이용 가이드',
-                    description: '복잡한 서울 지하철 시스템을 쉽게 이용하는 방법을 알려드립니다.',
-                    duration: 1,
-                    points: 30
-                }
-            ]
-        };
-
-        renderListingDetail(mockListing);
-    }, 300);
-}
-
-// 숙소 상세 정보 렌더링
-function renderListingDetail(listing) {
-    // 제목 설정
-    document.title = `${listing.title} - StaySwap`;
-    document.getElementById('listing-title').textContent = listing.title;
-
-    // 평점 및 리뷰 설정
-    document.getElementById('listing-rating').textContent = listing.rating;
-    document.getElementById('listing-reviews').textContent = `(${listing.reviews})`;
-    document.getElementById('sidebar-rating').textContent = listing.rating;
-
-    // 위치 설정
-    document.getElementById('listing-location').textContent = listing.location;
-
-    // 설명 설정
-    document.getElementById('listing-description').textContent = listing.description;
-
-    // 포인트 설정
-    document.getElementById('listing-points').textContent = `${listing.points} P`;
-    document.getElementById('summary-points').textContent = `${listing.points} 포인트`;
-    document.getElementById('total-points').textContent = `${listing.points} P`;
-
-    // 갤러리 이미지 설정
-    const galleryMainImage = document.getElementById('gallery-main-image');
-    galleryMainImage.src = listing.images[0];
-    galleryMainImage.alt = listing.title;
-
-    // 갤러리 점 생성
-    const galleryDots = document.getElementById('gallery-dots');
-    galleryDots.innerHTML = '';
-
-    listing.images.forEach((image, index) => {
-        const dot = document.createElement('span');
-        dot.className = 'gallery-dot' + (index === 0 ? ' active' : '');
-        dot.setAttribute('data-index', index);
-        dot.addEventListener('click', function() {
-            const imageIndex = parseInt(this.getAttribute('data-index'));
-            updateGallery(imageIndex);
-        });
-        galleryDots.appendChild(dot);
+    // 이전 이미지 버튼
+    $('.gallery-prev').on('click', function() {
+        showImage(currentImageIndex - 1);
     });
 
-    // 호스트 정보 설정
-    document.getElementById('host-name-title').textContent = `${listing.host.name}님이 호스팅하는 숙소`;
-    document.getElementById('host-image').src = listing.host.image;
-    document.getElementById('host-detail-name').textContent = listing.host.name;
-    document.getElementById('host-joined').textContent = `${listing.host.joinedYear}년에 가입`;
-    document.getElementById('host-reviews').textContent = `후기 ${listing.reviews}개`;
-    document.getElementById('host-response-rate').textContent = `응답률: ${listing.host.responseRate}%`;
-
-    // 슈퍼호스트 배지 설정
-    const superhostBadge = document.getElementById('superhost-badge');
-    if (listing.host.isSuperhost) {
-        superhostBadge.classList.remove('hidden');
-    } else {
-        superhostBadge.classList.add('hidden');
-    }
-
-    // 특징 배지 설정
-    const featuresContainer = document.getElementById('listing-features');
-    featuresContainer.innerHTML = '';
-
-    listing.features.forEach(feature => {
-        const badge = document.createElement('span');
-        badge.className = 'badge badge-outline';
-        badge.textContent = feature;
-        featuresContainer.appendChild(badge);
+    // 다음 이미지 버튼
+    $('.gallery-next').on('click', function() {
+        showImage(currentImageIndex + 1);
     });
 
-    // 편의시설 설정
-    const amenitiesContainer = document.getElementById('amenities-container');
-    amenitiesContainer.innerHTML = '';
+    // 초기 갤러리 도트 생성
+    createGalleryDots();
 
-    listing.amenities.forEach(amenity => {
-        const amenityElement = document.createElement('div');
-        amenityElement.className = 'amenity';
-        amenityElement.innerHTML = `
-            <i class="fas fa-check"></i>
-            <span>${amenity}</span>
-        `;
-        amenitiesContainer.appendChild(amenityElement);
+    // 공유 버튼 클릭 이벤트
+    $('.share-btn').on('click', function() {
+        // 실제 구현에서는 공유 기능 추가
+        alert('공유 기능은 준비 중입니다.');
     });
 
-    // LiveLocal 경험 설정
-    const liveLocalContainer = document.getElementById('livelocal-container');
-    if (listing.liveLocalExperiences && listing.liveLocalExperiences.length > 0) {
-        liveLocalContainer.innerHTML = '<h4 class="booking-options-title">LiveLocal 경험</h4>';
+    // 저장 버튼 클릭 이벤트
+    $('.save-btn').on('click', function() {
+        const $icon = $(this).find('i');
 
-        listing.liveLocalExperiences.forEach((exp, index) => {
-            const option = document.createElement('div');
-            option.className = 'booking-option';
-            option.innerHTML = `
+        if ($icon.hasClass('far')) {
+            // 저장 안된 상태 -> 저장
+            $icon.removeClass('far').addClass('fas');
+            alert('숙소가 저장되었습니다.');
+        } else {
+            // 저장된 상태 -> 저장 취소
+            $icon.removeClass('fas').addClass('far');
+            alert('숙소 저장이 취소되었습니다.');
+        }
+    });
+
+    // LiveLocal 경험 데이터 (실제로는 API에서 가져옴)
+    const liveLocalExperiences = [
+        {
+            id: 1,
+            title: '현지인 맛집 투어',
+            description: '강남 현지인들만 아는 숨은 맛집을 소개해드립니다.',
+            duration: 3,
+            points: 100
+        },
+        {
+            id: 2,
+            title: '한강 자전거 투어',
+            description: '한강을 따라 자전거를 타며 서울의 아름다운 경치를 감상하세요.',
+            duration: 2,
+            points: 80
+        }
+    ];
+
+    // TimeBank 서비스 데이터 (실제로는 API에서 가져옴)
+    const timeBankServices = [
+        {
+            id: 1,
+            title: '한국어 회화 수업',
+            description: '기초적인 한국어 회화를 배워보세요.',
+            duration: 1,
+            points: 50
+        },
+        {
+            id: 2,
+            title: '한식 요리 클래스',
+            description: '김치찌개와 불고기 등 한국 전통 요리를 배워보세요.',
+            duration: 2,
+            points: 70
+        }
+    ];
+
+    // LiveLocal 경험 렌더링
+    function renderLiveLocalExperiences() {
+        const container = $('#livelocal-container');
+        container.empty();
+
+        if (liveLocalExperiences.length === 0) {
+            container.html('<p>제공되는 LiveLocal 경험이 없습니다.</p>');
+            return;
+        }
+
+        liveLocalExperiences.forEach(exp => {
+            const option = $('<div>').addClass('booking-option');
+            option.html(`
                 <div class="booking-option-info">
                     <h5>${exp.title}</h5>
                     <p>${exp.description}</p>
-                    <div class="booking-option-duration">소요 시간: ${exp.duration}시간</div>
+                    <div class="booking-option-duration">
+                        <i class="far fa-clock"></i> ${exp.duration}시간
+                    </div>
                 </div>
                 <div class="booking-option-action">
                     <div class="booking-option-price">${exp.points} P</div>
                     <div class="booking-option-select">
                         <label class="radio-label">
-                            <input type="radio" name="exp-${exp.id}" value="none" checked>
-                            <span>선택 안함</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="exp-${exp.id}" value="select">
-                            <span>선택</span>
+                            <input type="radio" name="livelocal" value="${exp.id}"> 선택
                         </label>
                     </div>
                 </div>
-            `;
-            liveLocalContainer.appendChild(option);
+            `);
+
+            container.append(option);
         });
-    } else {
-        liveLocalContainer.innerHTML = '<p>이용 가능한 LiveLocal 경험이 없습니다.</p>';
     }
 
-    // TimeBank 서비스 설정
-    const timeBankContainer = document.getElementById('timebank-container');
-    if (listing.timeBankServices && listing.timeBankServices.length > 0) {
-        timeBankContainer.innerHTML = '<h4 class="booking-options-title">TimeBank 서비스</h4>';
+    // TimeBank 서비스 렌더링
+    function renderTimeBankServices() {
+        const container = $('#timebank-container');
+        container.empty();
 
-        listing.timeBankServices.forEach((service, index) => {
-            const option = document.createElement('div');
-            option.className = 'booking-option';
-            option.innerHTML = `
+        if (timeBankServices.length === 0) {
+            container.html('<p>제공되는 TimeBank 서비스가 없습니다.</p>');
+            return;
+        }
+
+        timeBankServices.forEach(service => {
+            const option = $('<div>').addClass('booking-option');
+            option.html(`
                 <div class="booking-option-info">
                     <h5>${service.title}</h5>
                     <p>${service.description}</p>
-                    <div class="booking-option-duration">소요 시간: ${service.duration}시간</div>
+                    <div class="booking-option-duration">
+                        <i class="far fa-clock"></i> ${service.duration}시간
+                    </div>
                 </div>
                 <div class="booking-option-action">
                     <div class="booking-option-price">${service.points} P</div>
                     <div class="booking-option-select">
                         <label class="radio-label">
-                            <input type="radio" name="service-${service.id}" value="none" checked>
-                            <span>선택 안함</span>
-                        </label>
-                        <label class="radio-label">
-                            <input type="radio" name="service-${service.id}" value="select">
-                            <span>선택</span>
+                            <input type="radio" name="timebank" value="${service.id}"> 선택
                         </label>
                     </div>
                 </div>
-            `;
-            timeBankContainer.appendChild(option);
+            `);
+
+            container.append(option);
         });
-    } else {
-        timeBankContainer.innerHTML = '<p>이용 가능한 TimeBank 서비스가 없습니다.</p>';
     }
 
-    // 갤러리 이미지 배열 저장
-    window.galleryImages = listing.images;
-    window.currentImageIndex = 0;
-}
+    // 초기 데이터 렌더링
+    renderLiveLocalExperiences();
+    renderTimeBankServices();
 
-// 갤러리 이미지 업데이트
-function updateGallery(index) {
-    if (!window.galleryImages) return;
+    // 옵션 적용 버튼 클릭 이벤트
+    $('#options-apply-btn').on('click', function() {
+        let totalPoints = parseInt($('#listing-points').text());
+        let liveLocalPoints = 0;
+        let timeBankPoints = 0;
 
-    const galleryMainImage = document.getElementById('gallery-main-image');
-    const galleryDots = document.querySelectorAll('.gallery-dot');
-
-    // 이미지 업데이트
-    galleryMainImage.src = window.galleryImages[index];
-
-    // 점 활성화 상태 업데이트
-    galleryDots.forEach((dot, i) => {
-        if (i === index) {
-            dot.classList.add('active');
-        } else {
-            dot.classList.remove('active');
+        // LiveLocal 선택 확인
+        const selectedLiveLocal = $('input[name="livelocal"]:checked').val();
+        if (selectedLiveLocal) {
+            const experience = liveLocalExperiences.find(exp => exp.id === parseInt(selectedLiveLocal));
+            if (experience) {
+                liveLocalPoints = experience.points;
+            }
         }
+
+        // TimeBank 선택 확인
+        const selectedTimeBank = $('input[name="timebank"]:checked').val();
+        if (selectedTimeBank) {
+            const service = timeBankServices.find(s => s.id === parseInt(selectedTimeBank));
+            if (service) {
+                timeBankPoints = service.points;
+            }
+        }
+
+        // 요약 업데이트
+        $('#livelocal-points').text(`${liveLocalPoints} P`);
+        $('#timebank-points').text(`${timeBankPoints} P`);
+
+        // 총 포인트 계산
+        const total = totalPoints + liveLocalPoints + timeBankPoints;
+        $('#total-points').text(`${total} P`);
+
+        alert('옵션이 적용되었습니다.');
     });
 
-    // 현재 이미지 인덱스 업데이트
-    window.currentImageIndex = index;
-}
+    // 내 숙소 데이터 (실제로는 API에서 가져옴)
+    const myListings = [
+        {
+            id: 1,
+            title: '제주 바다 전망 빌라',
+            location: '제주 서귀포시',
+            image: '/images/my-listing-1.jpg',
+            points: 700
+        },
+        {
+            id: 2,
+            title: '부산 해운대 오션뷰 콘도',
+            location: '부산 해운대구',
+            image: '/images/my-listing-2.jpg',
+            points: 600
+        },
+        {
+            id: 3,
+            title: '강원도 평창 산장',
+            location: '강원 평창군',
+            image: '/images/my-listing-3.jpg',
+            points: 650
+        }
+    ];
 
-// 갤러리 네비게이션
-function navigateGallery(direction) {
-    if (!window.galleryImages) return;
+    // 내 숙소 목록 렌더링
+    function renderMyListings() {
+        const container = $('.my-listings-container');
+        container.empty();
 
-    const totalImages = window.galleryImages.length;
-    let newIndex;
+        if (myListings.length === 0) {
+            container.html('<p class="p-4 text-center">등록된 숙소가 없습니다.</p>');
+            return;
+        }
 
-    if (direction === 'prev') {
-        newIndex = (window.currentImageIndex - 1 + totalImages) % totalImages;
-    } else {
-        newIndex = (window.currentImageIndex + 1) % totalImages;
-    }
+        myListings.forEach(listing => {
+            const item = $('<div>').addClass('my-listing-item').attr('data-id', listing.id);
+            item.html(`
+                <div class="my-listing-image">
+                    <img src="${listing.image}" alt="${listing.title}">
+                </div>
+                <div class="my-listing-info">
+                    <div class="my-listing-title">${listing.title}</div>
+                    <div class="my-listing-location">${listing.location}</div>
+                </div>
+                <div class="my-listing-points">${listing.points} P</div>
+            `);
 
-    updateGallery(newIndex);
-}
-
-// 교환 요청 처리
-function requestExchange(listingId) {
-    // 로그인 상태 확인 (실제 구현 시)
-    // const token = localStorage.getItem('token');
-    // if (!token) {
-    //     alert('로그인이 필요한 서비스입니다.');
-    //     window.location.href = '/auth';
-    //     return;
-    // }
-
-    // API 호출 (실제 구현 시)
-    // fetch('/api/exchanges', {
-    //     method: 'POST',
-    //     headers: {
-    //         'Content-Type': 'application/json',
-    //         'Authorization': `Bearer ${token}`
-    //     },
-    //     body: JSON.stringify({
-    //         listingId: listingId,
-    //         // 추가 정보 (날짜 등)
-    //     })
-    // })
-    // .then(response => response.json())
-    // .then(data => {
-    //     if (data.success) {
-    //         alert('교환 요청이 성공적으로 전송되었습니다.');
-    //         window.location.href = '/my/exchanges';
-    //     } else {
-    //         alert(data.message || '교환 요청에 실패했습니다.');
-    //     }
-    // })
-    // .catch(error => {
-    //     console.error('Error:', error);
-    //     alert('교환 요청 중 오류가 발생했습니다.');
-    // });
-
-    // 임시 구현 (API 연동 전)
-    alert('교환 요청이 성공적으로 전송되었습니다.');
-    window.location.href = '/page/exchanges';
-}
-
-// 옵션 적용 처리
-function applyOptions() {
-    // 선택된 옵션 확인
-    const selectedOptions = [];
-
-    // LiveLocal 경험 옵션
-    document.querySelectorAll('input[name^="exp-"]:checked').forEach(input => {
-        if (input.value === 'select') {
-            const expId = input.name.split('-')[1];
-            selectedOptions.push({
-                type: 'experience',
-                id: expId
+            // 숙소 선택 이벤트
+            item.on('click', function() {
+                $('.my-listing-item').removeClass('selected');
+                $(this).addClass('selected');
             });
-        }
-    });
 
-    // TimeBank 서비스 옵션
-    document.querySelectorAll('input[name^="service-"]:checked').forEach(input => {
-        if (input.value === 'select') {
-            const serviceId = input.name.split('-')[1];
-            selectedOptions.push({
-                type: 'service',
-                id: serviceId
-            });
-        }
-    });
-
-    // 선택된 옵션이 없는 경우
-    if (selectedOptions.length === 0) {
-        alert('선택된 옵션이 없습니다.');
-        return;
+            container.append(item);
+        });
     }
 
-    // 옵션 적용 (실제 구현 시 API 호출)
-    alert('선택한 옵션이 적용되었습니다.');
+    // 팝업 열기 함수
+    function openPopup(popupId) {
+        $(`#${popupId}`).css('display', 'flex');
+        $('body').css('overflow', 'hidden');
+    }
 
-    // 첫 번째 탭으로 전환
-    const bookingTabs = document.querySelectorAll('.booking-tab');
-    const bookingTabPanes = document.querySelectorAll('.booking-tab-pane');
+    // 팝업 닫기 함수
+    function closePopup(popupId) {
+        $(`#${popupId}`).css('display', 'none');
+        $('body').css('overflow', 'auto');
+    }
 
-    bookingTabs.forEach(t => t.classList.remove('active'));
-    bookingTabs[0].classList.add('active');
+    // 교환 요청 버튼 클릭 이벤트
+    $('#exchange-request-btn').on('click', function() {
+        // 체크인/체크아웃 날짜 확인
+        const checkinDate = $('#checkin-date').val();
+        const checkoutDate = $('#checkout-date').val();
+        const guestCount = $('#guest-count').val();
 
-    bookingTabPanes.forEach(pane => pane.classList.remove('active'));
-    bookingTabPanes[0].classList.add('active');
-}
+        if (!checkinDate || !checkoutDate) {
+            alert('체크인/체크아웃 날짜를 선택해주세요.');
+            return;
+        }
+
+        // 날짜 형식 변환
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+        };
+
+        // 팝업 내용 업데이트
+        $('#popup-checkin').text(formatDate(checkinDate));
+        $('#popup-checkout').text(formatDate(checkoutDate));
+        $('#popup-guests').text(guestCount);
+
+        // 내 숙소 목록 렌더링
+        renderMyListings();
+
+        // 팝업 열기
+        openPopup('exchange-popup');
+    });
+
+    // 숙박 요청 버튼 클릭 이벤트
+    $('#stay-request-btn').on('click', function() {
+        // 체크인/체크아웃 날짜 확인
+        const checkinDate = $('#checkin-date').val();
+        const checkoutDate = $('#checkout-date').val();
+        const guestCount = $('#guest-count').val();
+
+        if (!checkinDate || !checkoutDate) {
+            alert('체크인/체크아웃 날짜를 선택해주세요.');
+            return;
+        }
+
+        // 날짜 형식 변환
+        const formatDate = (dateString) => {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+        };
+
+        // 팝업 내용 업데이트
+        $('#stay-listing-title').text($('#listing-title').text());
+        $('#stay-checkin').text(formatDate(checkinDate));
+        $('#stay-checkout').text(formatDate(checkoutDate));
+        $('#stay-guests').text(guestCount);
+        $('#stay-points').text($('#total-points').text());
+
+        // 팝업 열기
+        openPopup('stay-popup');
+    });
+
+    // 팝업 닫기 버튼 클릭 이벤트
+    $('.popup-close, .popup-cancel').on('click', function() {
+        const popupId = $(this).closest('.popup-overlay').attr('id');
+        closePopup(popupId);
+    });
+
+    // 교환 요청 확인 버튼 클릭 이벤트
+    $('#exchange-confirm').on('click', function() {
+        const selectedListing = $('.my-listing-item.selected');
+
+        if (selectedListing.length === 0) {
+            alert('교환할 숙소를 선택해주세요.');
+            return;
+        }
+
+        const listingId = selectedListing.data('id');
+        const message = $('#exchange-message-text').val();
+
+        // 실제 구현 시 API 호출
+        console.log('교환 요청:', {
+            listingId,
+            checkinDate: $('#checkin-date').val(),
+            checkoutDate: $('#checkout-date').val(),
+            guestCount: $('#guest-count').val(),
+            message
+        });
+
+        // 팝업 닫기
+        closePopup('exchange-popup');
+
+        // 성공 메시지
+        alert('교환 요청이 성공적으로 전송되었습니다.');
+    });
+
+    // 숙박 요청 확인 버튼 클릭 이벤트
+    $('#stay-confirm').on('click', function() {
+        const message = $('#stay-message-text').val();
+
+        // 실제 구현 시 API 호출
+        console.log('숙박 요청:', {
+            checkinDate: $('#checkin-date').val(),
+            checkoutDate: $('#checkout-date').val(),
+            guestCount: $('#guest-count').val(),
+            totalPoints: $('#total-points').text(),
+            message
+        });
+
+        // 팝업 닫기
+        closePopup('stay-popup');
+
+        // 성공 메시지
+        alert('숙박 요청이 성공적으로 전송되었습니다.');
+    });
+});

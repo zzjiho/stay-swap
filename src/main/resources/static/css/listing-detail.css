@@ -7,6 +7,101 @@
     padding: 2rem 1rem;
 }
 
+/* 목록으로 돌아가기 링크 */
+.back-to-listings {
+    margin-bottom: 1.5rem;
+}
+
+.back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #4361ee;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.back-link:hover {
+    color: #3a56d4;
+    text-decoration: underline;
+}
+
+/* 숙소 제목 */
+.listing-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: #333;
+}
+
+/* 평점 및 위치 메타 정보 (수정된 부분) */
+.listing-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.listing-meta-left {
+    display: flex;
+    align-items: center;
+}
+
+.listing-rating {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+}
+
+.listing-rating i {
+    color: #F59E0B;
+    margin-right: 0.25rem;
+}
+
+.meta-separator {
+    margin: 0 0.5rem;
+    color: #666;
+}
+
+.listing-location {
+    display: inline-flex;
+    align-items: center;
+}
+
+.listing-location i {
+    margin-right: 0.25rem;
+    color: #666;
+}
+
+.listing-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+    background-color: #f5f5f5;
+}
+
+.action-btn i {
+    font-size: 1rem;
+}
+
 /* 갤러리 섹션 */
 .gallery-container {
     position: relative;
@@ -97,6 +192,15 @@
     .listing-info {
         grid-template-columns: 1fr;
     }
+
+    .button-container {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .listing-detail-container .btn-block {
+        width: 100%;
+    }
 }
 
 .listing-main {
@@ -105,33 +209,6 @@
 
 .listing-header {
     margin-bottom: 1.5rem;
-}
-
-.listing-title {
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 0.5rem;
-    color: #333;
-}
-
-.listing-location {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 1rem;
-    color: #666;
-    margin-bottom: 0.5rem;
-}
-
-.listing-rating {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.rating-stars {
-    color: #ff385c;
 }
 
 .listing-features {
@@ -396,6 +473,10 @@
     color: #666;
 }
 
+.sidebar-rating i {
+    color: #F59E0B;
+}
+
 .sidebar-points {
     font-size: 1.5rem;
     font-weight: 700;
@@ -497,8 +578,224 @@
 }
 
 .listing-detail-container .btn-block {
-    display: block;
+    display: inline-block;
+    width: 48%;
+    margin-right: 0;
+}
+
+.listing-detail-container .btn-block:last-child {
+    margin-right: 0;
+    margin-left: 0;
+}
+
+.button-container {
+    display: flex;
+    justify-content: space-between;
     width: 100%;
+    margin-top: 1rem;
+}
+
+/* 팝업 스타일 */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 2rem 1rem;
+}
+
+.popup-container {
+    background-color: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    animation: popup-fade-in 0.3s ease;
+}
+
+@keyframes popup-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.popup-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.popup-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+}
+
+.popup-close {
+    background: none;
+    border: none;
+    font-size: 1.25rem;
+    color: #666;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+}
+
+.popup-close:hover {
+    color: #333;
+}
+
+.popup-content {
+    padding: 1.5rem;
+}
+
+.popup-content p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    color: #555;
+}
+
+.popup-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid #eee;
+    background-color: #f9f9f9;
+}
+
+.popup-footer .btn {
+    width: auto;
+}
+
+/* 내 숙소 목록 스타일 */
+.my-listings-container {
+    margin: 1rem 0;
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #eee;
+    border-radius: 8px;
+}
+
+.my-listing-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.my-listing-item:last-child {
+    border-bottom: none;
+}
+
+.my-listing-item:hover {
+    background-color: #f5f5f5;
+}
+
+.my-listing-item.selected {
+    background-color: #e6f0ff;
+    border-left: 3px solid #4361ee;
+}
+
+.my-listing-image {
+    width: 80px;
+    height: 60px;
+    border-radius: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.my-listing-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.my-listing-info {
+    flex: 1;
+}
+
+.my-listing-title {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #333;
+}
+
+.my-listing-location {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.my-listing-points {
+    font-weight: 600;
+    color: #4361ee;
+}
+
+/* 교환 및 숙박 요청 상세 정보 */
+.exchange-details,
+.stay-details {
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.exchange-dates p,
+.stay-details p {
+    margin: 0.5rem 0;
+}
+
+.exchange-message,
+.stay-message {
+    margin-top: 1.5rem;
+}
+
+.exchange-message label,
+.stay-message label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: #555;
+}
+
+.exchange-message textarea,
+.stay-message textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+.exchange-message textarea:focus,
+.stay-message textarea:focus {
+    border-color: #4361ee;
+    outline: none;
 }
 
 /* 반응형 디자인 */
@@ -534,6 +831,34 @@
         align-items: flex-start;
         margin-top: 1rem;
     }
+
+    /* 모바일에서 메타 정보 조정 */
+    .listing-meta {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .listing-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    /* 모바일에서 버튼 조정 */
+    .button-container {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .listing-detail-container .btn-block {
+        width: 100%;
+    }
+
+    /* 모바일에서 팝업 조정 */
+    .popup-container {
+        max-height: 90vh;
+        overflow-y: auto;
+    }
 }
 
 @media (max-width: 576px) {
@@ -558,5 +883,13 @@
 
     .booking-tab {
         padding: 0.75rem 1rem;
+    }
+
+    .popup-footer {
+        flex-direction: column;
+    }
+
+    .popup-footer .btn {
+        width: 100%;
     }
 }
