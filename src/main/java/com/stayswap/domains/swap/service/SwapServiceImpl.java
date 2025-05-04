@@ -67,6 +67,40 @@ public class SwapServiceImpl implements SwapService {
         return StayResponse.of(savedSwap);
     }
 
+    @Override
+    public SwapResponse acceptSwapRequest(Long userId, Long swapId) {
+        Swap swap = swapRepository.findById(swapId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_SWAP_REQUEST));
+        
+        // 자신의 숙소만 처리 가능
+        if (!swap.getHouse().getUser().getId().equals(userId)) {
+            throw new ForbiddenException(NOT_MY_HOUSE);
+        }
+        
+        if (swap.getSwapStatus() != SwapStatus.PENDING) {
+            throw new BusinessException(ALREADY_PROCESSED_REQUEST);
+        }
+        
+        swap.accept();
+        
+        return SwapResponse.of(swap);
+    }
+
+    @Override
+    public SwapResponse rejectSwapRequest(Long userId, Long swapId) {
+
+        Swap swap = swapRepository.findById(swapId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_SWAP_REQUEST));
+        
+        if (!swap.getHouse().getUser().getId().equals(userId)) {
+            throw new ForbiddenException(NOT_MY_HOUSE);
+        }
+
+        swap.reject();
+        
+        return SwapResponse.of(swap);
+    }
+
     // 자신의 숙소에는 교환, 숙박 요청 불가
     private House validateTargetHouse(Long requesterId, Long targetHouseId) {
         House targetHouse = houseRepository.findById(targetHouseId)

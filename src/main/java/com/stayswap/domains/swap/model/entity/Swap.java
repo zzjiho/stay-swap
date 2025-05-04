@@ -55,4 +55,14 @@ public class Swap extends BaseTimeEntity {
     @ManyToOne
     @JoinColumn(name = "house_id", nullable = false)
     private House house;
+    
+    public void accept() {
+        this.swapStatus = SwapStatus.ACCEPTED;
+        this.responseAt = LocalDateTime.now();
+    }
+    
+    public void reject() {
+        this.swapStatus = SwapStatus.REJECTED;
+        this.responseAt = LocalDateTime.now();
+    }
 }
