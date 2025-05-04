@@ -69,21 +69,18 @@ public class SwapServiceImpl implements SwapService {
 
     @Override
     public SwapResponse acceptSwapRequest(Long userId, Long swapId) {
-        // 요청 ID로 교환/숙박 요청 조회
         Swap swap = swapRepository.findById(swapId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_SWAP_REQUEST));
         
-        // 숙소 주인 확인 (자신의 숙소에 온 요청만 수락 가능)
+        // 자신의 숙소만 처리 가능
         if (!swap.getHouse().getUser().getId().equals(userId)) {
             throw new ForbiddenException(NOT_MY_HOUSE);
         }
         
-        // 대기 상태인지 확인
         if (swap.getSwapStatus() != SwapStatus.PENDING) {
             throw new BusinessException(ALREADY_PROCESSED_REQUEST);
         }
         
-        // 교환/숙박 요청 수락 처리
         swap.accept();
         
         return SwapResponse.of(swap);
@@ -91,16 +88,14 @@ public class SwapServiceImpl implements SwapService {
 
     @Override
     public SwapResponse rejectSwapRequest(Long userId, Long swapId) {
-        // 요청 ID로 교환/숙박 요청 조회
+
         Swap swap = swapRepository.findById(swapId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_SWAP_REQUEST));
         
-        // 숙소 주인 확인 (자신의 숙소에 온 요청만 거절 가능)
         if (!swap.getHouse().getUser().getId().equals(userId)) {
             throw new ForbiddenException(NOT_MY_HOUSE);
         }
 
-        // 교환/숙박 요청 거절 처리
         swap.reject();
         
         return SwapResponse.of(swap);
