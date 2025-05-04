@@ -101,6 +101,26 @@ public class SwapServiceImpl implements SwapService {
         return SwapResponse.of(swap);
     }
 
+    @Override
+    public SwapResponse cancelSwapRequest(Long userId, Long swapId) {
+
+        Swap swap = swapRepository.findById(swapId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_SWAP_REQUEST));
+        
+        if (!swap.getRequester().getId().equals(userId)) {
+            throw new BusinessException(CANNOT_CANCEL_OTHERS_REQUEST);
+        }
+        
+        // 완료된 요청 취소 불가
+        if (swap.getSwapStatus() == SwapStatus.COMPLETED) {
+            throw new BusinessException(CANNOT_CANCEL_COMPLETED_REQUEST);
+        }
+        
+        swap.cancel();
+        
+        return SwapResponse.of(swap);
+    }
+
     // 자신의 숙소에는 교환, 숙박 요청 불가
     private House validateTargetHouse(Long requesterId, Long targetHouseId) {
         House targetHouse = houseRepository.findById(targetHouseId)

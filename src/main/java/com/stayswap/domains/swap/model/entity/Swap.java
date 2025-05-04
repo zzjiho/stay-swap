@@ -65,4 +65,9 @@ public class Swap extends BaseTimeEntity {
         this.swapStatus = SwapStatus.REJECTED;
         this.responseAt = LocalDateTime.now();
     }
+    
+    public void cancel() {
+        this.swapStatus = SwapStatus.CANCELED;
+        this.responseAt = LocalDateTime.now();
+    }
 }
