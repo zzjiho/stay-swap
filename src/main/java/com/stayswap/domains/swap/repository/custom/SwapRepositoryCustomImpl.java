@@ -1,85 +1,126 @@
 package com.stayswap.domains.swap.repository.custom;
 
-import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.stayswap.domains.swap.constant.SwapStatus;
 import com.stayswap.domains.swap.constant.SwapType;
-import com.stayswap.domains.swap.model.dto.request.SwapSearchRequest;
 import com.stayswap.domains.swap.model.dto.response.SwapListResponse;
-import com.stayswap.domains.swap.model.entity.QSwap;
-import com.stayswap.domains.swap.model.entity.Swap;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 
 import java.util.List;
 
+import static com.stayswap.domains.house.model.entity.QHouse.house;
+import static com.stayswap.domains.house.model.entity.QHouseImage.houseImage;
 import static com.stayswap.domains.swap.model.entity.QSwap.swap;
 
 @RequiredArgsConstructor
 public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
-    
+
     @Override
-    public Page<SwapListResponse> getSwapListByRequester(SwapSearchRequest request, Pageable pageable) {
-        QueryResults<Swap> queryResults = queryFactory
-                .selectFrom(swap)
+    public Slice<SwapListResponse> getSwapListByRequester(Long userId, SwapStatus swapStatus, SwapType swapType, Pageable pageable) {
+        List<SwapListResponse> content = queryFactory
+                .select(Projections.constructor(
+                        SwapListResponse.class,
+                        swap.id.as("swapId"),
+                        swap.requester.id.as("requesterId"),
+                        swap.startDate,
+                        swap.endDate,
+                        swap.swapType,
+                        swap.swapStatus,
+                        swap.message,
+                        swap.responseAt,
+                        swap.house.id.as("hostHouseId"),
+                        house.title.as("houseTitle"),
+                        swap.requesterHouseId.id.as("requesterHouseId"),
+                        house.houseType,
+                        JPAExpressions
+                                .select(houseImage.imageUrl.min())
+                                .from(houseImage)
+                                .where(houseImage.house.eq(house))
+                ))
+                .from(swap)
+                .join(swap.house, house)
                 .where(
-                    requesterIdEq(request.getUserId()),
-                    statusEq(request.getSwapStatus()),
-                    typeEq(request.getSwapType())
+                        requesterIdEq(userId),
+                        statusEq(swapStatus),
+                        typeEq(swapType)
                 )
                 .orderBy(swap.id.desc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetchResults();
-        
-        List<SwapListResponse> content = queryResults.getResults().stream()
-                .map(SwapListResponse::of)
-                .toList();
-        
-        return new PageImpl<>(content, pageable, queryResults.getTotal());
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
+
+        return checkLastPage(pageable, content);
     }
-    
+
     @Override
-    public Page<SwapListResponse> getSwapListByHost(SwapSearchRequest request, Pageable pageable) {
-        QueryResults<Swap> queryResults = queryFactory
-                .selectFrom(swap)
-                .leftJoin(swap.house).fetchJoin()
+    public Slice<SwapListResponse> getSwapListByHost(Long userId, SwapStatus swapStatus, SwapType swapType, Pageable pageable) {
+        List<SwapListResponse> content = queryFactory
+                .select(Projections.constructor(
+                        SwapListResponse.class,
+                        swap.id.as("swapId"),
+                        swap.requester.id.as("requesterId"),
+                        swap.startDate,
+                        swap.endDate,
+                        swap.swapType,
+                        swap.swapStatus,
+                        swap.message,
+                        swap.responseAt,
+                        swap.house.id.as("hostHouseId"),
+                        swap.house.title.as("houseTitle"),
+                        house.id.as("requesterHouseId"),
+                        house.houseType,
+                        JPAExpressions
+                                .select(houseImage.imageUrl.min())
+                                .from(houseImage)
+                                .where(houseImage.house.eq(swap.house))
+                ))
+                .from(swap)
+                .join(swap.house).on(swap.house.user.id.eq(userId))
+                .leftJoin(house).on(house.eq(swap.requesterHouseId))
                 .where(
-                    hostIdEq(request.getUserId()),
-                    statusEq(request.getSwapStatus()),
-                    typeEq(request.getSwapType())
+                        statusEq(swapStatus),
+                        typeEq(swapType)
                 )
                 .orderBy(swap.id.desc())
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
-                .fetchResults();
-        
-        List<SwapListResponse> content = queryResults.getResults().stream()
-                .map(SwapListResponse::of)
-                .toList();
-        
-        return new PageImpl<>(content, pageable, queryResults.getTotal());
+                .limit(pageable.getPageSize() + 1)
+                .fetch();
+
+        return checkLastPage(pageable, content);
+    }
+
+    private Slice<SwapListResponse> checkLastPage(Pageable pageable, List<SwapListResponse> results) {
+        boolean hasNext = false;
+
+        if (results.size() > pageable.getPageSize()) {
+            hasNext = true;
+            results.remove(pageable.getPageSize());
+        }
+
+        return new SliceImpl<>(results, pageable, hasNext);
     }
 
     private BooleanExpression requesterIdEq(Long requesterId) {
         return requesterId != null ? swap.requester.id.eq(requesterId) : null;
     }
-    
+
     private BooleanExpression hostIdEq(Long userId) {
         return userId != null ? swap.house.user.id.eq(userId) : null;
     }
-    
+
     private BooleanExpression statusEq(SwapStatus status) {
         return status != null ? swap.swapStatus.eq(status) : null;
     }
-    
+
     private BooleanExpression typeEq(SwapType type) {
         return type != null ? swap.swapType.eq(type) : null;
     }
-} 
+}

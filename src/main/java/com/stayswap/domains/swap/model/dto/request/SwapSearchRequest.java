@@ -14,35 +14,7 @@ import jakarta.validation.constraints.NotNull;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SwapSearchRequest {
-    
-    @NotNull(message = "사용자 ID는 필수입니다.")
-    private Long userId;
-    
-    private String status;
-    
-    private String type;
-    
-    public SwapStatus getSwapStatus() {
-        if (status == null || status.isEmpty()) {
-            return null;
-        }
-        
-        try {
-            return SwapStatus.valueOf(status.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 상태값입니다: " + status);
-        }
-    }
-    
-    public SwapType getSwapType() {
-        if (type == null || type.isEmpty()) {
-            return null;
-        }
-        
-        try {
-            return SwapType.valueOf(type.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 타입입니다: " + type);
-        }
-    }
-} 
+
+    private SwapStatus swapStatus;
+    private SwapType swapType;
+}
