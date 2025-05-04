@@ -46,4 +46,30 @@ public class SwapController {
         
         return RestApiResponse.success(swapService.createStayRequest(userId, request));
     }
+
+    @Operation(
+            summary = "숙박, 교환 수락 API",
+            description = "다른 사용자들이 내 숙소에 숙박, 교환 요청한것을 수락합니다. " +
+                    "PENDING 상태의 요청만 수락 가능합니다."
+    )
+    @PostMapping("/swap/{swapId}/accept")
+    public RestApiResponse<SwapResponse> acceptSwapRequest(
+            @RequestParam("userId") Long userId,
+            @PathVariable("swapId") Long swapId) {
+        
+        return RestApiResponse.success(swapService.acceptSwapRequest(userId, swapId));
+    }
+
+    @Operation(
+            summary = "숙박, 교환 거절 API",
+            description = "다른 사용자들이 내 숙소에 숙박, 교환 요청한것을 거절합니다. " +
+                    "상태여부 관계없이 거절 가능합니다."
+    )
+    @PostMapping("/swap/{swapId}/reject")
+    public RestApiResponse<SwapResponse> rejectSwapRequest(
+            @RequestParam("userId") Long userId,
+            @PathVariable("swapId") Long swapId) {
+        
+        return RestApiResponse.success(swapService.rejectSwapRequest(userId, swapId));
+    }
 } 
