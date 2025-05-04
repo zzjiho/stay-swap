@@ -72,4 +72,17 @@ public class SwapController {
         
         return RestApiResponse.success(swapService.rejectSwapRequest(userId, swapId));
     }
+
+    @Operation(
+            summary = "숙박, 교환 취소 API",
+            description = "다른 사용자들의 숙소에 숙박, 교환 요청한것을 취소합니다."
+    )
+    @PostMapping("/swap/{swapId}/cancel")
+    public RestApiResponse<SwapResponse> cancelSwapRequest(
+            @RequestParam("userId") Long userId,
+            @PathVariable("swapId") Long swapId) {
+        
+        return RestApiResponse.success(swapService.cancelSwapRequest(userId, swapId));
+    }
+
 } 

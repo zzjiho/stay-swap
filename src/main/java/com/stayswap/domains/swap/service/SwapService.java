@@ -10,4 +10,5 @@ public interface SwapService {
     StayResponse createStayRequest(Long requesterId, StayRequest request);
     SwapResponse acceptSwapRequest(Long userId, Long swapId);
     SwapResponse rejectSwapRequest(Long userId, Long swapId);
+    SwapResponse cancelSwapRequest(Long userId, Long swapId);
 } 
