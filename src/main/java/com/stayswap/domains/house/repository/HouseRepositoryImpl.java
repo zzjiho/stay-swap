@@ -3,11 +3,20 @@ package com.stayswap.domains.house.repository;
 import com.querydsl.core.QueryResults;
 import com.querydsl.core.types.Order;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.core.types.dsl.Expressions;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.stayswap.domains.house.model.dto.request.HouseSearchRequest;
+import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
+import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
-import com.stayswap.domains.house.model.dto.response.QHouseListResponse;
+import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
+import com.stayswap.domains.house.model.entity.House;
+import com.stayswap.domains.house.model.entity.HouseImage;
+import com.stayswap.domains.house.model.entity.HouseOption;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -15,24 +24,29 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.CollectionUtils;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.stayswap.domains.house.model.entity.QHouse.house;
 import static com.stayswap.domains.house.model.entity.QHouseImage.houseImage;
 import static com.stayswap.domains.house.model.entity.QHouseOption.houseOption;
 import static com.stayswap.domains.review.model.entity.QReview.review;
+import static com.stayswap.domains.user.model.entity.QUser.user;
 import static org.springframework.util.StringUtils.hasText;
 
 @RequiredArgsConstructor
 public class HouseRepositoryImpl implements HouseRepositoryCustom {
 
     private final JPAQueryFactory queryFactory;
+    private final EntityManager entityManager;
 
     @Override
     public Page<HouseListResponse> getHouseList(HouseSearchRequest request, Pageable pageable) {
         QueryResults<HouseListResponse> results = queryFactory
-                .select(new QHouseListResponse(
+                .select(Projections.constructor(
+                        HouseListResponse.class,
                         house.id,
                         house.title,
                         house.houseType,
@@ -42,11 +56,11 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         house.bed,
                         house.maxGuests,
                         houseImage.imageUrl,
-                        queryFactory.select(review.rating.avg())
+                        queryFactory.select(review.rating.avg().coalesce(0.0))
                                 .from(review)
                                 .join(review.swap).on(review.swap.house.id.eq(house.id))
                                 .where(review.rating.isNotNull()),
-                        queryFactory.select(review.count())
+                        queryFactory.select(review.count().coalesce(0L))
                                 .from(review)
                                 .join(review.swap).on(review.swap.house.id.eq(house.id))
                 ))
@@ -70,6 +84,126 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
         long total = results.getTotal();
 
         return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
+    public HouseDetailResponse getHouseDetail(Long houseId) {
+        return queryFactory
+                .select(Projections.constructor(
+                        HouseDetailResponse.class,
+                        house.id,
+                        house.title,
+                        house.description,
+                        house.rule,
+                        house.houseType,
+                        house.size,
+                        house.bedrooms,
+                        house.bed,
+                        house.bathrooms,
+                        house.maxGuests,
+                        house.city,
+                        house.district,
+                        house.petsAllowed,
+                        // 평점
+                        queryFactory.select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .join(review.swap)
+                                .where(review.swap.house.id.eq(house.id))
+                                .where(review.rating.isNotNull()),
+                        // 리뷰 수
+                        queryFactory.select(review.count().coalesce(0L))
+                                .from(review)
+                                .join(review.swap)
+                                .where(review.swap.house.id.eq(house.id)),
+                        house.user.id,
+                        // 편의시설 - 순서 수정
+                        Projections.constructor(
+                                HouseDetailResponse.AmenityInfo.class,
+                                houseOption.hasFreeWifi,
+                                houseOption.hasAirConditioner,
+                                houseOption.hasTV,
+                                houseOption.hasWashingMachine,
+                                houseOption.hasKitchen,
+                                houseOption.hasDryer,
+                                houseOption.hasIron,
+                                houseOption.hasRefrigerator,
+                                houseOption.hasMicrowave,
+                                houseOption.hasFreeParking,
+                                houseOption.hasBalconyTerrace,
+                                houseOption.hasPetsAllowed,
+                                houseOption.hasSmokingAllowed,
+                                houseOption.hasElevator,
+                                houseOption.otherAmenities,
+                                houseOption.otherFeatures
+                        )
+                ))
+                .from(house)
+                .join(house.user, user)
+                .join(house.houseOption, houseOption)
+                .where(house.id.eq(houseId))
+                .fetchOne();
+    }
+
+    @Override
+    public Long getHostIdByHouseId(Long houseId) {
+        return queryFactory
+            .select(house.user.id)
+            .from(house)
+            .where(house.id.eq(houseId))
+            .fetchOne();
+    }
+
+    @Override
+    public HostDetailResponse getHostDetailById(Long hostId) {
+        // 리뷰
+        NumberExpression<Long> reviewCount = Expressions.numberTemplate(Long.class,
+                "COALESCE({0}, 0)", 
+                queryFactory
+                    .select(review.count())
+                    .from(review)
+                    .join(house).on(review.targetHouse.id.eq(house.id))
+                    .where(house.user.id.eq(hostId)));
+        // 평점
+        NumberExpression<Double> avgRating = Expressions.numberTemplate(Double.class, 
+                "COALESCE({0}, 0.0)", 
+                queryFactory
+                    .select(review.rating.avg())
+                    .from(review)
+                    .join(house).on(review.targetHouse.id.eq(house.id))
+                    .where(house.user.id.eq(hostId))
+                    .where(review.rating.isNotNull()));
+
+        NumberExpression<Integer> joinYear = Expressions.numberTemplate(Integer.class,
+                "YEAR({0})", user.regTime);
+
+        // 호스트 정보 조회
+        return queryFactory
+            .select(Projections.constructor(
+                HostDetailResponse.class,
+                user.id,
+                user.userName,
+                user.profile,
+                joinYear,
+                reviewCount,
+                avgRating
+            ))
+            .from(user)
+            .where(user.id.eq(hostId))
+            .fetchOne();
+    }
+
+    @Override
+    public List<HouseImageResponse> getHouseImages(Long houseId) {
+        return queryFactory
+                .select(Projections.constructor(
+                        HouseImageResponse.class,
+                        houseImage.id,
+                        houseImage.imageUrl,
+                        houseImage.house.id
+                ))
+                .from(houseImage)
+                .where(houseImage.house.id.eq(houseId))
+                .fetch();
     }
 
     /**

@@ -1,12 +1,15 @@
 package com.stayswap.domains.house.model.dto.response;
 
-import com.querydsl.core.annotations.QueryProjection;
 import com.stayswap.domains.house.constant.HouseType;
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
 @Schema(description = "숙소 목록 조회 DTO")
+@NoArgsConstructor
+@AllArgsConstructor
 public class HouseListResponse {
 
     @Schema(description = "숙소(집) Id", example = "1")
@@ -41,21 +44,4 @@ public class HouseListResponse {
 
     @Schema(description = "리뷰 수", example = "100")
     private Long reviewCount;
-
-    @QueryProjection
-    public HouseListResponse(Long houseId, String title, HouseType houseType, String city, String district, 
-                           Integer bedrooms, Integer bed, Integer maxGuests, String mainImageUrl, 
-                           Double avgRating, Long reviewCount) {
-        this.houseId = houseId;
-        this.title = title;
-        this.houseType = houseType;
-        this.city = city;
-        this.district = district;
-        this.bedrooms = bedrooms;
-        this.bed = bed;
-        this.maxGuests = maxGuests;
-        this.mainImageUrl = mainImageUrl;
-        this.avgRating = avgRating;
-        this.reviewCount = reviewCount;
-    }
-} 
+}
