@@ -5,8 +5,11 @@ import com.stayswap.domains.house.model.dto.request.CreateHouseRequest;
 import com.stayswap.domains.house.model.dto.request.HouseSearchRequest;
 import com.stayswap.domains.house.model.dto.request.UpdateHouseRequest;
 import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
+import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
+import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
 import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
+import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
 import com.stayswap.domains.house.service.HouseService;
 import com.stayswap.global.model.RestApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -78,5 +81,39 @@ public class HouseController {
             @PageableDefault(size = 10) Pageable pageable) {
         
         return RestApiResponse.success(houseService.getHouseList(request, pageable));
+    }
+
+    @Operation(
+            summary = "숙소 상세 조회 API",
+            description = "숙소 상세 정보를 조회합니다. " +
+                    "숙소의 기본 정보, 이미지, 편의시설 정보, 호스트 ID 등을 포함합니다."
+    )
+    @GetMapping("/{houseId}")
+    public RestApiResponse<HouseDetailResponse> getHouseDetail(
+            @PathVariable("houseId") Long houseId) {
+        
+        return RestApiResponse.success(houseService.getHouseDetail(houseId));
+    }
+    
+    @Operation(
+            summary = "숙소 호스트 상세 조회 API",
+            description = "숙소의 호스트 상세 정보를 조회합니다."
+    )
+    @GetMapping("/{houseId}/host")
+    public RestApiResponse<HostDetailResponse> getHostDetail(
+            @PathVariable("houseId") Long houseId) {
+        
+        return RestApiResponse.success(houseService.getHostDetailByHouseId(houseId));
+    }
+
+    @Operation(
+            summary = "숙소 이미지 조회 API",
+            description = "숙소의 모든 이미지를 조회합니다."
+    )
+    @GetMapping("/{houseId}/images")
+    public RestApiResponse<List<HouseImageResponse>> getHouseImages(
+            @PathVariable("houseId") Long houseId) {
+        
+        return RestApiResponse.success(houseService.getHouseImages(houseId));
     }
 }

@@ -4,8 +4,11 @@ import com.stayswap.domains.house.model.dto.request.CreateHouseRequest;
 import com.stayswap.domains.house.model.dto.request.HouseSearchRequest;
 import com.stayswap.domains.house.model.dto.request.UpdateHouseRequest;
 import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
+import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
+import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
 import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
+import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
 import com.stayswap.domains.user.model.entity.User;
@@ -80,9 +83,53 @@ public class HouseService {
         return UpdateHouseResponse.of(house);
     }
 
-    // 숙소 조회
+    // 숙소 목록 조회
     @Transactional(readOnly = true)
     public Page<HouseListResponse> getHouseList(HouseSearchRequest request, Pageable pageable) {
         return houseRepository.getHouseList(request, pageable);
+    }
+
+    // 숙소 상세 정보 조회
+    @Transactional(readOnly = true)
+    public HouseDetailResponse getHouseDetail(Long houseId) {
+        HouseDetailResponse houseDetail = houseRepository.getHouseDetail(houseId);
+        
+        if (houseDetail == null) {
+            throw new NotFoundException(NOT_EXISTS_HOUSE);
+        }
+        
+        return houseDetail;
+    }
+
+    // 호스트 조회
+    @Transactional(readOnly = true)
+    public HostDetailResponse getHostDetailByHouseId(Long houseId) {
+
+        if (!houseRepository.existsById(houseId)) {
+            throw new NotFoundException(NOT_EXISTS_HOUSE);
+        }
+        
+        Long hostId = houseRepository.getHostIdByHouseId(houseId);
+        if (hostId == null) {
+            throw new NotFoundException(NOT_EXISTS_USER);
+        }
+        
+        HostDetailResponse hostDetail = houseRepository.getHostDetailById(hostId);
+        if (hostDetail == null) {
+            throw new NotFoundException(NOT_EXISTS_USER);
+        }
+        
+        return hostDetail;
+    }
+
+    // 숙소 이미지 조회
+    @Transactional(readOnly = true)
+    public List<HouseImageResponse> getHouseImages(Long houseId) {
+
+        if (!houseRepository.existsById(houseId)) {
+            throw new NotFoundException(NOT_EXISTS_HOUSE);
+        }
+        
+        return houseRepository.getHouseImages(houseId);
     }
 }
