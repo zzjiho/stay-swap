@@ -1,10 +1,12 @@
 package com.stayswap.domains.review.model.entity;
 
-import com.stayswap.domains.common.entity.BaseEntity;
+import com.stayswap.domains.common.entity.BaseTimeEntity;
+import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.swap.model.entity.Swap;
 import com.stayswap.domains.user.model.entity.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
@@ -12,7 +14,7 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Review extends BaseEntity {
+public class Review extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,4 +34,17 @@ public class Review extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
+    
+    @ManyToOne
+    @JoinColumn(name = "target_house_id", nullable = false)
+    private House targetHouse;
+    
+    @Builder
+    public Review(Integer rating, String comment, Swap swap, User user, House targetHouse) {
+        this.rating = rating;
+        this.comment = comment;
+        this.swap = swap;
+        this.user = user;
+        this.targetHouse = targetHouse;
+    }
 }
