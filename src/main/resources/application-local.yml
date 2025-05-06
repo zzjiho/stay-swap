@@ -38,6 +38,10 @@ spring:
         default-page-size: 10
         max-page-size: 2000
 
+  redis:
+    host: localhost
+    port: 6379
+
 logging.level:
   org.hibernate.SQL: debug
   org.hibernate.type: trace
