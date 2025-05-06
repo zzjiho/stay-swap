@@ -8,8 +8,10 @@ import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
 import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
+import com.stayswap.domains.house.model.dto.response.RecentHouseResponse;
 import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
 import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
+import com.stayswap.domains.house.service.HouseRedisService;
 import com.stayswap.domains.house.service.HouseService;
 import com.stayswap.global.model.RestApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -35,6 +37,7 @@ import java.util.List;
 public class HouseController {
 
     private final HouseService houseService;
+    private final HouseRedisService houseRedisService;
 
     @Operation(
             summary = "숙소 등록 API",
@@ -104,6 +107,20 @@ public class HouseController {
             @PathVariable("houseId") Long houseId) {
         
         return RestApiResponse.success(houseService.getHostDetailByHouseId(houseId));
+    }
+
+    @Operation(
+            summary = "최근 등록된 숙소 조회 API",
+            description = "최근에 등록된 숙소를 조회합니다. Redis 캐시를 활용하여 빠른 응답을 제공합니다. " +
+                    "기본적으로 3개의 최근 숙소를 반환하며, limit 파라미터로 개수를 조정할 수 있습니다(최대 10개)."
+    )
+    @GetMapping("/recent")
+    public RestApiResponse<List<RecentHouseResponse>> getRecentHouses(
+            @RequestParam(value = "limit", defaultValue = "3") int limit) {
+        
+        int validLimit = Math.min(Math.max(limit, 1), 10);
+        
+        return RestApiResponse.success(houseRedisService.getRecentHouses(validLimit));
     }
 
     @Operation(

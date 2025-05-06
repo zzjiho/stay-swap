@@ -37,6 +37,7 @@ public class HouseService {
     private final HouseRepository houseRepository;
     private final HouseImgService houseImgService;
     private final UserRepository userRepository;
+    private final HouseRedisService houseRedisService;
 
     // 숙소 등록
     public CreateHouseResponse createHouse(Long userId,
@@ -52,6 +53,8 @@ public class HouseService {
             houseImgService.validateImgCount(images, 10L);
             houseImgService.uploadHouseImg(savedHouse, images);
         }
+        
+        houseRedisService.invalidateRecentHousesCache();
 
         return CreateHouseResponse.of(savedHouse);
     }
@@ -79,6 +82,8 @@ public class HouseService {
             }
             houseImgService.updateSelectiveImg(house, request.getDeleteImageIds(), images);
         }
+        
+        houseRedisService.invalidateRecentHousesCache();
         
         return UpdateHouseResponse.of(house);
     }
