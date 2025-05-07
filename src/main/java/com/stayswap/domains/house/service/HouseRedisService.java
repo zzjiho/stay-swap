@@ -24,7 +24,7 @@ public class HouseRedisService {
     private static final String RECENT_HOUSES_KEY = "recent:houses";
     private static final long CACHE_TTL_MINUTES = 10;
 
-    // 최신 숙소 조회 (write around)
+    // 최신 숙소 조회
     public List<RecentHouseResponse> getRecentHouses(int limit) {
         // Redis에서 최근 등록된 숙소 목록 조회 시도
         List<RecentHouseResponse> cachedHouses = (List<RecentHouseResponse>) redisTemplate.opsForValue().get(RECENT_HOUSES_KEY);
@@ -35,7 +35,6 @@ public class HouseRedisService {
             // DB에서 최근 등록된 숙소 조회
             List<House> recentHouses = houseRepository.findTop10ByIsActiveTrueOrderByRegTimeDesc();
             
-            // DTO 변환 및 썸네일 URL 추가
             cachedHouses = recentHouses.stream()
                     .map(house -> {
                         String thumbnailUrl = null;
@@ -59,10 +58,8 @@ public class HouseRedisService {
                 .limit(limit)
                 .collect(Collectors.toList());
     }
-    
-    /**
-     * 새 숙소가 등록되거나 업데이트될 때 캐시 무효화
-     */
+
+    // 새 숙소가 등록되거나 업데이트될 때 캐시 무효화
     public void invalidateRecentHousesCache() {
         redisTemplate.delete(RECENT_HOUSES_KEY);
     }
