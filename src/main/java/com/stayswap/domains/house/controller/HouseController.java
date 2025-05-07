@@ -8,6 +8,7 @@ import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
 import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
+import com.stayswap.domains.house.model.dto.response.PopularHouseResponse;
 import com.stayswap.domains.house.model.dto.response.RecentHouseResponse;
 import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
 import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
@@ -121,6 +122,20 @@ public class HouseController {
         int validLimit = Math.min(Math.max(limit, 1), 10);
         
         return RestApiResponse.success(houseRedisService.getRecentHouses(validLimit));
+    }
+    
+    @Operation(
+            summary = "인기 숙소 조회 API",
+            description = "평점 4점 이상, 리뷰 수가 많은 순서로 인기 숙소를 조회합니다. Redis 캐시를 활용하여 빠른 응답을 제공합니다. " +
+                    "기본적으로 3개의 인기 숙소를 반환하며, limit 파라미터로 개수를 조정할 수 있습니다(최대 10개)."
+    )
+    @GetMapping("/popular")
+    public RestApiResponse<List<PopularHouseResponse>> getPopularHouses(
+            @RequestParam(value = "limit", defaultValue = "3") int limit) {
+        
+        int validLimit = Math.min(Math.max(limit, 1), 10);
+        
+        return RestApiResponse.success(houseRedisService.getPopularHouses(validLimit));
     }
 
     @Operation(

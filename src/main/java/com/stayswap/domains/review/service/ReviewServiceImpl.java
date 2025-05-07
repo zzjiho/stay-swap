@@ -2,6 +2,7 @@ package com.stayswap.domains.review.service;
 
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
+import com.stayswap.domains.house.service.HouseRedisService;
 import com.stayswap.domains.review.model.dto.request.ReviewRequest;
 import com.stayswap.domains.review.model.dto.response.ReviewResponse;
 import com.stayswap.domains.review.model.entity.Review;
@@ -28,6 +29,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final SwapRepository swapRepository;
     private final UserRepository userRepository;
+    private final HouseRedisService houseRedisService;
 
     @Override
     @Transactional
@@ -74,6 +76,9 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review review = request.toEntity(user, swap, targetHouse);
         Review savedReview = reviewRepository.save(review);
+        
+        // 인기 숙소 캐시 무효화
+        houseRedisService.invalidatePopularHousesCache();
 
         return ReviewResponse.of(savedReview);
     }
