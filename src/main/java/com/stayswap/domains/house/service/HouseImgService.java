@@ -86,4 +86,14 @@ public class HouseImgService {
             uploadHouseImg(house, newImages);
         }
     }
+
+    /**
+     * 숙소에 속한 이미지 URL 목록 조회
+     */
+    @Transactional(readOnly = true)
+    public List<String> getHouseImageUrls(Long houseId) {
+        return houseImageRepository.findByHouseId(houseId).stream()
+                .map(HouseImage::getImageUrl)
+                .toList();
+    }
 }
