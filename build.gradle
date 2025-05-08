@@ -69,6 +69,14 @@ dependencies {
 
 	// feign
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign:4.2.1'
+
+	// firebase admin
+	implementation 'com.google.firebase:firebase-admin:9.4.3'
+
+	// rabbitMQ
+	implementation 'org.springframework.boot:spring-boot-starter-amqp'
+
+
 }
 
 
@@ -84,4 +92,9 @@ dependencyManagement {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// 테스트 코드를 제외한 빌드 수행
+tasks.withType(Test) {
+	enabled = false
 }

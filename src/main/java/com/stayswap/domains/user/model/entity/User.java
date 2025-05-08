@@ -49,6 +49,9 @@ public class User extends BaseTimeEntity {
 
     private LocalDateTime tokenExpirationTime;
 
+    @Column
+    private String fcmToken;
+
     public void updateRefreshToken(JwtTokenDto jwtTokenDto) {
         refreshToken = jwtTokenDto.getRefreshToken();
         tokenExpirationTime = DateTimeUtils.convertToLocalDateTime(jwtTokenDto.getRefreshTokenExpireTime());
@@ -63,5 +66,12 @@ public class User extends BaseTimeEntity {
      */
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+
+    /**
+     * FCM 토큰 업데이트
+     */
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }

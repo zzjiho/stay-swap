@@ -6,6 +6,8 @@ import com.stayswap.domains.swap.model.dto.response.SwapResponse;
 import com.stayswap.domains.swap.model.dto.response.StayResponse;
 import com.stayswap.domains.swap.service.SwapService;
 import com.stayswap.global.model.RestApiResponse;
+import com.stayswap.resolver.userinfo.UserInfo;
+import com.stayswap.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -27,11 +29,11 @@ public class SwapController {
     )
     @PostMapping("/swap")
     public RestApiResponse<SwapResponse> createSwapExchange(
-            @RequestParam("requesterId") Long requesterId,
+            @UserInfo UserInfoDto userInfo,
             @Valid @RequestBody SwapRequest request,
             BindingResult bindingResult) {
         
-        return RestApiResponse.success(swapService.createSwapRequest(requesterId, request));
+        return RestApiResponse.success(swapService.createSwapRequest(userInfo.getUserId(), request));
     }
 
     @Operation(
@@ -40,11 +42,11 @@ public class SwapController {
     )
     @PostMapping("/stay")
     public RestApiResponse<StayResponse> createSwapStay(
-            @RequestParam("userId") Long userId,
+            @UserInfo UserInfoDto userInfo,
             @Valid @RequestBody StayRequest request,
             BindingResult bindingResult) {
         
-        return RestApiResponse.success(swapService.createStayRequest(userId, request));
+        return RestApiResponse.success(swapService.createStayRequest(userInfo.getUserId(), request));
     }
 
     @Operation(
