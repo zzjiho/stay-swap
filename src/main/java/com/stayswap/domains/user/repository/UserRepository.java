@@ -2,6 +2,24 @@ package com.stayswap.domains.user.repository;
 
 import com.stayswap.domains.user.model.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
-public interface UserRepository extends JpaRepository<User, Long> {
+import java.util.Optional;
+
+@Repository
+public interface UserRepository extends JpaRepository<User, Long>, UserRepositoryCustom {
+
+    Optional<User> findByEmail(String email);
+
+    boolean existsByNickname(String nickname);
+
+    Optional<User> findNicknameAndProfileById(Long userId);
+
+    Optional<User> findByRefreshToken(String refreshToken);
+
+    @Query("SELECT u.refreshToken FROM User u WHERE u.id = :userId")
+    String findRefreshTokenById(@Param("userId") Long userId);
+
 }

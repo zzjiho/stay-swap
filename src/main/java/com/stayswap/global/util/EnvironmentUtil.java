@@ -1,20 +1,19 @@
 package com.stayswap.global.util;
 
-import lombok.RequiredArgsConstructor;
-import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-@RequiredArgsConstructor
 public class EnvironmentUtil {
 
-    private final Environment env;
+    @Value("${kakao.client.id}")
+    private String kakaoClientId;
 
     /**
    	 * Custom value - Kakao Client ID
    	 * */
    	public String getKakaoClientId() {
-   		return env.getProperty("kakao.client.id");
+   		return kakaoClientId;
    	}
 
 }

@@ -3,15 +3,17 @@ package com.stayswap.domains.user.model.entity;
 import com.stayswap.domains.common.entity.BaseTimeEntity;
 import com.stayswap.domains.user.constant.Role;
 import com.stayswap.domains.user.constant.UserType;
+import com.stayswap.global.util.DateTimeUtils;
+import com.stayswap.jwt.dto.JwtTokenDto;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTimeEntity {
 
@@ -46,4 +48,20 @@ public class User extends BaseTimeEntity {
     private String refreshToken;
 
     private LocalDateTime tokenExpirationTime;
+
+    public void updateRefreshToken(JwtTokenDto jwtTokenDto) {
+        refreshToken = jwtTokenDto.getRefreshToken();
+        tokenExpirationTime = DateTimeUtils.convertToLocalDateTime(jwtTokenDto.getRefreshTokenExpireTime());
+    }
+
+    public void updateRefreshTokenNow(LocalDateTime tokenExpirationTime) {
+        this.tokenExpirationTime = tokenExpirationTime;
+    }
+
+    /**
+     * 닉네임 수정
+     */
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
 }
