@@ -1,11 +1,9 @@
 package com.stayswap.domains.notification.controller;
 
-import com.stayswap.domains.notification.model.dto.request.UpdateFcmTokenRequest;
 import com.stayswap.domains.notification.model.dto.response.NotificationResponse;
 import com.stayswap.domains.notification.service.NotificationService;
-import com.stayswap.domains.user.model.entity.User;
-import com.stayswap.domains.user.repository.UserRepository;
-import com.stayswap.global.error.exception.NotFoundException;
+import com.stayswap.domains.user.model.dto.request.DeviceRegistrationRequest;
+import com.stayswap.domains.user.service.UserDeviceService;
 import com.stayswap.resolver.userinfo.UserInfo;
 import com.stayswap.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
@@ -17,8 +15,6 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import static com.stayswap.global.code.ErrorCode.NOT_EXISTS_USER;
-
 @Tag(name = "알림 API", description = "알림 관련 API")
 @RestController
 @RequiredArgsConstructor
@@ -26,22 +22,7 @@ import static com.stayswap.global.code.ErrorCode.NOT_EXISTS_USER;
 public class NotificationController {
 
     private final NotificationService notificationService;
-    private final UserRepository userRepository;
-
-    @Operation(summary = "FCM 토큰 업데이트", description = "사용자의 FCM 토큰을 업데이트합니다.")
-    @PutMapping("/fcm-token")
-    public ResponseEntity<Void> updateFcmToken(
-            @UserInfo UserInfoDto userInfo,
-            @RequestBody UpdateFcmTokenRequest request) {
-        
-        User user = userRepository.findById(userInfo.getUserId())
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
-        
-        user.updateFcmToken(request.getFcmToken());
-        userRepository.save(user);
-        
-        return ResponseEntity.ok().build();
-    }
+    private final UserDeviceService userDeviceService;
 
     @Operation(summary = "알림 목록 조회", description = "사용자의 알림 목록을 조회합니다.")
     @GetMapping
@@ -61,5 +42,12 @@ public class NotificationController {
         
         NotificationResponse response = notificationService.markAsRead(notificationId, userInfo.getUserId());
         return ResponseEntity.ok(response);
+    }
+
+    @Operation(summary = "읽지 않은 알림 개수", description = "읽지 않은 알림 개수를 조회합니다.")
+    @GetMapping("/unread-count")
+    public ResponseEntity<Long> getUnreadCount(@UserInfo UserInfoDto userInfo) {
+        long count = notificationService.countUnreadNotifications(userInfo.getUserId());
+        return ResponseEntity.ok(count);
     }
 }

@@ -5,6 +5,7 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
 import com.google.firebase.messaging.*;
 import com.stayswap.domains.notification.constant.NotificationType;
+import com.stayswap.domains.user.service.UserDeviceService;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -21,6 +23,8 @@ import java.util.Map;
 public class FCMService {
 
     private static final String FCM_CREDENTIAL_PATH = "fcm/stay-swap-firebase-adminsdk-fbsvc-2f94ce1f1f.json";
+    
+    private final UserDeviceService userDeviceService;
 
     /**
      * Firebase 초기화
@@ -46,17 +50,34 @@ public class FCMService {
     }
 
     /**
-     * FCM 푸시 알림 전송
+     * 사용자의 모든 기기에 알림 전송
+     */
+    public void sendPushNotificationToUser(Long userId, String title, String body, 
+                                          NotificationType type, Long referenceId) {
+        List<String> tokens = userDeviceService.getUserFcmTokens(userId);
+        
+        if (tokens.isEmpty()) {
+            log.info("사용자 ID {}의 등록된 FCM 토큰이 없습니다.", userId);
+            return;
+        }
+        
+        if (tokens.size() == 1) {
+            sendPushNotification(tokens.get(0), title, body, type, referenceId);
+        } else {
+            sendMulticastPushNotification(title, body, type, referenceId, tokens.toArray(new String[0]));
+        }
+    }
+
+    /**
+     * 단일 기기에 푸시 알림 전송
      */
     public void sendPushNotification(String token, String title, String body, 
                                     NotificationType type, Long referenceId) {
         try {
-            // 알림 데이터 설정
             Map<String, String> data = new HashMap<>();
             data.put("type", type.name());
             data.put("referenceId", String.valueOf(referenceId));
             
-            // 알림 메시지 구성
             Message message = Message.builder()
                     .setNotification(Notification.builder()
                             .setTitle(title)
@@ -66,32 +87,28 @@ public class FCMService {
                     .setToken(token)
                     .build();
             
-            // 알림 전송
             String response = FirebaseMessaging.getInstance().send(message);
             log.info("FCM 알림 전송 완료: {}", response);
             
         } catch (FirebaseMessagingException e) {
-            log.error("FCM 알림 전송 실패", e);
+            log.error("FCM 알림 전송 실패: {}", e.getMessage());
         }
     }
 
     /**
-     * 다중 기기에 FCM 푸시 알림 전송
+     * 다중 기기에 푸시 알림 전송
      */
     public void sendMulticastPushNotification(
             String title, String body, NotificationType type, Long referenceId, String... tokens) {
         try {
-            // 알림 대상이 없는 경우
             if (tokens.length == 0) {
                 return;
             }
             
-            // 알림 데이터 설정
             Map<String, String> data = new HashMap<>();
             data.put("type", type.name());
             data.put("referenceId", String.valueOf(referenceId));
             
-            // 멀티캐스트 알림 메시지 구성
             MulticastMessage message = MulticastMessage.builder()
                     .setNotification(Notification.builder()
                             .setTitle(title)
@@ -101,13 +118,12 @@ public class FCMService {
                     .addAllTokens(java.util.Arrays.asList(tokens))
                     .build();
             
-            // 알림 전송
             BatchResponse response = FirebaseMessaging.getInstance().sendMulticast(message);
             log.info("FCM 다중 알림 전송 완료: 성공: {}, 실패: {}", 
                     response.getSuccessCount(), response.getFailureCount());
             
         } catch (FirebaseMessagingException e) {
-            log.error("FCM 다중 알림 전송 실패", e);
+            log.error("FCM 다중 알림 전송 실패: {}", e.getMessage());
         }
     }
 } 

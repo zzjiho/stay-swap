@@ -81,20 +81,16 @@ public class NotificationService {
      * 알림 저장 및 FCM 발송 처리 (RabbitMQ 컨슈머에서 호출)
      */
     public void processNotification(NotificationMessage message) {
-
         Notification notification = saveNotification(message);
         
-        // FCM 푸시 알림 전송
-        User recipient = notification.getRecipient();
-        if (recipient.getFcmToken() != null && !recipient.getFcmToken().isBlank()) {
-            fcmService.sendPushNotification(
-                    recipient.getFcmToken(),
-                    notification.getTitle(),
-                    notification.getContent(),
-                    notification.getType(),
-                    notification.getReferenceId()
-            );
-        }
+        // FCM 푸시 알림 전송 (사용자의 모든 기기에)
+        fcmService.sendPushNotificationToUser(
+                notification.getRecipient().getId(),
+                notification.getTitle(),
+                notification.getContent(),
+                notification.getType(),
+                notification.getReferenceId()
+        );
     }
 
     /**
