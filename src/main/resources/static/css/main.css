@@ -708,3 +708,41 @@ button,
         margin-bottom: 0.5rem;
     }
 }
+
+/* 드롭다운 메뉴 */
+.user-profile-container {
+    position: relative;
+}
+
+.profile-dropdown-container {
+    position: relative;
+}
+
+.profile-dropdown {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    width: 150px;
+    background-color: var(--background-color);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    z-index: 100;
+    display: none;
+    overflow: hidden;
+}
+
+.profile-dropdown.active {
+    display: block;
+}
+
+.dropdown-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-color);
+    transition: var(--transition);
+}
+
+.dropdown-item:hover {
+    background-color: var(--background-light);
+    color: var(--primary-color);
+}

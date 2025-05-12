@@ -1,161 +1,162 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>StaySwap</title>
-    <link rel="stylesheet" th:href="@{/css/main.css}">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Firebase 관련 메타 태그 추가 -->
-    <link rel="manifest" href="/manifest.json">
-    <!-- 인증 공통 JS 추가 -->
+
+    <!-- Styles -->
+    <link rel="stylesheet" th:href="@{/css/main.css}" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <!-- Firebase / Auth 공통 -->
+    <link rel="manifest" href="/manifest.json" />
     <script th:src="@{/js/auth-common.js}"></script>
 </head>
+
 <body>
 <header class="header">
     <div class="container">
         <div class="header-content">
             <a href="/" class="logo">
-                <i class="fas fa-home"></i>
-                <span>StaySwap</span>
+                <i class="fas fa-home"></i><span>StaySwap</span>
             </a>
+
             <nav class="main-nav">
                 <a href="/page/listings" class="nav-link">숙소 찾기</a>
-                <a href="/page/new" class="nav-link">숙소 등록</a>
+                <a href="/page/new"       class="nav-link">숙소 등록</a>
                 <a href="/page/exchanges" class="nav-link">교환 관리</a>
             </nav>
+
             <div class="user-actions">
-                <div id="user-profile" style="display: none;">
-                    <a href="/page/profile" class="avatar-link">
-                        <div class="avatar">
-                            <img id="profile-image" src="/placeholder.svg" alt="프로필">
-                            <span id="profile-initial">사</span>
+                <!-- 프로필 / 드롭다운 -->
+                <div id="user-profile" class="user-profile-container" style="display:none;">
+                    <div class="profile-dropdown-container">
+                        <a href="#" class="avatar-link" id="profile-dropdown-toggle">
+                            <div class="avatar">
+                                <img id="profile-image" src="/images/profile.png" alt="프로필" />
+                                <span id="profile-initial">사</span>
+                            </div>
+                        </a>
+
+                        <div id="profile-dropdown" class="profile-dropdown">
+                            <a href="/page/profile"      class="dropdown-item">마이페이지</a>
+                            <a href="/page/subscription" class="dropdown-item">구독관리</a>
+                            <a href="#" id="logout-btn"  class="dropdown-item">로그아웃</a>
                         </div>
-                    </a>
+                    </div>
                 </div>
+
+                <!-- 로그인 버튼 -->
                 <div id="auth-buttons">
                     <a href="/page/auth" class="btn btn-outline">로그인</a>
-<!--                    <a href="/auth?tab=register" class="btn btn-primary">회원가입</a>-->
                 </div>
             </div>
         </div>
     </div>
 </header>
 
-<main>
-    <!-- 각 페이지의 내용이 여기에 들어갑니다 -->
-</main>
+<main><!-- 페이지별 내용 --></main>
 
-<!--<footer class="footer">-->
-<!--    <div class="container">-->
-<!--        <div class="footer-content">-->
-<!--            <div class="copyright">© 2025 StaySwap. All rights reserved.</div>-->
-<!--            <div class="footer-links">-->
-<!--                <a href="#" class="footer-link">이용약관</a>-->
-<!--                <a href="#" class="footer-link">개인정보처리방침</a>-->
-<!--            </div>-->
-<!--        </div>-->
-<!--    </div>-->
-<!--</footer>-->
-
-<!-- Firebase SDK 추가 -->
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
 
-<!-- Firebase 초기화 스크립트 -->
+<!-- Firebase 설정 -->
 <script th:inline="javascript">
-    // 서버에서 전달받은 Firebase 설정
     const firebaseConfig = {
-        apiKey: /*[[${firebaseConfig.apiKey}]]*/ '',
-        authDomain: /*[[${firebaseConfig.authDomain}]]*/ '',
-        projectId: /*[[${firebaseConfig.projectId}]]*/ '',
-        storageBucket: /*[[${firebaseConfig.storageBucket}]]*/ '',
+        apiKey:          /*[[${firebaseConfig.apiKey}]]*/ '',
+        authDomain:      /*[[${firebaseConfig.authDomain}]]*/ '',
+        projectId:       /*[[${firebaseConfig.projectId}]]*/ '',
+        storageBucket:   /*[[${firebaseConfig.storageBucket}]]*/ '',
         messagingSenderId: /*[[${firebaseConfig.messagingSenderId}]]*/ '',
-        appId: /*[[${firebaseConfig.appId}]]*/ '',
-        measurementId: /*[[${firebaseConfig.measurementId}]]*/ ''
+        appId:           /*[[${firebaseConfig.appId}]]*/ '',
+        measurementId:   /*[[${firebaseConfig.measurementId}]]*/ ''
     };
-    
-    // Firebase 초기화
     firebase.initializeApp(firebaseConfig);
-    
-    // FCM 토큰 발급에 사용할 VAPID 키 전역 변수로 설정
     window.vapidKey = /*[[${firebaseConfig.vapidKey}]]*/ '';
 </script>
 
+<!-- 기타 스크립트 -->
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/fcm-token.js}"></script>
+
+<!-- *** 헤더 UI 제어 전용 스크립트 *** -->
 <script>
-    // 사용자 인증 상태에 따라 UI 업데이트
-    function updateAuthUI(isLoggedIn, userData) {
+    /* ① 로그인/로그아웃에 따라 버튼만 토글 */
+    function toggleHeaderUI(isLoggedIn) {
         const userProfile = document.getElementById('user-profile');
         const authButtons = document.getElementById('auth-buttons');
-        const profileImage = document.getElementById('profile-image');
-        const profileInitial = document.getElementById('profile-initial');
-
-        if (isLoggedIn && userData) {
+        if (isLoggedIn) {
             userProfile.style.display = 'block';
             authButtons.style.display = 'none';
-
-            if (userData.profile) {
-                profileImage.src = userData.profile;
-                profileImage.style.display = 'block';
-                profileInitial.style.display = 'none';
-            } else {
-                profileImage.style.display = 'none';
-                profileInitial.style.display = 'block';
-                profileInitial.textContent = userData.name ? userData.name.charAt(0) : '?';
-            }
-            
-            // 사용자가 로그인한 경우 FCM 토큰 초기화
-            initFCM();
         } else {
             userProfile.style.display = 'none';
             authButtons.style.display = 'flex';
         }
     }
 
-    // API에서 사용자 정보 가져오기
-    async function fetchUserInfo() {
-        // 인증 상태 확인
-        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
-            try {
-                const response = await fetchWithAuth('/api/user/me');
-                if (response && response.ok) {
-                    const userData = await response.json();
-                    updateAuthUI(true, userData);
-                    return;
-                }
-            } catch (error) {
-                console.error('사용자 정보 조회 실패:', error);
-            }
+    /* ② 아바타 이미지·이니셜 세팅 */
+    function fillProfile(user) {
+        if (!user) return;
+        const img  = document.getElementById('profile-image');
+        const init = document.getElementById('profile-initial');
+
+        if (user.profile) {
+            img.src = user.profile;
+            img.style.display  = 'block';
+            init.style.display = 'none';
+        } else {
+            img.style.display  = 'none';
+            init.style.display = 'block';
+            init.textContent   = user.name ? user.name.charAt(0) : '?';
         }
-        
-        // 로그인되지 않았거나 정보 조회 실패
-        updateAuthUI(false, null);
     }
 
-    // 인증 상태 변경 이벤트 리스너
-    document.addEventListener('authStateChanged', (event) => {
-        if (event.detail.isLoggedIn) {
-            fetchUserInfo();
-        } else {
-            updateAuthUI(false, null);
+    /* ③ 사용자 정보 조회 */
+    async function fetchUserInfo() {
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+            toggleHeaderUI(true);          // accessToken만 있어도 바로 로그인 UI
+            try {
+                const r = await fetchWithAuth('/api/user/me');
+                if (r && r.ok) fillProfile(await r.json());
+            } catch (_) { /* 실패해도 상관없음 */ }
+            return;
         }
+        toggleHeaderUI(false);             // 토큰 없으면 로그인 버튼
+    }
+
+    /* ④ auth 상태 이벤트 → 헤더 동기화 */
+    document.addEventListener('authStateChanged', e => {
+        e.detail.isLoggedIn ? fetchUserInfo() : toggleHeaderUI(false);
     });
 
-    // 페이지 로드 시 사용자 정보 가져오기
+    /* ⑤ 페이지 로드 → 헤더 동기화 */
     document.addEventListener('DOMContentLoaded', fetchUserInfo);
-    
-    // 로그아웃 버튼 이벤트 리스너 (필요시 추가)
+
+    /* ⑥ 아바타 클릭 → 드롭다운 토글 */
     document.addEventListener('DOMContentLoaded', () => {
-        const logoutBtn = document.getElementById('logout-btn');
-        if (logoutBtn) {
-            logoutBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                if (typeof logout === 'function') {
-                    logout();
-                }
-            });
+        const toggle   = document.getElementById('profile-dropdown-toggle');
+        const dropdown = document.getElementById('profile-dropdown');
+        if (!toggle) return;
+
+        toggle.addEventListener('click', e => {
+            e.preventDefault();
+            dropdown.classList.toggle('active');
+        });
+        document.addEventListener('click', e => {
+            if (!toggle.contains(e.target) && !dropdown.contains(e.target))
+                dropdown.classList.remove('active');
+        });
+    });
+</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        /* accessToken 있으면 → 로그인 상태로 간주 */
+        if (window.auth?.accessToken) {
+            document.getElementById('auth-buttons').style.display   = 'none';
+            document.getElementById('user-profile').style.display   = 'block';
         }
     });
 </script>

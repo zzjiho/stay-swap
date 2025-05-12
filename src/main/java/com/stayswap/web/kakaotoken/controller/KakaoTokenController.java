@@ -112,8 +112,15 @@ public class KakaoTokenController {
             refreshTokenCookie.setMaxAge((int) maxAge);
             response.addCookie(refreshTokenCookie);
             
-            // 액세스 토큰과 함께 홈페이지로 리다이렉트
-            response.sendRedirect("/?access_token=" + jwtToken.getAccessToken());
+            // 세션 스토리지를 위한 임시 쿠키 생성 (JavaScript로 읽을 수 있게 HttpOnly 아님)
+            Cookie tempAccessTokenCookie = new Cookie("temp_access_token", jwtToken.getAccessToken());
+            tempAccessTokenCookie.setHttpOnly(false);
+            tempAccessTokenCookie.setPath("/");
+            tempAccessTokenCookie.setMaxAge(60); // 1분만 유효 (JavaScript에서 읽은 후 삭제됨)
+            response.addCookie(tempAccessTokenCookie);
+            
+            // 액세스 토큰 없이 홈페이지로 리다이렉트
+            response.sendRedirect("/");
             
         } catch (Exception e) {
             log.error("카카오 로그인 처리 중 오류 발생", e);

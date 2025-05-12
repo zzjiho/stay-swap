@@ -3,13 +3,57 @@
  * 모든 페이지에서 인증 상태를 관리합니다.
  */
 
-// 전역 변수 (메모리에만 저장)
-let accessToken = null;
-let tokenExpireTime = null;
-let isAuthInitialized = false;
+// window.auth 전역 객체가 없으면 생성
+window.auth = window.auth || {};
 
-// 페이지 로드 시 실행
-document.addEventListener("DOMContentLoaded", () => {
+// 전역 상태를 이 객체에만 저장
+auth.accessToken = null;
+auth.tokenExpireTime = null;
+auth.isInitialized = false;
+
+// 쿠키에서 값을 가져오는 함수
+function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+// 쿠키 삭제 함수
+function deleteCookie(name) {
+    document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+}
+
+// 임시 액세스 토큰 쿠키 처리
+function handleTempAccessToken() {
+    const tempToken = getCookie('temp_access_token');
+    if (tempToken) {
+        // 메모리에 저장
+        auth.accessToken = tempToken;
+        auth.tokenExpireTime = new Date().getTime() + (18 * 60 * 1000); // 약 18분 설정 (토큰 만료 전)
+        auth.isInitialized = true;
+        
+        // 토큰 만료 전에 자동 갱신 설정
+        setupTokenRenewal();
+        
+        // 로그인 상태 이벤트 발생
+        dispatchLoginEvent(true);
+        
+        // 임시 쿠키 즉시 삭제
+        deleteCookie('temp_access_token');
+        
+        return true;
+    }
+    return false;
+}
+
+/* ───────── 페이지 로드 시점 ───────── */
+document.addEventListener('DOMContentLoaded', () => {
+    // 먼저 임시 토큰 쿠키 확인
+    if (handleTempAccessToken()) {
+        return; // 임시 토큰이 있으면 나머지 초기화 과정 스킵
+    }
+    
     // URL에 code 파라미터가 있는지 확인 (카카오 로그인 콜백)
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
@@ -23,250 +67,96 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-/**
- * 카카오 로그인 콜백 처리 함수
- */
+/* ───────── 카카오 로그인 콜백 ───────── */
 async function handleKakaoCallback(code) {
     try {
-        // 백엔드에서 카카오 토큰을 받은 후, 우리 서비스의 JWT 토큰으로 교환
-        const response = await fetch('/api/oauth/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${code}` // 인가 코드를 Authorization 헤더에 전달
-            },
-            body: JSON.stringify({
-                userType: 'KAKAO'
-            }),
-            credentials: 'include' // 쿠키를 받기 위해 필요
+        const r = await fetch('/api/oauth/login', {
+            method:'POST',
+            headers:{'Content-Type':'application/json','Authorization':`Bearer ${code}`},
+            body:JSON.stringify({userType:'KAKAO'}),
+            credentials:'include'
         });
-
-        if (!response.ok) {
-            throw new Error('로그인 처리 중 오류가 발생했습니다.');
-        }
-
-        const data = await response.json();
-        
-        // accessToken만 메모리에 저장 (refreshToken은 쿠키로 관리)
-        accessToken = data.accessToken;
-        tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-        isAuthInitialized = true;
-        
-        // 토큰 만료 전에 자동 갱신 설정
+        if (!r.ok) throw new Error();
+        const d = await r.json();
+        auth.accessToken     = d.accessToken;
+        auth.tokenExpireTime = new Date(d.accessTokenExpireTime).getTime();
+        auth.isInitialized   = true;
         setupTokenRenewal();
-        
-        // 로그인 상태 이벤트 발생
         dispatchLoginEvent(true);
-        
-        // URL에서 code 파라미터 제거하고 페이지 리로드
+
         const url = new URL(window.location.href);
         url.searchParams.delete('code');
-        window.history.replaceState({}, document.title, url);
-        
-        // 리디렉션 URL이 있으면 해당 URL로 이동
-        const redirectUrl = url.searchParams.get("redirect");
-        if (redirectUrl) {
-            window.location.replace(redirectUrl);
-        }
-    } catch (error) {
-        console.error('로그인 처리 중 오류:', error);
-        alert('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
-        window.location.href = "/page/auth";
+        window.history.replaceState({},document.title,url);
+
+        const redirect = url.searchParams.get('redirect');
+        if (redirect) window.location.replace(redirect);
+    } catch {
+        window.location.href = '/page/auth';
     }
 }
 
-/**
- * 인증 초기화 함수
- * 페이지 로드 시 자동으로 실행되어 토큰 상태를 확인하고 갱신합니다.
- */
+/* ───────── 초기화 & 토큰 교환 ───────── */
 async function initializeAuth() {
-    // 이미 초기화되었거나 토큰이 유효하면 스킵
-    if (isAuthInitialized && accessToken && !isTokenExpired()) {
-        return true;
-    }
-    
+    if (auth.isInitialized && auth.accessToken && !isTokenExpired()) return true;
     try {
-        // 서버에 토큰 갱신 요청
-        const response = await fetch('/api/token/refresh', {
-            method: 'GET',
-            credentials: 'include' // 쿠키 포함
-        });
-        
-        if (!response.ok) {
-            // 로그인 상태가 아님
-            isAuthInitialized = true;
-            return false;
-        }
-        
-        const data = await response.json();
-        
-        // 메모리에 accessToken 저장
-        accessToken = data.accessToken;
-        tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-        isAuthInitialized = true;
-        
-        // 토큰 만료 전에 자동 갱신 설정
+        const r = await fetch('/api/token/refresh',{credentials:'include'});
+        if (!r.ok) { auth.isInitialized=true; dispatchLoginEvent(false); return false; }
+        const d = await r.json();
+        auth.accessToken     = d.accessToken;
+        auth.tokenExpireTime = new Date(d.accessTokenExpireTime).getTime();
+        auth.isInitialized   = true;
         setupTokenRenewal();
-        
-        // 로그인 상태 이벤트 발생
         dispatchLoginEvent(true);
-        
+        if (typeof fetchUserInfo==='function') fetchUserInfo();
         return true;
-    } catch (error) {
-        console.error('인증 초기화 중 오류:', error);
-        isAuthInitialized = true;
-        
-        // 로그인 상태 이벤트 발생
-        dispatchLoginEvent(false);
-        
-        return false;
+    } catch {
+        auth.isInitialized = true; dispatchLoginEvent(false); return false;
     }
 }
 
-/**
- * 로그인 상태 변경 이벤트 발생
- */
-function dispatchLoginEvent(isLoggedIn) {
-    const event = new CustomEvent('authStateChanged', {
-        detail: { isLoggedIn }
-    });
-    document.dispatchEvent(event);
+/* ───────── 유틸 ───────── */
+function dispatchLoginEvent(isLoggedIn){
+    document.dispatchEvent(new CustomEvent('authStateChanged',{detail:{isLoggedIn}}));
 }
-
-/**
- * 토큰 만료 전에 자동 갱신 설정
- */
-function setupTokenRenewal() {
-    if (!tokenExpireTime) return;
-    
-    // 토큰 만료 5분 전에 갱신
-    const timeUntilExpiry = tokenExpireTime - Date.now();
-    const renewalTime = Math.max(0, timeUntilExpiry - (5 * 60 * 1000));
-    
-    setTimeout(async () => {
-        await refreshAccessToken();
-    }, renewalTime);
+function setupTokenRenewal(){
+    if(!auth.tokenExpireTime) return;
+    const delay=Math.max(0, auth.tokenExpireTime-Date.now()-5*60*1000);
+    setTimeout(refreshAccessToken, delay);
 }
+function getAuthHeader(){ return auth.accessToken?{Authorization:`Bearer ${auth.accessToken}`} : {}; }
+function isTokenExpired(){ return !auth.tokenExpireTime || Date.now()>auth.tokenExpireTime; }
+function isLoggedIn(){ return !!auth.accessToken && !isTokenExpired(); }
 
-/**
- * API 요청 시 사용할 인증 헤더 생성 함수
- */
-function getAuthHeader() {
-    return accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {};
-}
-
-/**
- * 토큰 만료 확인 함수
- */
-function isTokenExpired() {
-    if (!tokenExpireTime) return true;
-    return Date.now() > tokenExpireTime;
-}
-
-/**
- * 현재 로그인 상태 확인
- */
-function isLoggedIn() {
-    return accessToken !== null && !isTokenExpired();
-}
-
-/**
- * 액세스 토큰 갱신 함수
- */
-async function refreshAccessToken() {
-    try {
-        const response = await fetch('/api/token/refresh', {
-            method: 'GET',
-            credentials: 'include' // 쿠키 포함
-        });
-        
-        if (!response.ok) {
-            throw new Error('토큰 갱신 실패');
-        }
-        
-        const data = await response.json();
-        accessToken = data.accessToken;
-        tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-        
-        // 토큰 만료 전에 자동 갱신 설정
+/* ───────── 토큰 갱신 ───────── */
+async function refreshAccessToken(){
+    try{
+        const r=await fetch('/api/token/refresh',{credentials:'include'});
+        if(!r.ok) throw new Error();
+        const d=await r.json();
+        auth.accessToken=d.accessToken;
+        auth.tokenExpireTime=new Date(d.accessTokenExpireTime).getTime();
         setupTokenRenewal();
-        
-        // 로그인 상태 이벤트 발생
         dispatchLoginEvent(true);
-        
         return true;
-    } catch (error) {
-        console.error('토큰 갱신 중 오류:', error);
-        logout();
-        return false;
-    }
+    }catch{ logout(); return false; }
 }
 
-/**
- * 로그아웃 함수
- */
-async function logout() {
-    // 메모리의 토큰 삭제
-    accessToken = null;
-    tokenExpireTime = null;
-    
-    try {
-        // 서버에 로그아웃 요청 (쿠키 삭제)
-        await fetch('/api/logout', {
-            method: 'POST',
-            credentials: 'include'
-        });
-        
-        // 로그인 상태 이벤트 발생
-        dispatchLoginEvent(false);
-    } catch (error) {
-        console.error('로그아웃 중 오류:', error);
-    }
+/* ───────── 로그아웃 ───────── */
+async function logout(){
+    auth.accessToken=null; auth.tokenExpireTime=null;
+    try{ await fetch('/api/logout',{method:'POST',credentials:'include'}); }
+    finally{ dispatchLoginEvent(false); window.location.href='/page/auth'; }
 }
 
-/**
- * 인증이 필요한 API 요청 래퍼 함수
- */
-async function fetchWithAuth(url, options = {}) {
-    // 인증 초기화가 필요한 경우
-    if (!isAuthInitialized || !accessToken || isTokenExpired()) {
-        const initialized = await initializeAuth();
-        if (!initialized || !accessToken) {
-            // 로그인 페이지로 리다이렉트
-            window.location.href = `/page/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
-            return null;
-        }
+/* ───────── 인증 요청 래퍼 ───────── */
+async function fetchWithAuth(url,opt={}){
+    if(!auth.isInitialized||!auth.accessToken||isTokenExpired()){
+        const ok=await initializeAuth(); if(!ok) return null;
     }
-    
-    // 인증 헤더 추가
-    const headers = {
-        ...options.headers,
-        ...getAuthHeader()
-    };
-    
-    try {
-        const response = await fetch(url, {
-            ...options,
-            headers,
-            credentials: 'include' // 쿠키 포함
-        });
-        
-        // 401 응답이면 토큰 갱신 후 재시도
-        if (response.status === 401) {
-            const refreshed = await refreshAccessToken();
-            if (!refreshed) {
-                // 로그인 페이지로 리다이렉트
-                window.location.href = `/page/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
-                return null;
-            }
-            
-            // 토큰 갱신 후 재시도
-            return fetchWithAuth(url, options);
-        }
-        
-        return response;
-    } catch (error) {
-        console.error('API 요청 중 오류:', error);
-        return null;
+    const res=await fetch(url,{...opt,headers:{...opt.headers,...getAuthHeader()},credentials:'include'});
+    if(res.status===401){
+        const ok=await refreshAccessToken(); if(!ok) return null;
+        return fetchWithAuth(url,opt);
     }
-} 
+    return res;
+}
