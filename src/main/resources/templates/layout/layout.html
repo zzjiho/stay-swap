@@ -6,6 +6,8 @@
     <title>StaySwap</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase 관련 메타 태그 추가 -->
+    <link rel="manifest" href="/manifest.json">
 </head>
 <body>
 <header class="header">
@@ -54,7 +56,32 @@
 <!--    </div>-->
 <!--</footer>-->
 
+<!-- Firebase SDK 추가 -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
+
+<!-- Firebase 초기화 스크립트 -->
+<script th:inline="javascript">
+    // 서버에서 전달받은 Firebase 설정
+    const firebaseConfig = {
+        apiKey: /*[[${firebaseConfig.apiKey}]]*/ '',
+        authDomain: /*[[${firebaseConfig.authDomain}]]*/ '',
+        projectId: /*[[${firebaseConfig.projectId}]]*/ '',
+        storageBucket: /*[[${firebaseConfig.storageBucket}]]*/ '',
+        messagingSenderId: /*[[${firebaseConfig.messagingSenderId}]]*/ '',
+        appId: /*[[${firebaseConfig.appId}]]*/ '',
+        measurementId: /*[[${firebaseConfig.measurementId}]]*/ ''
+    };
+    
+    // Firebase 초기화
+    firebase.initializeApp(firebaseConfig);
+    
+    // FCM 토큰 발급에 사용할 VAPID 키 전역 변수로 설정
+    window.vapidKey = /*[[${firebaseConfig.vapidKey}]]*/ '';
+</script>
+
 <script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/fcm-token.js}"></script>
 <script>
     // 사용자 인증 상태에 따라 UI 업데이트
     function updateAuthUI(user) {
@@ -76,6 +103,9 @@
                 profileInitial.style.display = 'block';
                 profileInitial.textContent = user.name.charAt(0);
             }
+            
+            // 사용자가 로그인한 경우 FCM 토큰 초기화
+            initFCM();
         } else {
             userProfile.style.display = 'none';
             authButtons.style.display = 'flex';
