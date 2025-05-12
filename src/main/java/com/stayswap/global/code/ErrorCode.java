@@ -30,6 +30,9 @@ public enum ErrorCode {
     NOT_COMPLETED_SWAP(BAD_REQUEST, false, "BR011", "완료상태만 리뷰작성이 가능합니다."),
     CANNOT_REVIEW_OWN_HOUSE(BAD_REQUEST, false, "BR012", "자신의 숙소에는 리뷰를 작성할 수 없습니다."),
 
+    NOT_EXISTS_RESOURCE(BAD_REQUEST, false, "BR013", "존재하지 않는 알림입니다."),
+
+
     /**
      * 인증 && 인가
      */
@@ -48,6 +51,8 @@ public enum ErrorCode {
     NOT_FOUND_REFRESH_TOKEN(FORBIDDEN, false, "F003", "리프레시 토큰을 찾을 수 없습니다."),
     REFRESH_TOKEN_EXPIRED(FORBIDDEN, false, "F004", "리프레시 토큰이 만료되었습니다."),
     NOT_MY_NICKNAME(FORBIDDEN, false, "F005", "자신의 닉네임만 수정할 수 있습니다.");
+
+
 
     private final HttpStatusCode statusCode;
     private final boolean notification;

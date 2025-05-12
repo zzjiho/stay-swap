@@ -2,6 +2,7 @@ package com.stayswap.domains.swap.service;
 
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
+import com.stayswap.domains.notification.service.NotificationService;
 import com.stayswap.domains.swap.constant.SwapStatus;
 import com.stayswap.domains.swap.constant.SwapType;
 import com.stayswap.domains.swap.model.dto.request.SwapRequest;
@@ -33,6 +34,7 @@ public class SwapServiceImpl implements SwapService {
     private final SwapRepository swapRepository;
     private final UserRepository userRepository;
     private final HouseRepository houseRepository;
+    private final NotificationService notificationService;
 
     @Override
     public SwapResponse createSwapRequest(Long requesterId, SwapRequest request) {
@@ -50,6 +52,10 @@ public class SwapServiceImpl implements SwapService {
 
         Swap swap = request.toEntity(requester, requesterHouse, targetHouse);
         Swap savedSwap = swapRepository.save(swap);
+        
+        // 알림 전송
+        Long recipientId = targetHouse.getUser().getId();
+        notificationService.createSwapRequestNotification(recipientId, requesterId, savedSwap.getId());
 
         return SwapResponse.of(savedSwap);
     }
@@ -63,6 +69,10 @@ public class SwapServiceImpl implements SwapService {
 
         Swap swap = request.toEntity(requester, targetHouse);
         Swap savedSwap = swapRepository.save(swap);
+        
+        // 알림 전송
+        Long recipientId = targetHouse.getUser().getId();
+        notificationService.createBookingRequestNotification(recipientId, requesterId, savedSwap.getId());
 
         return StayResponse.of(savedSwap);
     }
