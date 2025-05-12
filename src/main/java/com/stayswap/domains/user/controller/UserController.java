@@ -4,6 +4,7 @@ import com.stayswap.domains.user.model.dto.request.UpdateNicknameRequest;
 import com.stayswap.domains.user.model.dto.response.GetNicknameResponse;
 import com.stayswap.domains.user.model.dto.response.LogoutResponse;
 import com.stayswap.domains.user.model.dto.response.UpdateNicknameResponse;
+import com.stayswap.domains.user.model.dto.response.UserInfoResponse;
 import com.stayswap.domains.user.service.UserService;
 import com.stayswap.global.model.RestApiResponse;
 import com.stayswap.resolver.userinfo.UserInfo;
@@ -12,6 +13,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -21,6 +23,16 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+
+    @Operation(
+            summary = "사용자 정보 조회 API",
+            description = "현재 로그인한 사용자의 정보를 조회합니다."
+    )
+    @GetMapping("/me")
+    public ResponseEntity<UserInfoResponse> getUserInfo(@UserInfo UserInfoDto userInfo) {
+        UserInfoResponse response = userService.getUserInfo(userInfo.getUserId());
+        return ResponseEntity.ok(response);
+    }
 
     @Operation(
             summary = "사용자 닉네임, 프로필 사진 조회 API",

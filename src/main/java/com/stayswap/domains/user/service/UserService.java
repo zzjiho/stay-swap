@@ -4,6 +4,7 @@ import com.stayswap.domains.user.model.dto.request.UpdateNicknameRequest;
 import com.stayswap.domains.user.model.dto.response.GetNicknameResponse;
 import com.stayswap.domains.user.model.dto.response.LogoutResponse;
 import com.stayswap.domains.user.model.dto.response.UpdateNicknameResponse;
+import com.stayswap.domains.user.model.dto.response.UserInfoResponse;
 import com.stayswap.domains.user.model.entity.User;
 import com.stayswap.domains.user.repository.UserRepository;
 import com.stayswap.domains.user.repository.nickname.GenerateRandomNicknameRepository;
@@ -68,6 +69,17 @@ public class UserService {
                 return nickname;
             }
         }
+    }
+
+    /**
+     * 사용자 정보 조회
+     */
+    @Transactional(readOnly = true)
+    public UserInfoResponse getUserInfo(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+        
+        return UserInfoResponse.from(user);
     }
 
     /**

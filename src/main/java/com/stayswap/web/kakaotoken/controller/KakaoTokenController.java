@@ -6,6 +6,7 @@ import com.stayswap.web.kakaotoken.client.KakaoTokenClient;
 import com.stayswap.web.kakaotoken.dto.KakaoTokenDto;
 import com.stayswap.web.kakaotoken.util.KakaoApiUtil;
 import com.stayswap.web.kakaotoken.util.RequestUrlUtil;
+import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.stayswap.api.login.dto.OauthLoginDto;
+import com.stayswap.api.login.service.OauthLoginService;
+import com.stayswap.domains.user.constant.UserType;
 
 import java.io.IOException;
 
@@ -25,6 +30,8 @@ public class KakaoTokenController {
 
     private final EnvironmentUtil env;
     private final KakaoTokenClient kakaoTokenClient;
+    @Autowired
+    private OauthLoginService oauthLoginService;
 
     @Value("${kakao.client.id}")
     private String clientId;
@@ -64,9 +71,10 @@ public class KakaoTokenController {
 
     //Step 2 : 토큰받기
     @GetMapping("/oauth/kakao/callback")
-    public ResponseEntity<KakaoTokenDto.Response> loginCallback(
+    public void loginCallback(
             HttpServletRequest request,
-            @RequestParam("code") String code) {
+            HttpServletResponse response,
+            @RequestParam("code") String code) throws IOException {
 
         String contentType = "application/x-www-form-urlencoded;charset=utf-8";
 
@@ -88,7 +96,29 @@ public class KakaoTokenController {
         KakaoTokenDto.Response kakaoToken = kakaoTokenClient.requestKakaoToken(contentType, kakaoTokenRequestDto);
         log.info("[-] kakaoToken : {}", kakaoToken);
 
-        return ResponseEntity.ok(kakaoToken);
+        // OauthLoginService를 직접 호출하여 로그인 처리
+        try {
+            OauthLoginDto.Response jwtToken = oauthLoginService.oauthLogin(
+                    kakaoToken.getAccess_token(), 
+                    UserType.KAKAO
+            );
+            
+            // JWT 토큰을 쿠키에 저장
+            Cookie refreshTokenCookie = new Cookie("refreshToken", jwtToken.getRefreshToken());
+            refreshTokenCookie.setHttpOnly(true);
+            refreshTokenCookie.setPath("/");
+            // 쿠키 만료 시간 설정
+            long maxAge = (jwtToken.getRefreshTokenExpireTime().getTime() - System.currentTimeMillis()) / 1000;
+            refreshTokenCookie.setMaxAge((int) maxAge);
+            response.addCookie(refreshTokenCookie);
+            
+            // 액세스 토큰과 함께 홈페이지로 리다이렉트
+            response.sendRedirect("/?access_token=" + jwtToken.getAccessToken());
+            
+        } catch (Exception e) {
+            log.error("카카오 로그인 처리 중 오류 발생", e);
+            response.sendRedirect("/page/auth?error=login_failed");
+        }
     }
 
 }

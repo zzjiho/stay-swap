@@ -8,6 +8,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Firebase 관련 메타 태그 추가 -->
     <link rel="manifest" href="/manifest.json">
+    <!-- 인증 공통 JS 추가 -->
+    <script th:src="@{/js/auth-common.js}"></script>
 </head>
 <body>
 <header class="header">
@@ -84,24 +86,24 @@
 <script th:src="@{/js/fcm-token.js}"></script>
 <script>
     // 사용자 인증 상태에 따라 UI 업데이트
-    function updateAuthUI(user) {
+    function updateAuthUI(isLoggedIn, userData) {
         const userProfile = document.getElementById('user-profile');
         const authButtons = document.getElementById('auth-buttons');
         const profileImage = document.getElementById('profile-image');
         const profileInitial = document.getElementById('profile-initial');
 
-        if (user) {
+        if (isLoggedIn && userData) {
             userProfile.style.display = 'block';
             authButtons.style.display = 'none';
 
-            if (user.profileImage) {
-                profileImage.src = user.profileImage;
+            if (userData.profile) {
+                profileImage.src = userData.profile;
                 profileImage.style.display = 'block';
                 profileInitial.style.display = 'none';
             } else {
                 profileImage.style.display = 'none';
                 profileInitial.style.display = 'block';
-                profileInitial.textContent = user.name.charAt(0);
+                profileInitial.textContent = userData.name ? userData.name.charAt(0) : '?';
             }
             
             // 사용자가 로그인한 경우 FCM 토큰 초기화
@@ -113,21 +115,49 @@
     }
 
     // API에서 사용자 정보 가져오기
-    function fetchUserInfo() {
-        // 실제 구현 시 API 호출
-        // fetch('/api/user')
-        //     .then(response => response.json())
-        //     .then(user => updateAuthUI(user))
-        //     .catch(() => updateAuthUI(null));
-
-        // 테스트용 더미 데이터
-        const user = null; // 로그인 안 된 상태
-        // const user = { name: '홍길동', profileImage: null }; // 로그인 된 상태
-        updateAuthUI(user);
+    async function fetchUserInfo() {
+        // 인증 상태 확인
+        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+            try {
+                const response = await fetchWithAuth('/api/user/me');
+                if (response && response.ok) {
+                    const userData = await response.json();
+                    updateAuthUI(true, userData);
+                    return;
+                }
+            } catch (error) {
+                console.error('사용자 정보 조회 실패:', error);
+            }
+        }
+        
+        // 로그인되지 않았거나 정보 조회 실패
+        updateAuthUI(false, null);
     }
+
+    // 인증 상태 변경 이벤트 리스너
+    document.addEventListener('authStateChanged', (event) => {
+        if (event.detail.isLoggedIn) {
+            fetchUserInfo();
+        } else {
+            updateAuthUI(false, null);
+        }
+    });
 
     // 페이지 로드 시 사용자 정보 가져오기
     document.addEventListener('DOMContentLoaded', fetchUserInfo);
+    
+    // 로그아웃 버튼 이벤트 리스너 (필요시 추가)
+    document.addEventListener('DOMContentLoaded', () => {
+        const logoutBtn = document.getElementById('logout-btn');
+        if (logoutBtn) {
+            logoutBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (typeof logout === 'function') {
+                    logout();
+                }
+            });
+        }
+    });
 </script>
 </body>
 </html>

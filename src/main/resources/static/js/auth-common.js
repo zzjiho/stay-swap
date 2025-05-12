@@ -1,94 +1,27 @@
 /**
- * StaySwap 인증 관련 JavaScript
- * accessToken은 메모리에 저장하고, refreshToken은 HttpOnly 쿠키로 관리합니다.
+ * StaySwap 인증 공통 JavaScript
+ * 모든 페이지에서 인증 상태를 관리합니다.
  */
 
 // 전역 변수 (메모리에만 저장)
 let accessToken = null;
 let tokenExpireTime = null;
+let isAuthInitialized = false;
 
 // 페이지 로드 시 실행
 document.addEventListener("DOMContentLoaded", () => {
-    // 현재 페이지 URL 확인
-    const currentPath = window.location.pathname;
-    
-    // URL 파라미터 처리
+    // URL에 code 파라미터가 있는지 확인 (카카오 로그인 콜백)
     const urlParams = new URLSearchParams(window.location.search);
-    const redirectUrl = urlParams.get("redirect");
     const code = urlParams.get("code");
     
-    // 카카오 로그인 버튼 이벤트 핸들러 추가
-    const kakaoLoginBtn = document.querySelector(".kakao-login");
-    if (kakaoLoginBtn) {
-        kakaoLoginBtn.addEventListener("click", function(e) {
-            e.preventDefault();
-            handleKakaoLogin();
-        });
-    }
-
-    // 다른 소셜 로그인 버튼에 리디렉션 URL 추가
-    if (redirectUrl) {
-        const otherSocialButtons = document.querySelectorAll(".social-button:not(.kakao-login)");
-        otherSocialButtons.forEach((button) => {
-            const currentHref = button.getAttribute("href");
-            button.setAttribute("href", `${currentHref}?redirect_uri=${encodeURIComponent(redirectUrl)}`);
-        });
-    }
-
-    // URL에 code 파라미터가 있으면 카카오 콜백 처리
     if (code) {
+        // 카카오 로그인 콜백 처리
         handleKakaoCallback(code);
     } else {
-        // 이미 로그인 상태인지 확인 (페이지 새로고침 시)
-        checkLoginStatus();
+        // 일반적인 인증 초기화
+        initializeAuth();
     }
 });
-
-/**
- * 로그인 상태 확인 및 토큰 갱신
- */
-async function checkLoginStatus() {
-    try {
-        // 서버에 토큰 갱신 요청 (refreshToken은 쿠키로 자동 전송됨)
-        const response = await fetch('/api/token/refresh', {
-            method: 'GET',
-            credentials: 'include' // 쿠키 포함
-        });
-
-        if (!response.ok) {
-            // 로그인 상태가 아님
-            return;
-        }
-
-        const data = await response.json();
-        
-        // 메모리에 accessToken 저장
-        accessToken = data.accessToken;
-        tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-        
-        // 로그인 성공 후 처리 (예: 리디렉션)
-        const redirectUrl = new URLSearchParams(window.location.search).get("redirect");
-        if (redirectUrl) {
-            window.location.href = redirectUrl;
-        } else if (window.location.pathname === '/page/auth') {
-            // 로그인 페이지에 있으면 홈으로 리다이렉트
-            window.location.href = '/';
-        }
-        
-        // 토큰 만료 전에 자동 갱신 설정
-        setupTokenRenewal();
-    } catch (error) {
-        console.error('로그인 상태 확인 중 오류:', error);
-    }
-}
-
-/**
- * 카카오 로그인 처리 함수
- */
-function handleKakaoLogin() {
-    // 백엔드에서 제공하는 /kakao 엔드포인트 호출
-    window.location.href = "/kakao";
-}
 
 /**
  * 카카오 로그인 콜백 처리 함수
@@ -117,19 +50,87 @@ async function handleKakaoCallback(code) {
         // accessToken만 메모리에 저장 (refreshToken은 쿠키로 관리)
         accessToken = data.accessToken;
         tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
+        isAuthInitialized = true;
         
         // 토큰 만료 전에 자동 갱신 설정
         setupTokenRenewal();
         
-        // 리디렉션 URL이 있으면 해당 URL로, 없으면 홈으로 리다이렉트
-        const redirectUrl = new URLSearchParams(window.location.search).get("redirect") || "/";
+        // 로그인 상태 이벤트 발생
+        dispatchLoginEvent(true);
         
-        window.location.replace(redirectUrl);
+        // URL에서 code 파라미터 제거하고 페이지 리로드
+        const url = new URL(window.location.href);
+        url.searchParams.delete('code');
+        window.history.replaceState({}, document.title, url);
+        
+        // 리디렉션 URL이 있으면 해당 URL로 이동
+        const redirectUrl = url.searchParams.get("redirect");
+        if (redirectUrl) {
+            window.location.replace(redirectUrl);
+        }
     } catch (error) {
         console.error('로그인 처리 중 오류:', error);
         alert('로그인 처리 중 오류가 발생했습니다. 다시 시도해주세요.');
         window.location.href = "/page/auth";
     }
+}
+
+/**
+ * 인증 초기화 함수
+ * 페이지 로드 시 자동으로 실행되어 토큰 상태를 확인하고 갱신합니다.
+ */
+async function initializeAuth() {
+    // 이미 초기화되었거나 토큰이 유효하면 스킵
+    if (isAuthInitialized && accessToken && !isTokenExpired()) {
+        return true;
+    }
+    
+    try {
+        // 서버에 토큰 갱신 요청
+        const response = await fetch('/api/token/refresh', {
+            method: 'GET',
+            credentials: 'include' // 쿠키 포함
+        });
+        
+        if (!response.ok) {
+            // 로그인 상태가 아님
+            isAuthInitialized = true;
+            return false;
+        }
+        
+        const data = await response.json();
+        
+        // 메모리에 accessToken 저장
+        accessToken = data.accessToken;
+        tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
+        isAuthInitialized = true;
+        
+        // 토큰 만료 전에 자동 갱신 설정
+        setupTokenRenewal();
+        
+        // 로그인 상태 이벤트 발생
+        dispatchLoginEvent(true);
+        
+        return true;
+    } catch (error) {
+        console.error('인증 초기화 중 오류:', error);
+        isAuthInitialized = true;
+        
+        // 로그인 상태 이벤트 발생
+        dispatchLoginEvent(false);
+        
+        return false;
+    }
+}
+
+/**
+ * 로그인 상태 변경 이벤트 발생
+ */
+function dispatchLoginEvent(isLoggedIn) {
+    const event = new CustomEvent('authStateChanged', {
+        detail: { isLoggedIn }
+    });
+    document.dispatchEvent(event);
 }
 
 /**
@@ -163,6 +164,13 @@ function isTokenExpired() {
 }
 
 /**
+ * 현재 로그인 상태 확인
+ */
+function isLoggedIn() {
+    return accessToken !== null && !isTokenExpired();
+}
+
+/**
  * 액세스 토큰 갱신 함수
  */
 async function refreshAccessToken() {
@@ -182,6 +190,9 @@ async function refreshAccessToken() {
         
         // 토큰 만료 전에 자동 갱신 설정
         setupTokenRenewal();
+        
+        // 로그인 상태 이벤트 발생
+        dispatchLoginEvent(true);
         
         return true;
     } catch (error) {
@@ -205,10 +216,11 @@ async function logout() {
             method: 'POST',
             credentials: 'include'
         });
+        
+        // 로그인 상태 이벤트 발생
+        dispatchLoginEvent(false);
     } catch (error) {
         console.error('로그아웃 중 오류:', error);
-    } finally {
-        window.location.href = '/page/auth';
     }
 }
 
@@ -216,10 +228,12 @@ async function logout() {
  * 인증이 필요한 API 요청 래퍼 함수
  */
 async function fetchWithAuth(url, options = {}) {
-    // 토큰이 만료되었으면 갱신 시도
-    if (isTokenExpired()) {
-        const refreshed = await refreshAccessToken();
-        if (!refreshed) {
+    // 인증 초기화가 필요한 경우
+    if (!isAuthInitialized || !accessToken || isTokenExpired()) {
+        const initialized = await initializeAuth();
+        if (!initialized || !accessToken) {
+            // 로그인 페이지로 리다이렉트
+            window.location.href = `/page/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
             return null;
         }
     }
@@ -241,6 +255,8 @@ async function fetchWithAuth(url, options = {}) {
         if (response.status === 401) {
             const refreshed = await refreshAccessToken();
             if (!refreshed) {
+                // 로그인 페이지로 리다이렉트
+                window.location.href = `/page/auth?redirect=${encodeURIComponent(window.location.pathname)}`;
                 return null;
             }
             
@@ -253,4 +269,4 @@ async function fetchWithAuth(url, options = {}) {
         console.error('API 요청 중 오류:', error);
         return null;
     }
-}
+} 
