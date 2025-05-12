@@ -27,6 +27,7 @@ function deleteCookie(name) {
 // 임시 액세스 토큰 쿠키 처리
 function handleTempAccessToken() {
     const tempToken = getCookie('temp_access_token');
+    
     if (tempToken) {
         // 메모리에 저장
         auth.accessToken = tempToken;
@@ -49,6 +50,8 @@ function handleTempAccessToken() {
 
 /* ───────── 페이지 로드 시점 ───────── */
 document.addEventListener('DOMContentLoaded', () => {
+    // 현재 쿠키 상태 확인
+    
     // 먼저 임시 토큰 쿠키 확인
     if (handleTempAccessToken()) {
         return; // 임시 토큰이 있으면 나머지 초기화 과정 스킵
@@ -76,11 +79,14 @@ async function handleKakaoCallback(code) {
             body:JSON.stringify({userType:'KAKAO'}),
             credentials:'include'
         });
-        if (!r.ok) throw new Error();
+        if (!r.ok) {
+            throw new Error();
+        }
         const d = await r.json();
         auth.accessToken     = d.accessToken;
         auth.tokenExpireTime = new Date(d.accessTokenExpireTime).getTime();
         auth.isInitialized   = true;
+        
         setupTokenRenewal();
         dispatchLoginEvent(true);
 
@@ -90,27 +96,44 @@ async function handleKakaoCallback(code) {
 
         const redirect = url.searchParams.get('redirect');
         if (redirect) window.location.replace(redirect);
-    } catch {
+    } catch (error) {
         window.location.href = '/page/auth';
     }
 }
 
 /* ───────── 초기화 & 토큰 교환 ───────── */
 async function initializeAuth() {
-    if (auth.isInitialized && auth.accessToken && !isTokenExpired()) return true;
+    if (auth.isInitialized && auth.accessToken && !isTokenExpired()) {
+        return true;
+    }
+    
     try {
-        const r = await fetch('/api/token/refresh',{credentials:'include'});
-        if (!r.ok) { auth.isInitialized=true; dispatchLoginEvent(false); return false; }
+        const r = await fetch('/api/token/refresh',{
+            method: 'GET',
+            credentials:'include'
+        });
+        
+        if (!r.ok) { 
+            auth.isInitialized=true; 
+            dispatchLoginEvent(false);
+            return false; 
+        }
+        
         const d = await r.json();
+        
         auth.accessToken     = d.accessToken;
         auth.tokenExpireTime = new Date(d.accessTokenExpireTime).getTime();
         auth.isInitialized   = true;
+        
         setupTokenRenewal();
         dispatchLoginEvent(true);
+        
         if (typeof fetchUserInfo==='function') fetchUserInfo();
         return true;
-    } catch {
-        auth.isInitialized = true; dispatchLoginEvent(false); return false;
+    } catch (error) {
+        auth.isInitialized = true; 
+        dispatchLoginEvent(false); 
+        return false;
     }
 }
 
@@ -118,41 +141,92 @@ async function initializeAuth() {
 function dispatchLoginEvent(isLoggedIn){
     document.dispatchEvent(new CustomEvent('authStateChanged',{detail:{isLoggedIn}}));
 }
+
 function setupTokenRenewal(){
     if(!auth.tokenExpireTime) return;
     const delay=Math.max(0, auth.tokenExpireTime-Date.now()-5*60*1000);
     setTimeout(refreshAccessToken, delay);
 }
-function getAuthHeader(){ return auth.accessToken?{Authorization:`Bearer ${auth.accessToken}`} : {}; }
-function isTokenExpired(){ return !auth.tokenExpireTime || Date.now()>auth.tokenExpireTime; }
-function isLoggedIn(){ return !!auth.accessToken && !isTokenExpired(); }
+
+function getAuthHeader(){ 
+    return auth.accessToken?{Authorization:`Bearer ${auth.accessToken}`} : {}; 
+}
+
+function isTokenExpired(){ 
+    return !auth.tokenExpireTime || Date.now()>auth.tokenExpireTime;
+}
+
+function isLoggedIn(){ 
+    return !!auth.accessToken && !isTokenExpired();
+}
 
 /* ───────── 토큰 갱신 ───────── */
 async function refreshAccessToken(){
     try{
         const r=await fetch('/api/token/refresh',{credentials:'include'});
-        if(!r.ok) throw new Error();
+        if(!r.ok) {
+            throw new Error();
+        }
         const d=await r.json();
+        
         auth.accessToken=d.accessToken;
         auth.tokenExpireTime=new Date(d.accessTokenExpireTime).getTime();
         setupTokenRenewal();
         dispatchLoginEvent(true);
         return true;
-    }catch{ logout(); return false; }
+    }catch(error){ 
+        logout(); 
+        return false; 
+    }
 }
 
 /* ───────── 로그아웃 ───────── */
 async function logout(){
-    auth.accessToken=null; auth.tokenExpireTime=null;
-    try{ await fetch('/api/logout',{method:'POST',credentials:'include'}); }
-    finally{ dispatchLoginEvent(false); window.location.href='/page/auth'; }
+    // 로컬 상태 초기화
+    auth.accessToken = null;
+    auth.tokenExpireTime = null;
+    
+    try {
+        // 1. 사용자 로그아웃 API 호출 - 리프레시 토큰 만료 처리
+        if (auth.isInitialized) {
+            try {
+                await fetch('/api/user/logout', {
+                    method: 'POST',
+                    headers: getAuthHeader(),
+                    credentials: 'include'
+                });
+                console.log('사용자 로그아웃 API 호출 성공');
+            } catch (err) {
+                console.error('사용자 로그아웃 API 호출 실패:', err);
+            }
+        }
+        
+        // 2. 쿠키 기반 로그아웃 API 호출 - 쿠키 삭제
+        await fetch('/api/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        console.log('쿠키 로그아웃 API 호출 성공');
+    } catch (err) {
+        console.error('로그아웃 중 오류:', err);
+    } finally {
+        // 상태 업데이트 및 로그인 페이지로 리디렉션
+        auth.isInitialized = true;
+        dispatchLoginEvent(false);
+        console.log('로그아웃 완료, 로그인 페이지로 이동');
+        window.location.href = '/page/auth';
+    }
 }
+
+// window 객체에 등록
+window.logout = logout;
 
 /* ───────── 인증 요청 래퍼 ───────── */
 async function fetchWithAuth(url,opt={}){
     if(!auth.isInitialized||!auth.accessToken||isTokenExpired()){
         const ok=await initializeAuth(); if(!ok) return null;
     }
+    
     const res=await fetch(url,{...opt,headers:{...opt.headers,...getAuthHeader()},credentials:'include'});
     if(res.status===401){
         const ok=await refreshAccessToken(); if(!ok) return null;

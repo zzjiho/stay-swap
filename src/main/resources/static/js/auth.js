@@ -195,12 +195,19 @@ async function refreshAccessToken() {
  * 로그아웃 함수
  */
 async function logout() {
+    console.log('여기타냐');
     // 메모리의 토큰 삭제
     accessToken = null;
     tokenExpireTime = null;
     
     try {
         // 서버에 로그아웃 요청 (쿠키 삭제)
+        await fetch('/api/user/logout', {
+            method: 'POST',
+            credentials: 'include'
+        });
+        
+        // 쿠키 기반 로그아웃 API도 호출
         await fetch('/api/logout', {
             method: 'POST',
             credentials: 'include'
@@ -211,6 +218,9 @@ async function logout() {
         window.location.href = '/page/auth';
     }
 }
+
+// 전역에서 접근할 수 있도록 window 객체에 등록
+window.authLogout = logout;
 
 /**
  * 인증이 필요한 API 요청 래퍼 함수

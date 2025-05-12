@@ -11,6 +11,18 @@
 
     <!-- Firebase / Auth 공통 -->
     <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Auth 초기화 미리 생성 -->
+    <script>
+        // auth 객체 미리 초기화
+        window.auth = window.auth || {
+            accessToken: null,
+            tokenExpireTime: null,
+            isInitialized: false
+        };
+    </script>
+    
+    <!-- Auth 공통 스크립트 -->
     <script th:src="@{/js/auth-common.js}"></script>
 </head>
 
@@ -35,7 +47,7 @@
                         <a href="#" class="avatar-link" id="profile-dropdown-toggle">
                             <div class="avatar">
                                 <img id="profile-image" src="/images/profile.png" alt="프로필" />
-                                <span id="profile-initial">사</span>
+<!--                                <span id="profile-initial">사</span>-->
                             </div>
                         </a>
 
@@ -115,12 +127,26 @@
 
     /* ③ 사용자 정보 조회 */
     async function fetchUserInfo() {
-        if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+        // isLoggedIn 함수가 없으면 직접 확인
+        const isUserLoggedIn = (typeof isLoggedIn === 'function') 
+            ? isLoggedIn() 
+            : (!!window.auth?.accessToken);
+        
+        if (isUserLoggedIn) {
             toggleHeaderUI(true);          // accessToken만 있어도 바로 로그인 UI
             try {
-                const r = await fetchWithAuth('/api/user/me');
+                // fetchWithAuth 함수가 없으면 직접 구현
+                const r = (typeof fetchWithAuth === 'function')
+                    ? await fetchWithAuth('/api/user/me')
+                    : await fetch('/api/user/me', {
+                          headers: { Authorization: `Bearer ${window.auth.accessToken}` },
+                          credentials: 'include'
+                      });
+                
                 if (r && r.ok) fillProfile(await r.json());
-            } catch (_) { /* 실패해도 상관없음 */ }
+            } catch (error) { 
+                /* 실패해도 상관없음 */ 
+            }
             return;
         }
         toggleHeaderUI(false);             // 토큰 없으면 로그인 버튼
@@ -152,11 +178,62 @@
 </script>
 
 <script>
+    // 페이지 로드 완료 후 추가 확인 (백업)
     document.addEventListener('DOMContentLoaded', () => {
         /* accessToken 있으면 → 로그인 상태로 간주 */
         if (window.auth?.accessToken) {
-            document.getElementById('auth-buttons').style.display   = 'none';
-            document.getElementById('user-profile').style.display   = 'block';
+            toggleHeaderUI(true);
+        } else {
+            // 리프레시 토큰 쿠키 확인 함수
+            function getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+            
+            // 리프레시 토큰이 있을 때 수동으로 갱신 시도
+            const refreshToken = getCookie('refreshToken');
+            if (refreshToken) {
+                if (typeof initializeAuth === 'function') {
+                    setTimeout(async () => {
+                        try {
+                            const success = await initializeAuth();
+                            if (success) {
+                                toggleHeaderUI(true);
+                            }
+                        } catch (error) {
+                            // 오류 처리
+                        }
+                    }, 500);
+                } else {
+                    setTimeout(async () => {
+                        try {
+                            const r = await fetch('/api/token/refresh', {
+                                method: 'GET',
+                                credentials: 'include'
+                            });
+                            
+                            if (r.ok) {
+                                const data = await r.json();
+                                
+                                window.auth.accessToken = data.accessToken;
+                                window.auth.tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
+                                window.auth.isInitialized = true;
+                                
+                                toggleHeaderUI(true);
+                                
+                                // 인증 상태 변경 이벤트 발생
+                                document.dispatchEvent(new CustomEvent('authStateChanged', {
+                                    detail: { isLoggedIn: true }
+                                }));
+                            }
+                        } catch (error) {
+                            // 오류 처리
+                        }
+                    }, 500);
+                }
+            }
         }
     });
 </script>
