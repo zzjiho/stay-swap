@@ -11,11 +11,13 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.util.Arrays;
 
 
 @RestController
@@ -26,6 +28,7 @@ public class OauthLoginController {
 
     private final OauthValidator oauthValidator;
     private final OauthLoginService oauthLoginService;
+    private final Environment environment;
 
     @Tag(name = "authentication")
     @Operation(summary = "소셜 로그인 API", description = "소셜 로그인 API")
@@ -52,17 +55,18 @@ public class OauthLoginController {
         refreshTokenCookie.setMaxAge((int) maxAge);
         
         // HTTPS 환경에서는 Secure 플래그 활성화 (프로덕션 환경에서 사용)
-        // refreshTokenCookie.setSecure(true);
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean isProduction = Arrays.stream(activeProfiles)
+                .anyMatch(profile -> profile.equals("prod") || profile.equals("production"));
+        
+        if (isProduction) {
+            refreshTokenCookie.setSecure(true);
+            // XSS 공격 방지를 위한 추가 설정
+            refreshTokenCookie.setAttribute("SameSite", "Lax");
+        }
         
         httpServletResponse.addCookie(refreshTokenCookie);
 
-        // 응답에서 refreshToken 제외 (쿠키로 전달했으므로)
-        OauthLoginDto.Response responseWithoutRefreshToken = OauthLoginDto.Response.builder()
-                .grantType(jwtTokenResponseDto.getGrantType())
-                .accessToken(jwtTokenResponseDto.getAccessToken())
-                .accessTokenExpireTime(jwtTokenResponseDto.getAccessTokenExpireTime())
-                .build();
-
-        return ResponseEntity.ok(responseWithoutRefreshToken);
+        return ResponseEntity.ok(jwtTokenResponseDto);
     }
 }

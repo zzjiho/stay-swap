@@ -4,12 +4,14 @@ import com.stayswap.global.interceptor.AuthenticationInterceptor;
 import com.stayswap.resolver.UserInfoArgumentResolver;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -18,11 +20,32 @@ public class WebConfig implements WebMvcConfigurer {
 
     private final AuthenticationInterceptor authenticationInterceptor;
     private final UserInfoArgumentResolver userInfoArgumentResolver;
+    private final Environment environment;
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("*") //허용할 url
-                .allowedOrigins("*") // *: 모든 origin 허용
+        // 프로필에 따라 허용할 도메인 결정
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean isProduction = Arrays.stream(activeProfiles)
+                .anyMatch(profile -> profile.equals("prod") || profile.equals("production"));
+        
+        String[] allowedOrigins;
+        if (isProduction) {
+            allowedOrigins = new String[]{
+                    "https://stayswap.com",
+                    "https://www.stayswap.com"
+            };
+        } else {
+            // 개발 환경에서는 로컬호스트와 개발 서버 허용
+            allowedOrigins = new String[]{
+                    "http://localhost:8080",
+                    "http://127.0.0.1:8080",
+                    "https://dev.stayswap.com"
+            };
+        }
+        
+        registry.addMapping("/**") // 모든 경로에 대해 CORS 설정 적용
+                .allowedOrigins(allowedOrigins)
                 .allowedMethods(
                         HttpMethod.GET.name(),
                         HttpMethod.POST.name(),
@@ -31,7 +54,9 @@ public class WebConfig implements WebMvcConfigurer {
                         HttpMethod.DELETE.name(),
                         HttpMethod.OPTIONS.name()
                 )
-                .maxAge(3600);
+                .allowedHeaders("*") // 모든 헤더 허용
+                .allowCredentials(true) // 인증 정보 허용
+                .maxAge(3600); // 1시간 동안 preflight 요청 캐시
     }
 
     @Override
@@ -43,7 +68,6 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns( // 인증이 필요 없는 url
                         "/api/oauth/login",
                         "/api/logout",
-                        "/api/access-token/issue",
                         "/api/token/refresh",
                         "/v3/api-docs/**",
                         "/api/health-check");

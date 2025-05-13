@@ -4,7 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
         window.auth = {
             accessToken: null,
             tokenExpireTime: null,
-            isInitialized: false
+            isInitialized: false,
+            refreshInProgress: false
         };
     }
     
@@ -20,7 +21,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 return !window.auth.tokenExpireTime || new Date().getTime() > window.auth.tokenExpireTime;
             };
         }
+        
+        // 토큰 만료 시간이 1분 이내인지 확인하는 함수
+        if (typeof window.isTokenExpiringInOneMinute !== 'function') {
+            window.isTokenExpiringInOneMinute = function() {
+                if (!window.auth.tokenExpireTime) return false;
+                const oneMinuteInMs = 60 * 1000;
+                const timeLeft = window.auth.tokenExpireTime - new Date().getTime();
+                return timeLeft > 0 && timeLeft < oneMinuteInMs;
+            };
+        }
     }
+    
+    // URL 파라미터에서 인증 토큰 확인
+    checkAuthFromUrlParams();
 
     // 현재 페이지 활성화
     highlightCurrentPage();
@@ -85,28 +99,65 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 수동으로 refreshToken 확인 및 인증 초기화
-    manualInitAuth();
+    // URL 파라미터에서 토큰을 가져오지 않았다면 refreshToken을 확인
+    if (!window.auth.accessToken) {
+        // 수동으로 refreshToken 확인 및 인증 초기화
+        manualInitAuth();
+    }
     
     // 로그인 상태에 따라 UI 업데이트
     updateUIBasedOnAuthState();
+    
+    // 토큰 자동 갱신 타이머 설정
+    setupTokenRefreshTimer();
 });
+
+// URL 파라미터에서 인증 정보 확인
+function checkAuthFromUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    // auth_success 파라미터가 있는지 확인
+    if (urlParams.get('auth_success') === 'true') {
+        const token = urlParams.get('token');
+        const expireTime = urlParams.get('expire');
+        
+        if (token && expireTime) {
+            // 메모리에 토큰 정보 저장
+            window.auth.accessToken = token;
+            window.auth.tokenExpireTime = parseInt(expireTime);
+            window.auth.isInitialized = true;
+            
+            console.log('URL에서 인증 정보를 추출했습니다. 만료 시간:', new Date(window.auth.tokenExpireTime).toLocaleString());
+            
+            // 인증 이벤트 발생
+            document.dispatchEvent(new CustomEvent('authStateChanged', {
+                detail: { isLoggedIn: true }
+            }));
+            
+            // URL에서 인증 파라미터 제거 (히스토리 조작)
+            const cleanUrl = window.location.protocol + '//' + 
+                            window.location.host + 
+                            window.location.pathname;
+            window.history.replaceState({}, document.title, cleanUrl);
+        }
+    }
+}
 
 // 수동으로 인증 초기화
 async function manualInitAuth() {
-    // 리프레시 토큰이 있는지 확인
-    function getCookie(name) {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop().split(';').shift();
-        return null;
+    // 이미 refreshToken을 확인 중이면 중복 실행 방지
+    if (window.auth.refreshInProgress) {
+        return false;
     }
     
-    // 토큰 갱신 시도
+    window.auth.refreshInProgress = true;
+    
     try {
         const response = await fetch('/api/token/refresh', {
             method: 'GET',
-            credentials: 'include' // 모든 쿠키 포함
+            headers: { 'Cache-Control': 'no-cache' },
+            credentials: 'include',
+            cache: 'no-store'
         });
         
         if (response.ok) {
@@ -128,13 +179,84 @@ async function manualInitAuth() {
                 }));
             }
             
+            window.auth.refreshInProgress = false;
             return true;
         }
     } catch (error) {
         console.error('토큰 갱신 중 오류:', error);
     }
     
+    window.auth.refreshInProgress = false;
     return false;
+}
+
+// 토큰이 곧 만료되는지 확인하고 필요하면 갱신하는 타이머 설정
+function setupTokenRefreshTimer() {
+    // 10초마다 토큰 상태 확인
+    const tokenCheckInterval = setInterval(async function() {
+        // 로그인 상태가 아니면 처리할 필요 없음
+        if (!window.auth?.accessToken) {
+            return;
+        }
+        
+        // 토큰이 만료 1분 전이면 갱신
+        if (isTokenExpiringInOneMinute()) {
+            await refreshAccessToken();
+        } 
+        // 토큰이 이미 만료되었다면 강제 갱신
+        else if (isTokenExpired()) {
+            const success = await refreshAccessToken();
+            if (!success) {
+                // 갱신 실패 시 로그인 페이지로 리디렉션 또는 적절한 처리
+                console.log('토큰 갱신 실패, 로그인 상태 초기화');
+                window.auth.accessToken = null;
+                window.auth.tokenExpireTime = null;
+                updateUIBasedOnAuthState();
+            }
+        }
+    }, 10000); // 10초마다 체크
+
+    // 페이지 언로드 시 타이머 정리
+    window.addEventListener('beforeunload', function() {
+        clearInterval(tokenCheckInterval);
+    });
+}
+
+// 토큰 갱신 함수
+async function refreshAccessToken() {
+    // 이미 갱신 중이면 중복 실행 방지
+    if (window.auth.refreshInProgress) {
+        return false;
+    }
+    
+    window.auth.refreshInProgress = true;
+    
+    try {
+        const response = await fetch('/api/token/refresh', {
+            method: 'GET',
+            headers: { 'Cache-Control': 'no-cache' },
+            credentials: 'include',
+            cache: 'no-store'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            window.auth.accessToken = data.accessToken;
+            window.auth.tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
+            
+            console.log('토큰 갱신 성공. 만료 시간:', new Date(window.auth.tokenExpireTime).toLocaleString());
+            
+            window.auth.refreshInProgress = false;
+            return true;
+        }
+        
+        throw new Error('토큰 갱신 실패');
+    } catch (error) {
+        console.error('토큰 갱신 중 오류:', error);
+        window.auth.refreshInProgress = false;
+        return false;
+    }
 }
 
 // 현재 페이지 활성화
@@ -190,46 +312,3 @@ setTimeout(function() {
         updateUIBasedOnAuthState();
     }
 }, 1000);
-
-// 5초마다 인증 상태를 확인하고 UI 업데이트
-setInterval(function() {
-    fetch('/api/token/refresh', {
-        method: 'GET',
-        headers: { 'Cache-Control': 'no-cache' },
-        credentials: 'include',
-        cache: 'no-store'
-    })
-    .then(res => {
-        if (res.ok) return res.json();
-        throw new Error('토큰 갱신 실패');
-    })
-    .then(data => {
-        // 이미 로그인 상태라면 UI 변경 안함
-        if (window.auth?.accessToken) return;
-        
-        // 액세스 토큰 설정
-        window.auth.accessToken = data.accessToken;
-        window.auth.tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-        window.auth.isInitialized = true;
-        
-        // UI 업데이트
-        const userProfile = document.getElementById('user-profile');
-        const authButtons = document.getElementById('auth-buttons');
-        
-        if (userProfile) userProfile.style.display = 'block';
-        if (authButtons) authButtons.style.display = 'none';
-    })
-    .catch(err => {
-        // 오류 발생 시 로그아웃 상태로 간주하고 UI 업데이트
-        if (window.auth?.accessToken) {
-            window.auth.accessToken = null;
-            window.auth.tokenExpireTime = null;
-            
-            const userProfile = document.getElementById('user-profile');
-            const authButtons = document.getElementById('auth-buttons');
-            
-            if (userProfile) userProfile.style.display = 'none';
-            if (authButtons) authButtons.style.display = 'flex';
-        }
-    });
-}, 5000);

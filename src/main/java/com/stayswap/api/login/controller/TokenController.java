@@ -14,9 +14,12 @@ import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Arrays;
 
 @Tag(name = "authentication", description = "로그인/로그아웃/토큰재발급 API")
 @RestController
@@ -27,6 +30,7 @@ public class TokenController {
     private final TokenService tokenService;
     private final TokenManager tokenManager;
     private final UserRepository userRepository;
+    private final Environment environment;
 
 
     @Tag(name = "authentication")
@@ -94,8 +98,18 @@ public class TokenController {
             // 쿠키 만료 시간 설정
             long maxAge = (tokenResponse.getRefreshTokenExpireTime().getTime() - System.currentTimeMillis()) / 1000;
             refreshTokenCookie.setMaxAge((int) maxAge);
+            
             // HTTPS 환경에서는 Secure 플래그 활성화 (프로덕션 환경에서 사용)
-            // refreshTokenCookie.setSecure(true);
+            String[] activeProfiles = environment.getActiveProfiles();
+            boolean isProduction = Arrays.stream(activeProfiles)
+                    .anyMatch(profile -> profile.equals("prod") || profile.equals("production"));
+            
+            if (isProduction) {
+                refreshTokenCookie.setSecure(true);
+                // XSS 공격 방지를 위한 추가 설정
+                refreshTokenCookie.setAttribute("SameSite", "Lax");
+            }
+            
             response.addCookie(refreshTokenCookie);
             
             // 응답에서는 refreshToken 제외
@@ -117,6 +131,18 @@ public class TokenController {
         Cookie cookie = new Cookie("refreshToken", null);
         cookie.setMaxAge(0); // 즉시 만료
         cookie.setPath("/");
+        
+        // HTTPS 환경에서는 Secure 플래그 활성화 (프로덕션 환경에서 사용)
+        String[] activeProfiles = environment.getActiveProfiles();
+        boolean isProduction = Arrays.stream(activeProfiles)
+                .anyMatch(profile -> profile.equals("prod") || profile.equals("production"));
+        
+        if (isProduction) {
+            cookie.setSecure(true);
+            // XSS 공격 방지를 위한 추가 설정
+            cookie.setAttribute("SameSite", "Lax");
+        }
+        
         response.addCookie(cookie);
         
         return ResponseEntity.ok().build();

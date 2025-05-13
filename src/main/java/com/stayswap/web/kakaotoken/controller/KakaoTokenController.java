@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,6 +23,9 @@ import com.stayswap.api.login.service.OauthLoginService;
 import com.stayswap.domains.user.constant.UserType;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 @Slf4j
 @Controller
@@ -30,8 +34,8 @@ public class KakaoTokenController {
 
     private final EnvironmentUtil env;
     private final KakaoTokenClient kakaoTokenClient;
-    @Autowired
-    private OauthLoginService oauthLoginService;
+    private final OauthLoginService oauthLoginService;
+    private final Environment environment;
 
     @Value("${kakao.client.id}")
     private String clientId;
@@ -103,24 +107,34 @@ public class KakaoTokenController {
                     UserType.KAKAO
             );
             
-            // JWT 토큰을 쿠키에 저장
+            // JWT refreshToken을 쿠키에 저장
             Cookie refreshTokenCookie = new Cookie("refreshToken", jwtToken.getRefreshToken());
             refreshTokenCookie.setHttpOnly(true);
             refreshTokenCookie.setPath("/");
             // 쿠키 만료 시간 설정
             long maxAge = (jwtToken.getRefreshTokenExpireTime().getTime() - System.currentTimeMillis()) / 1000;
             refreshTokenCookie.setMaxAge((int) maxAge);
+            
+            // HTTPS 환경에서는 Secure 플래그 활성화 (프로덕션 환경에서 사용)
+            String[] activeProfiles = environment.getActiveProfiles();
+            boolean isProduction = Arrays.stream(activeProfiles)
+                    .anyMatch(profile -> profile.equals("prod") || profile.equals("production"));
+            
+            if (isProduction) {
+                refreshTokenCookie.setSecure(true);
+                // XSS 공격 방지를 위한 추가 설정
+                refreshTokenCookie.setAttribute("SameSite", "Lax");
+            }
+            
             response.addCookie(refreshTokenCookie);
             
-            // 세션 스토리지를 위한 임시 쿠키 생성 (JavaScript로 읽을 수 있게 HttpOnly 아님)
-            Cookie tempAccessTokenCookie = new Cookie("temp_access_token", jwtToken.getAccessToken());
-            tempAccessTokenCookie.setHttpOnly(false);
-            tempAccessTokenCookie.setPath("/");
-            tempAccessTokenCookie.setMaxAge(60); // 1분만 유효 (JavaScript에서 읽은 후 삭제됨)
-            response.addCookie(tempAccessTokenCookie);
+            // 액세스 토큰 일회성으로 사용 후 메모리에 저장
+            String redirectUrl = "/?auth_success=true&token=" +
+                URLEncoder.encode(jwtToken.getAccessToken(), StandardCharsets.UTF_8) + 
+                "&expire=" + jwtToken.getAccessTokenExpireTime().getTime();
             
-            // 액세스 토큰 없이 홈페이지로 리다이렉트
-            response.sendRedirect("/");
+            // 홈페이지로 리다이렉트 (토큰은 URL 파라미터로 전달)
+            response.sendRedirect(redirectUrl);
             
         } catch (Exception e) {
             log.error("카카오 로그인 처리 중 오류 발생", e);

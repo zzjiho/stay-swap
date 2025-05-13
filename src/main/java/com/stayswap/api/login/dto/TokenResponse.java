@@ -1,6 +1,8 @@
 package com.stayswap.api.login.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.stayswap.util.TokenMaskingUtil;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,5 +40,21 @@ public class TokenResponse {
         this.refreshTokenExpireTime = refreshTokenExpireTime;
     }
 
-
+    /**
+     * JSON 직렬화 시 accessToken을 마스킹 처리
+     * @return 마스킹된 accessToken
+     */
+    @JsonGetter("accessToken")
+    public String getMaskedAccessToken() {
+        return TokenMaskingUtil.maskAccessToken(accessToken);
+    }
+    
+    /**
+     * JSON 직렬화 시 refreshToken을 마스킹 처리
+     * @return 마스킹된 refreshToken
+     */
+    @JsonGetter("refreshToken")
+    public String getMaskedRefreshToken() {
+        return TokenMaskingUtil.maskRefreshToken(refreshToken);
+    }
 }

@@ -8,7 +8,10 @@ import com.stayswap.jwt.dto.JwtTokenDto;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.SignatureException;
+import io.jsonwebtoken.UnsupportedJwtException;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -108,10 +111,19 @@ public class TokenManager {
                     .getBody();
 
         } catch (ExpiredJwtException e) {
-            log.info("token 만료", e);
+            log.info("토큰 만료됨: {}", e.getMessage());
             throw new AuthenticationException(TOKEN_EXPIRED);
+        } catch (SignatureException e) {
+            log.info("잘못된 JWT 서명: {}", e.getMessage());
+            throw new AuthenticationException(NOT_VALID_TOKEN);
+        } catch (MalformedJwtException e) {
+            log.info("잘못된 JWT 토큰 형식: {}", e.getMessage());
+            throw new AuthenticationException(NOT_VALID_TOKEN);
+        } catch (UnsupportedJwtException e) {
+            log.info("지원되지 않는 JWT 토큰: {}", e.getMessage());
+            throw new AuthenticationException(NOT_VALID_TOKEN);
         } catch (Exception e) {
-            log.info("유효하지 않은 token", e);
+            log.info("유효하지 않은 토큰: {}", e.getMessage());
             throw new AuthenticationException(NOT_VALID_TOKEN);
         }
     }
@@ -128,43 +140,23 @@ public class TokenManager {
                         .parseClaimsJws(token)
                         .getBody();
 
+        } catch (ExpiredJwtException e) {
+            log.info("토큰 만료됨: {}", e.getMessage());
+            // 만료된 토큰이어도 클레임 정보는 추출
+            return e.getClaims();
+        } catch (SignatureException e) {
+            log.info("잘못된 JWT 서명: {}", e.getMessage());
+            throw new AuthenticationException(NOT_VALID_TOKEN);
+        } catch (MalformedJwtException e) {
+            log.info("잘못된 JWT 토큰 형식: {}", e.getMessage());
+            throw new AuthenticationException(NOT_VALID_TOKEN);
+        } catch (UnsupportedJwtException e) {
+            log.info("지원되지 않는 JWT 토큰: {}", e.getMessage());
+            throw new AuthenticationException(NOT_VALID_TOKEN);
         } catch (Exception e) {
-            log.info("유효하지 않은 token", e);
+            log.info("토큰 클레임 추출 중 오류: {}", e.getMessage());
             throw new AuthenticationException(NOT_VALID_TOKEN);
         }
         return claims;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 }
