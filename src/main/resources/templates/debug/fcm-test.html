@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FCM 테스트 페이지</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .logs {
+            height: 250px;
+            overflow-y: auto;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .warn { color: orange; }
+        .info { color: blue; }
+        button {
+            padding: 8px 15px;
+            background: #4a86e8;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+            margin-bottom: 5px;
+        }
+        button:hover {
+            background: #3a76d8;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <h1>FCM 테스트 페이지</h1>
+    
+    <div class="card">
+        <h2>스크립트 로드 상태</h2>
+        <div id="script-status">확인 중...</div>
+        <button id="check-scripts">스크립트 확인</button>
+    </div>
+    
+    <div class="card">
+        <h2>인증 상태</h2>
+        <div id="auth-status">확인 중...</div>
+        <button id="check-auth">인증 확인</button>
+    </div>
+    
+    <div class="card">
+        <h2>Firebase 상태</h2>
+        <div id="firebase-status">확인 중...</div>
+        <button id="check-firebase">Firebase 확인</button>
+        <button id="init-firebase">Firebase 초기화</button>
+    </div>
+    
+    <div class="card">
+        <h2>알림 권한</h2>
+        <div id="permission-status">확인 중...</div>
+        <button id="check-permission">권한 확인</button>
+        <button id="request-permission">권한 요청</button>
+    </div>
+    
+    <div class="card">
+        <h2>FCM 토큰</h2>
+        <div id="token-status">확인 중...</div>
+        <div id="token-value" style="margin-top: 10px; font-size: 13px; word-break: break-all;"></div>
+        <button id="get-token">토큰 가져오기</button>
+        <button id="register-token">토큰 등록</button>
+    </div>
+    
+    <div class="card">
+        <h2>로그</h2>
+        <div class="logs" id="logs"></div>
+        <button id="clear-logs">로그 지우기</button>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
+    
+    <script th:inline="javascript">
+        // 전역 설정 객체
+        window.auth = window.auth || {
+            accessToken: null,
+            tokenExpireTime: null,
+            isInitialized: false
+        };
+        
+        window.fcmDebug = {
+            firebaseInitialized: false,
+            scriptLoaded: false,
+            initialized: false,
+            errors: []
+        };
+        
+        // 로그 기록
+        function log(message, type = 'info') {
+            const logsElement = document.getElementById('logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = type;
+            logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            logsElement.appendChild(logEntry);
+            logsElement.scrollTop = logsElement.scrollHeight;
+            console.log(`[FCM-TEST] ${message}`);
+        }
+        
+        // 스크립트 로드 확인
+        function checkScripts() {
+            log('스크립트 로드 상태 확인');
+            const status = {
+                jquery: typeof jQuery !== 'undefined',
+                firebase: typeof firebase !== 'undefined',
+                messaging: typeof firebase !== 'undefined' && typeof firebase.messaging === 'function',
+                initFCM: typeof initFCM === 'function'
+            };
+            
+            const statusElement = document.getElementById('script-status');
+            let html = '<ul>';
+            html += `<li>jQuery: ${status.jquery ? '✅ 로드됨' : '❌ 로드되지 않음'}</li>`;
+            html += `<li>Firebase: ${status.firebase ? '✅ 로드됨' : '❌ 로드되지 않음'}</li>`;
+            html += `<li>Firebase Messaging: ${status.messaging ? '✅ 로드됨' : '❌ 로드되지 않음'}</li>`;
+            html += `<li>initFCM 함수: ${status.initFCM ? '✅ 존재함' : '❌ 존재하지 않음'}</li>`;
+            html += '</ul>';
+            
+            statusElement.innerHTML = html;
+            
+            return status;
+        }
+        
+        // 인증 상태 확인
+        function checkAuth() {
+            log('인증 상태 확인');
+            
+            // 로컬 스토리지에서 토큰 확인
+            const localToken = localStorage.getItem('accessToken');
+            const authToken = localStorage.getItem('auth_token');
+            const sessionToken = sessionStorage.getItem('auth_token');
+            const memoryToken = window.auth && window.auth.accessToken;
+            
+            // 실제 사용 가능한 토큰 값 (단순히 존재하는지만 확인하는 것이 아니라 실제 값을 가져옴)
+            const actualToken = memoryToken || localToken || authToken || sessionToken;
+            const isLoggedIn = !!actualToken;
+            
+            const statusElement = document.getElementById('auth-status');
+            let html = `<div>${isLoggedIn ? '✅ 로그인됨' : '❌ 로그인되지 않음'}</div>`;
+            
+            // 실제 토큰 값이 있으면 표시 (개발 목적)
+            if (actualToken) {
+                html += `<div style="color:green">토큰: ${actualToken.substring(0, 10)}...</div>`;
+            }
+            
+            html += '<ul>';
+            html += `<li>메모리 토큰: ${memoryToken ? '✅ 있음' : '❌ 없음'}</li>`;
+            html += `<li>localStorage(accessToken): ${localToken ? '✅ 있음' : '❌ 없음'}</li>`;
+            html += `<li>localStorage(auth_token): ${authToken ? '✅ 있음' : '❌ 없음'}</li>`;
+            html += `<li>sessionStorage(auth_token): ${sessionToken ? '✅ 있음' : '❌ 없음'}</li>`;
+            html += '</ul>';
+            
+            statusElement.innerHTML = html;
+            
+            return {
+                isLoggedIn,
+                actualToken,
+                tokens: {
+                    memory: memoryToken,
+                    local: localToken,
+                    auth: authToken,
+                    session: sessionToken
+                }
+            };
+        }
+        
+        // Firebase 상태 확인
+        function checkFirebase() {
+            log('Firebase 상태 확인');
+            
+            // Firebase 로드 확인
+            const isLoaded = typeof firebase !== 'undefined';
+            let isInitialized = false;
+            let hasApp = false;
+            
+            if (isLoaded) {
+                try {
+                    // 앱 초기화 여부 확인
+                    const app = firebase.app();
+                    isInitialized = true;
+                    hasApp = true;
+                } catch (e) {
+                    isInitialized = false;
+                }
+            }
+            
+            // VAPID 키 확인
+            const hasVapidKey = !!window.vapidKey;
+            
+            const statusElement = document.getElementById('firebase-status');
+            let html = `<div>${isInitialized ? '✅ 초기화됨' : '❌ 초기화되지 않음'}</div>`;
+            html += '<ul>';
+            html += `<li>Firebase SDK: ${isLoaded ? '✅ 로드됨' : '❌ 로드되지 않음'}</li>`;
+            html += `<li>앱 초기화: ${hasApp ? '✅ 완료' : '❌ 안됨'}</li>`;
+            html += `<li>VAPID 키: ${hasVapidKey ? '✅ 설정됨' : '❌ 설정되지 않음'}</li>`;
+            html += '</ul>';
+            
+            if (window.fcmDebug && window.fcmDebug.errors.length > 0) {
+                html += '<p><strong>오류 내역:</strong></p><ul>';
+                window.fcmDebug.errors.forEach(error => {
+                    html += `<li style="color:red">${error}</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            statusElement.innerHTML = html;
+            
+            return {
+                isLoaded,
+                isInitialized,
+                hasApp,
+                hasVapidKey
+            };
+        }
+        
+        // Firebase 초기화
+        async function initFirebase() {
+            log('Firebase 초기화 시도');
+            
+            try {
+                // 이미 초기화되었는지 확인
+                try {
+                    firebase.app();
+                    log('Firebase가 이미 초기화되어 있습니다.', 'warn');
+                    return true;
+                } catch (e) {
+                    // 초기화되지 않음, 계속 진행
+                }
+                
+                // API에서 Firebase 설정 가져오기
+                const response = await fetch('/api/config/firebase');
+                if (!response.ok) {
+                    throw new Error(`Firebase 설정 로드 실패: ${response.status}`);
+                }
+                
+                const config = await response.json();
+                log(`Firebase 설정 로드 성공`);
+                
+                // Firebase 초기화
+                firebase.initializeApp({
+                    apiKey: config.apiKey,
+                    authDomain: config.authDomain,
+                    projectId: config.projectId,
+                    storageBucket: config.storageBucket,
+                    messagingSenderId: config.messagingSenderId,
+                    appId: config.appId,
+                    measurementId: config.measurementId
+                });
+                
+                // VAPID 키 저장
+                window.vapidKey = config.vapidKey;
+                
+                log('Firebase 초기화 성공', 'success');
+                window.fcmDebug.firebaseInitialized = true;
+                
+                // 상태 업데이트
+                checkFirebase();
+                
+                return true;
+            } catch (error) {
+                log(`Firebase 초기화 실패: ${error.message}`, 'error');
+                window.fcmDebug.errors.push(`초기화 실패: ${error.message}`);
+                checkFirebase();
+                return false;
+            }
+        }
+        
+        // 알림 권한 확인
+        function checkNotificationPermission() {
+            log('알림 권한 확인');
+            
+            if (!('Notification' in window)) {
+                const statusElement = document.getElementById('permission-status');
+                statusElement.innerHTML = '❌ 이 브라우저는 알림을 지원하지 않습니다.';
+                log('브라우저가 알림을 지원하지 않습니다.', 'error');
+                return 'not-supported';
+            }
+            
+            const permission = Notification.permission;
+            const statusElement = document.getElementById('permission-status');
+            
+            let statusText, statusClass;
+            if (permission === 'granted') {
+                statusText = '✅ 권한 허용됨';
+                statusClass = 'success';
+                log('알림 권한이 허용되어 있습니다.', 'success');
+            } else if (permission === 'denied') {
+                statusText = '❌ 권한 거부됨';
+                statusClass = 'error';
+                log('알림 권한이 거부되어 있습니다.', 'error');
+            } else {
+                statusText = '⚠️ 권한 요청 필요';
+                statusClass = 'warn';
+                log('알림 권한이 결정되지 않았습니다.', 'warn');
+            }
+            
+            statusElement.innerHTML = `<div class="${statusClass}">${statusText}</div>`;
+            
+            return permission;
+        }
+        
+        // 알림 권한 요청
+        async function requestNotificationPermission() {
+            log('알림 권한 요청');
+            
+            if (!('Notification' in window)) {
+                log('브라우저가 알림을 지원하지 않습니다.', 'error');
+                return 'not-supported';
+            }
+            
+            try {
+                const permission = await Notification.requestPermission();
+                log(`알림 권한 요청 결과: ${permission}`, permission === 'granted' ? 'success' : 'warn');
+                
+                // 상태 업데이트
+                checkNotificationPermission();
+                
+                return permission;
+            } catch (error) {
+                log(`알림 권한 요청 실패: ${error.message}`, 'error');
+                checkNotificationPermission();
+                return null;
+            }
+        }
+        
+        // FCM 토큰 가져오기
+        async function getFCMToken() {
+            log('FCM 토큰 요청');
+            
+            const statusElement = document.getElementById('token-status');
+            const tokenElement = document.getElementById('token-value');
+            
+            try {
+                // 전제 조건 확인
+                const firebaseStatus = checkFirebase();
+                if (!firebaseStatus.isInitialized) {
+                    await initFirebase();
+                }
+                
+                const permission = checkNotificationPermission();
+                if (permission !== 'granted') {
+                    const newPermission = await requestNotificationPermission();
+                    if (newPermission !== 'granted') {
+                        throw new Error('알림 권한이 허용되지 않았습니다.');
+                    }
+                }
+                
+                // 메시징 인스턴스 가져오기
+                const messaging = firebase.messaging();
+                
+                // 토큰 가져오기
+                statusElement.innerHTML = '⏳ 토큰 요청 중...';
+                tokenElement.textContent = '';
+                
+                const token = await messaging.getToken({ vapidKey: window.vapidKey });
+                
+                if (token) {
+                    log('FCM 토큰 획득 성공', 'success');
+                    statusElement.innerHTML = '✅ 토큰 획득 성공';
+                    tokenElement.innerHTML = `<pre>${token}</pre>`;
+                    return token;
+                } else {
+                    throw new Error('토큰을 가져올 수 없습니다.');
+                }
+            } catch (error) {
+                log(`FCM 토큰 요청 실패: ${error.message}`, 'error');
+                statusElement.innerHTML = `❌ 토큰 요청 실패: ${error.message}`;
+                tokenElement.textContent = '';
+                return null;
+            }
+        }
+        
+        // 토큰을 서버에 등록
+        async function registerToken() {
+            log('서버에 토큰 등록 시도');
+            
+            try {
+                // 인증 토큰 확인
+                const authStatus = checkAuth();
+                
+                // 실제 토큰값 확인
+                const authToken = authStatus.actualToken;
+                
+                if (!authToken) {
+                    throw new Error('로그인되지 않은 상태입니다.');
+                }
+                
+                log('인증 토큰 확인됨: ' + authToken.substring(0, 10) + '...', 'success');
+                
+                // FCM 토큰 획득
+                const token = await getFCMToken();
+                if (!token) {
+                    throw new Error('FCM 토큰을 획득할 수 없습니다.');
+                }
+                
+                // 기기 정보 구성
+                const deviceId = localStorage.getItem('device_id') || ('web_' + Math.random().toString(36).substring(2, 15));
+                localStorage.setItem('device_id', deviceId);
+                
+                const deviceInfo = {
+                    deviceId: deviceId,
+                    deviceType: 'WEB',
+                    fcmToken: token,
+                    deviceName: navigator.userAgent
+                };
+                
+                log(`서버에 등록할 디바이스 정보:`, 'info');
+                log(JSON.stringify(deviceInfo), 'info');
+                
+                // API 요청
+                const response = await fetch('/api/users/devices', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + authToken
+                    },
+                    body: JSON.stringify(deviceInfo)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`서버 응답 오류 (${response.status}): ${errorText}`);
+                }
+                
+                const result = await response.json();
+                log('FCM 토큰 서버 등록 성공!', 'success');
+                localStorage.setItem('fcmTokenRegistered', 'true');
+                
+                return true;
+            } catch (error) {
+                log(`서버 등록 실패: ${error.message}`, 'error');
+                return false;
+            }
+        }
+        
+        // 이벤트 핸들러 등록
+        document.addEventListener('DOMContentLoaded', function() {
+            // 스크립트 상태 확인
+            document.getElementById('check-scripts').addEventListener('click', checkScripts);
+            
+            // 인증 상태 확인
+            document.getElementById('check-auth').addEventListener('click', checkAuth);
+            
+            // Firebase 상태 확인
+            document.getElementById('check-firebase').addEventListener('click', checkFirebase);
+            document.getElementById('init-firebase').addEventListener('click', initFirebase);
+            
+            // 알림 권한 
+            document.getElementById('check-permission').addEventListener('click', checkNotificationPermission);
+            document.getElementById('request-permission').addEventListener('click', requestNotificationPermission);
+            
+            // FCM 토큰
+            document.getElementById('get-token').addEventListener('click', getFCMToken);
+            document.getElementById('register-token').addEventListener('click', registerToken);
+            
+            // 로그 지우기
+            document.getElementById('clear-logs').addEventListener('click', function() {
+                document.getElementById('logs').innerHTML = '';
+                log('로그가 지워졌습니다.');
+            });
+            
+            // 초기 상태 확인
+            checkScripts();
+            checkAuth();
+            checkFirebase();
+            checkNotificationPermission();
+            
+            log('FCM 테스트 페이지가 준비되었습니다.', 'info');
+        });
+    </script>
+</body>
+</html> 

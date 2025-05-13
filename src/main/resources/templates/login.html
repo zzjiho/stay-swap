@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StaySwap - 로그인</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <!-- jQuery 라이브러리 -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="login-container">
+            <h1>StaySwap 로그인</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">이메일</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">비밀번호</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit" class="btn btn-primary">로그인</button>
+            </form>
+            <p>계정이 없으신가요? <a href="/signup">회원가입</a></p>
+        </div>
+    </div>
+
+    <!-- Firebase 관련 스크립트 -->
+    <script>
+        // 디버깅을 위한 전역 변수 설정
+        window.fcmDebug = {
+            configLoaded: false,
+            firebaseInitialized: false,
+            vapidKeySet: false
+        };
+        
+        // VAPID 키를 전역 변수로 설정 (fcm-token.js에서 사용)
+        window.vapidKey = null;
+        
+        // Firebase 설정 정보 가져오기
+        $(document).ready(function() {
+            console.log('�� Firebase 설정 정보를 가져오는 중...');
+            $.ajax({
+                url: '/api/config/firebase',
+                type: 'GET',
+                dataType: 'json',
+                success: function(config) {
+                    console.log('✅ Firebase 설정 정보 가져오기 성공:', config);
+                    window.fcmDebug.configLoaded = true;
+                    
+                    // VAPID 키 전역 변수에 저장
+                    window.vapidKey = config.vapidKey;
+                    window.fcmDebug.vapidKeySet = true;
+                    console.log('✅ VAPID 키 설정 완료:', config.vapidKey);
+                    
+                    // Firebase 초기화
+                    try {
+                        firebase.initializeApp({
+                            apiKey: config.apiKey,
+                            authDomain: config.authDomain,
+                            projectId: config.projectId,
+                            storageBucket: config.storageBucket,
+                            messagingSenderId: config.messagingSenderId,
+                            appId: config.appId,
+                            measurementId: config.measurementId
+                        });
+                        
+                        window.fcmDebug.firebaseInitialized = true;
+                        console.log('✅ Firebase가 성공적으로 초기화되었습니다.');
+                    } catch (err) {
+                        console.error('❌ Firebase 초기화 오류:', err);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('❌ Firebase 설정을 가져오는데 실패했습니다:', error);
+                    console.error('응답 상태:', xhr.status);
+                    console.error('응답 내용:', xhr.responseText);
+                }
+            });
+        });
+    </script>
+    
+    <!-- FCM 토큰 관리 스크립트 -->
+    <script src="/js/fcm-token.js"></script>
+    
+    <!-- 로그인 처리 스크립트 -->
+    <script src="/js/login.js"></script>
+</body>
+</html> 

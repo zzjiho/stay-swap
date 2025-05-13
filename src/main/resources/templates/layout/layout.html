@@ -20,6 +20,16 @@
             tokenExpireTime: null,
             isInitialized: false
         };
+        
+        // FCM 디버깅 객체 추가
+        window.fcmDebug = {
+            firebaseInitialized: false,
+            scriptLoaded: false,
+            initialized: false,
+            errors: []
+        };
+        
+        console.log('🔍 Layout script loaded: auth and fcmDebug objects initialized');
     </script>
     
     <!-- Auth 공통 스크립트 -->
@@ -70,28 +80,98 @@
 
 <main><!-- 페이지별 내용 --></main>
 
+<!-- jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
 
 <!-- Firebase 설정 -->
 <script th:inline="javascript">
-    const firebaseConfig = {
-        apiKey:          /*[[${firebaseConfig.apiKey}]]*/ '',
-        authDomain:      /*[[${firebaseConfig.authDomain}]]*/ '',
-        projectId:       /*[[${firebaseConfig.projectId}]]*/ '',
-        storageBucket:   /*[[${firebaseConfig.storageBucket}]]*/ '',
-        messagingSenderId: /*[[${firebaseConfig.messagingSenderId}]]*/ '',
-        appId:           /*[[${firebaseConfig.appId}]]*/ '',
-        measurementId:   /*[[${firebaseConfig.measurementId}]]*/ ''
-    };
-    firebase.initializeApp(firebaseConfig);
-    window.vapidKey = /*[[${firebaseConfig.vapidKey}]]*/ '';
+    console.log('🔍 Firebase 설정 스크립트 실행 시작');
+    try {
+        const firebaseConfig = {
+            apiKey:          /*[[${firebaseConfig.apiKey}]]*/ '',
+            authDomain:      /*[[${firebaseConfig.authDomain}]]*/ '',
+            projectId:       /*[[${firebaseConfig.projectId}]]*/ '',
+            storageBucket:   /*[[${firebaseConfig.storageBucket}]]*/ '',
+            messagingSenderId: /*[[${firebaseConfig.messagingSenderId}]]*/ '',
+            appId:           /*[[${firebaseConfig.appId}]]*/ '',
+            measurementId:   /*[[${firebaseConfig.measurementId}]]*/ ''
+        };
+        
+        // 설정 값 검증
+        const missingValues = Object.entries(firebaseConfig)
+            .filter(([key, value]) => !value || value === '')
+            .map(([key]) => key);
+        
+        if (missingValues.length > 0) {
+            console.error('⚠️ Firebase 설정에 빈 값이 있습니다:', missingValues.join(', '));
+            window.fcmDebug.errors.push('Firebase 설정에 빈 값 있음: ' + missingValues.join(', '));
+        } else {
+            console.log('✅ Firebase 설정 값 확인됨');
+        }
+        
+        // Firebase 초기화
+        if (typeof firebase !== 'undefined') {
+            firebase.initializeApp(firebaseConfig);
+            window.vapidKey = /*[[${firebaseConfig.vapidKey}]]*/ '';
+            window.fcmDebug.firebaseInitialized = true;
+            console.log('✅ Firebase 초기화 완료');
+        } else {
+            console.error('❌ Firebase SDK가 로드되지 않았습니다.');
+            window.fcmDebug.errors.push('Firebase SDK 로드되지 않음');
+        }
+    } catch (error) {
+        console.error('❌ Firebase 초기화 오류:', error);
+        window.fcmDebug.errors.push('Firebase 초기화 실패: ' + error.message);
+    }
 </script>
 
 <!-- 기타 스크립트 -->
 <script th:src="@{/js/main.js}"></script>
-<script th:src="@{/js/fcm-token.js}"></script>
+
+<!-- FCM 스크립트 - Firebase 초기화 후 로드 -->
+<script>
+    console.log('🔍 FCM 스크립트 로드 준비');
+    document.addEventListener('DOMContentLoaded', function() {
+        // 디버그 목적으로 추가
+        window.checkFirebaseInit = function() {
+            console.log('🔍 Firebase 초기화 상태:', window.fcmDebug);
+            return window.fcmDebug.firebaseInitialized;
+        };
+        
+        // Firebase 초기화 확인 후 FCM 스크립트 로드
+        if (window.fcmDebug.firebaseInitialized) {
+            console.log('✅ Firebase가 초기화되었습니다. FCM 스크립트 로드 중...');
+            
+            // 스크립트 요소 생성 및 추가
+            const script = document.createElement('script');
+            script.src = '/js/fcm-token.js';
+            script.onload = function() {
+                console.log('✅ FCM 스크립트 로드 완료');
+                window.fcmDebug.scriptLoaded = true;
+                
+                // 디버그 스크립트 로드
+                const debugScript = document.createElement('script');
+                debugScript.src = '/js/debug.js';
+                debugScript.onload = function() {
+                    console.log('✅ 디버그 스크립트 로드 완료');
+                };
+                document.body.appendChild(debugScript);
+            };
+            script.onerror = function() {
+                console.error('❌ FCM 스크립트 로드 실패');
+                window.fcmDebug.errors.push('FCM 스크립트 로드 실패');
+            };
+            document.body.appendChild(script);
+        } else {
+            console.error('❌ Firebase가 초기화되지 않았습니다. FCM 스크립트를 로드할 수 없습니다.');
+            window.fcmDebug.errors.push('Firebase 초기화 안됨, FCM 스크립트 로드 불가');
+        }
+    });
+</script>
 
 <!-- *** 헤더 UI 제어 전용 스크립트 *** -->
 <script>

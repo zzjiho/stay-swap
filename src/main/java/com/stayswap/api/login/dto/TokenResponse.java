@@ -44,10 +44,10 @@ public class TokenResponse {
      * JSON 직렬화 시 accessToken을 마스킹 처리
      * @return 마스킹된 accessToken
      */
-    @JsonGetter("accessToken")
-    public String getMaskedAccessToken() {
-        return TokenMaskingUtil.maskAccessToken(accessToken);
-    }
+//    @JsonGetter("accessToken")
+//    public String getMaskedAccessToken() {
+//        return TokenMaskingUtil.maskAccessToken(accessToken);
+//    }
     
     /**
      * JSON 직렬화 시 refreshToken을 마스킹 처리

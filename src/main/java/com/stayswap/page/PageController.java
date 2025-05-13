@@ -46,4 +46,14 @@ public class PageController {
         return "subscription";
     }
 
+    @GetMapping("/page/fcm-debug")
+    public String fcmDebug() {
+        return "fcm-debug";
+    }
+
+    @GetMapping("/page/debug/fcm-test")
+    public String fcmTest() {
+        return "debug/fcm-test";
+    }
+
 }
