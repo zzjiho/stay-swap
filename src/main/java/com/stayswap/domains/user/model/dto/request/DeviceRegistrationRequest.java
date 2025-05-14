@@ -13,6 +13,9 @@ import jakarta.validation.constraints.NotNull;
 @NoArgsConstructor
 public class DeviceRegistrationRequest {
 
+    @NotBlank(message = "디바이스 ID는 필수입니다")
+    private String deviceId;
+
     @NotNull(message = "디바이스 유형은 필수입니다")
     private DeviceType deviceType;
 

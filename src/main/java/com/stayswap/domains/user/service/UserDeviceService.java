@@ -66,6 +66,7 @@ public class UserDeviceService {
                 .deviceType(request.getDeviceType())
                 .deviceModel(request.getDeviceModel())
                 .fcmToken(request.getFcmToken())
+                .deviceId(request.getDeviceId())
                 .build();
         
         return userDeviceRepository.save(newDevice);

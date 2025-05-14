@@ -21,6 +21,9 @@ public class UserDevice extends BaseTimeEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "device_id", nullable = false)
+    private String deviceId;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -39,11 +42,12 @@ public class UserDevice extends BaseTimeEntity {
     private boolean isActive = true;
 
     @Builder
-    public UserDevice(User user, DeviceType deviceType, String deviceModel, String fcmToken) {
+    public UserDevice(User user, DeviceType deviceType, String deviceModel, String fcmToken, String deviceId) {
         this.user = user;
         this.deviceType = deviceType;
         this.deviceModel = deviceModel;
         this.fcmToken = fcmToken;
+        this.deviceId = deviceId;
     }
 
     /**

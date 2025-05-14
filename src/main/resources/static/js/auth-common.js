@@ -27,22 +27,22 @@ function deleteCookie(name) {
 // 임시 액세스 토큰 쿠키 처리
 function handleTempAccessToken() {
     const tempToken = getCookie('temp_access_token');
-    
+
     if (tempToken) {
         // 메모리에 저장
         auth.accessToken = tempToken;
         auth.tokenExpireTime = new Date().getTime() + (18 * 60 * 1000); // 약 18분 설정 (토큰 만료 전)
         auth.isInitialized = true;
-        
+
         // 토큰 만료 전에 자동 갱신 설정
         setupTokenRenewal();
-        
+
         // 로그인 상태 이벤트 발생
         dispatchLoginEvent(true);
-        
+
         // 임시 쿠키 즉시 삭제
         deleteCookie('temp_access_token');
-        
+
         return true;
     }
     return false;
@@ -51,16 +51,16 @@ function handleTempAccessToken() {
 /* ───────── 페이지 로드 시점 ───────── */
 document.addEventListener('DOMContentLoaded', () => {
     // 현재 쿠키 상태 확인
-    
+
     // 먼저 임시 토큰 쿠키 확인
     if (handleTempAccessToken()) {
         return; // 임시 토큰이 있으면 나머지 초기화 과정 스킵
     }
-    
+
     // URL에 code 파라미터가 있는지 확인 (카카오 로그인 콜백)
     const urlParams = new URLSearchParams(window.location.search);
     const code = urlParams.get("code");
-    
+
     if (code) {
         // 카카오 로그인 콜백 처리
         handleKakaoCallback(code);
@@ -86,7 +86,7 @@ async function handleKakaoCallback(code) {
         auth.accessToken     = d.accessToken;
         auth.tokenExpireTime = new Date(d.accessTokenExpireTime).getTime();
         auth.isInitialized   = true;
-        
+
         setupTokenRenewal();
         dispatchLoginEvent(true);
 
@@ -106,33 +106,33 @@ async function initializeAuth() {
     if (auth.isInitialized && auth.accessToken && !isTokenExpired()) {
         return true;
     }
-    
+
     try {
         const r = await fetch('/api/token/refresh',{
             method: 'GET',
             credentials:'include'
         });
-        
-        if (!r.ok) { 
-            auth.isInitialized=true; 
+
+        if (!r.ok) {
+            auth.isInitialized=true;
             dispatchLoginEvent(false);
-            return false; 
+            return false;
         }
-        
+
         const d = await r.json();
-        
+
         auth.accessToken     = d.accessToken;
         auth.tokenExpireTime = new Date(d.accessTokenExpireTime).getTime();
         auth.isInitialized   = true;
-        
+
         setupTokenRenewal();
         dispatchLoginEvent(true);
-        
+
         if (typeof fetchUserInfo==='function') fetchUserInfo();
         return true;
     } catch (error) {
-        auth.isInitialized = true; 
-        dispatchLoginEvent(false); 
+        auth.isInitialized = true;
+        dispatchLoginEvent(false);
         return false;
     }
 }
@@ -148,15 +148,15 @@ function setupTokenRenewal(){
     setTimeout(refreshAccessToken, delay);
 }
 
-function getAuthHeader(){ 
-    return auth.accessToken?{Authorization:`Bearer ${auth.accessToken}`} : {}; 
+function getAuthHeader(){
+    return auth.accessToken?{Authorization:`Bearer ${auth.accessToken}`} : {};
 }
 
-function isTokenExpired(){ 
+function isTokenExpired(){
     return !auth.tokenExpireTime || Date.now()>auth.tokenExpireTime;
 }
 
-function isLoggedIn(){ 
+function isLoggedIn(){
     return !!auth.accessToken && !isTokenExpired();
 }
 
@@ -168,15 +168,15 @@ async function refreshAccessToken(){
             throw new Error();
         }
         const d=await r.json();
-        
+
         auth.accessToken=d.accessToken;
         auth.tokenExpireTime=new Date(d.accessTokenExpireTime).getTime();
         setupTokenRenewal();
         dispatchLoginEvent(true);
         return true;
-    }catch(error){ 
-        logout(); 
-        return false; 
+    }catch(error){
+        logout();
+        return false;
     }
 }
 
@@ -185,7 +185,7 @@ async function logout(){
     // 로컬 상태 초기화
     auth.accessToken = null;
     auth.tokenExpireTime = null;
-    
+
     try {
         // 1. 사용자 로그아웃 API 호출 - 리프레시 토큰 만료 처리
         if (auth.isInitialized) {
@@ -200,7 +200,7 @@ async function logout(){
                 console.error('사용자 로그아웃 API 호출 실패:', err);
             }
         }
-        
+
         // 2. 쿠키 기반 로그아웃 API 호출 - 쿠키 삭제
         await fetch('/api/logout', {
             method: 'POST',
@@ -226,7 +226,7 @@ async function fetchWithAuth(url,opt={}){
     if(!auth.isInitialized||!auth.accessToken||isTokenExpired()){
         const ok=await initializeAuth(); if(!ok) return null;
     }
-    
+
     const res=await fetch(url,{...opt,headers:{...opt.headers,...getAuthHeader()},credentials:'include'});
     if(res.status===401){
         const ok=await refreshAccessToken(); if(!ok) return null;

@@ -161,8 +161,18 @@
             const sessionToken = sessionStorage.getItem('auth_token');
             const memoryToken = window.auth && window.auth.accessToken;
             
+            // 쿠키에서 refreshToken 확인
+            const getCookie = (name) => {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            };
+            
+            const refreshToken = getCookie('refreshToken');
+            
             // 실제 사용 가능한 토큰 값 (단순히 존재하는지만 확인하는 것이 아니라 실제 값을 가져옴)
-            const actualToken = memoryToken || localToken || authToken || sessionToken;
+            const actualToken = memoryToken || localToken || authToken || sessionToken || refreshToken;
             const isLoggedIn = !!actualToken;
             
             const statusElement = document.getElementById('auth-status');
@@ -178,6 +188,7 @@
             html += `<li>localStorage(accessToken): ${localToken ? '✅ 있음' : '❌ 없음'}</li>`;
             html += `<li>localStorage(auth_token): ${authToken ? '✅ 있음' : '❌ 없음'}</li>`;
             html += `<li>sessionStorage(auth_token): ${sessionToken ? '✅ 있음' : '❌ 없음'}</li>`;
+            html += `<li>쿠키(refreshToken): ${refreshToken ? '✅ 있음' : '❌ 없음'}</li>`;
             html += '</ul>';
             
             statusElement.innerHTML = html;
@@ -189,7 +200,8 @@
                     memory: memoryToken,
                     local: localToken,
                     auth: authToken,
-                    session: sessionToken
+                    session: sessionToken,
+                    refresh: refreshToken
                 }
             };
         }
@@ -405,17 +417,25 @@
             log('서버에 토큰 등록 시도');
             
             try {
-                // 인증 토큰 확인
-                const authStatus = checkAuth();
+                // 먼저 /api/token/refresh를 호출하여 최신 accessToken 획득
+                log('액세스 토큰 갱신 시도...');
+                const tokenResponse = await fetch('/api/token/refresh', {
+                    method: 'GET',
+                    credentials: 'include' // 쿠키 포함
+                });
                 
-                // 실제 토큰값 확인
-                const authToken = authStatus.actualToken;
-                
-                if (!authToken) {
-                    throw new Error('로그인되지 않은 상태입니다.');
+                if (!tokenResponse.ok) {
+                    throw new Error('토큰 갱신 실패: ' + tokenResponse.status);
                 }
                 
-                log('인증 토큰 확인됨: ' + authToken.substring(0, 10) + '...', 'success');
+                const tokenData = await tokenResponse.json();
+                const accessToken = tokenData.accessToken;
+                
+                if (!accessToken) {
+                    throw new Error('액세스 토큰을 획득할 수 없습니다.');
+                }
+                
+                log('액세스 토큰 갱신 성공: ' + accessToken.substring(0, 10) + '...', 'success');
                 
                 // FCM 토큰 획득
                 const token = await getFCMToken();
@@ -430,8 +450,8 @@
                 const deviceInfo = {
                     deviceId: deviceId,
                     deviceType: 'WEB',
-                    fcmToken: token,
-                    deviceName: navigator.userAgent
+                    deviceModel: navigator.userAgent,
+                    fcmToken: token
                 };
                 
                 log(`서버에 등록할 디바이스 정보:`, 'info');
@@ -442,7 +462,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + authToken
+                        'Authorization': 'Bearer ' + accessToken
                     },
                     body: JSON.stringify(deviceInfo)
                 });
@@ -452,7 +472,6 @@
                     throw new Error(`서버 응답 오류 (${response.status}): ${errorText}`);
                 }
                 
-                const result = await response.json();
                 log('FCM 토큰 서버 등록 성공!', 'success');
                 localStorage.setItem('fcmTokenRegistered', 'true');
                 
