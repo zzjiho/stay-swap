@@ -5,86 +5,75 @@
 importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js');
 
-// API에서 Firebase 설정 가져오기
-self.addEventListener('install', async (event) => {
-  try {
-    const response = await fetch('/api/config/firebase');
-    if (!response.ok) {
-      throw new Error('Firebase 설정을 가져오는데 실패했습니다.');
-    }
-    
-    const firebaseConfig = await response.json();
-    
-    // Firebase 초기화
-    firebase.initializeApp({
-      apiKey: firebaseConfig.apiKey,
-      authDomain: firebaseConfig.authDomain,
-      projectId: firebaseConfig.projectId,
-      storageBucket: firebaseConfig.storageBucket,
-      messagingSenderId: firebaseConfig.messagingSenderId,
-      appId: firebaseConfig.appId,
-      measurementId: firebaseConfig.measurementId
-    });
-    
-    // Firebase Messaging 인스턴스 가져오기
-    const messaging = firebase.messaging();
-    
-    // 백그라운드 메시지 처리
-    messaging.onBackgroundMessage((payload) => {
-      console.log('[firebase-messaging-sw.js] 백그라운드 메시지 수신:', payload);
-      
-      // 알림 데이터 추출
-      const notificationTitle = payload.notification.title || '새로운 알림';
-      const notificationOptions = {
-        body: payload.notification.body || '',
-        icon: '/images/logo.png',
-        badge: '/images/badge.png',
-        data: payload.data
-      };
-    
-      // 알림 표시
-      self.registration.showNotification(notificationTitle, notificationOptions);
-    });
-    
-  } catch (error) {
-    console.error('Service Worker 초기화 중 오류 발생:', error);
-    
-    // 오류 발생 시 메시지 표시
-    self.registration.showNotification('알림 서비스 오류', {
-      body: 'FCM 서비스를 초기화하는 중 오류가 발생했습니다. 페이지를 새로고침해 주세요.',
-      icon: '/images/logo.png'
-    });
-  }
+// Firebase 초기화 - 설정은 서버에서 동적으로 가져오지 못하므로 일단 기본값 사용
+// 실제 값은 런타임에 설정됩니다
+firebase.initializeApp({
+  apiKey: "AIzaSyD5HvXq5LensKV4jTMNnrXavRIw8whDvh4",
+  projectId: "stay-swap",
+  messagingSenderId: "448255567490",
+  appId: "1:448255567490:web:5c517e8ec4590e3f8d369b"
 });
 
-// 알림 클릭 처리
+const messaging = firebase.messaging();
+
+// 백그라운드 메시지 핸들러
+messaging.onBackgroundMessage((payload) => {
+  console.log('[firebase-messaging-sw.js] 백그라운드 메시지 수신:', payload);
+
+  // 알림 데이터 추출
+  const notificationTitle = payload.notification?.title || '새로운 알림';
+  const notificationOptions = {
+    body: payload.notification?.body || '',
+    icon: '/img/logo.png',
+    badge: '/img/badge.png', // 모바일 기기 알림 뱃지 아이콘 (옵션)
+    tag: 'notification-' + Date.now(), // 알림 그룹화를 위한 태그 (옵션)
+    data: payload.data || {} // 커스텀 데이터 저장 (알림 클릭 시 활용 가능)
+  };
+
+  // 백그라운드에서 알림 표시
+  return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// 알림 클릭 이벤트 처리
 self.addEventListener('notificationclick', (event) => {
-  console.log('[firebase-messaging-sw.js] 알림 클릭:', event);
+  console.log('[firebase-messaging-sw.js] 알림 클릭됨:', event);
 
   // 알림 닫기
   event.notification.close();
 
-  // 클릭 시 이동할 URL (데이터에서 URL을 가져오거나 기본값 사용)
-  const urlToOpen = event.notification.data?.url || '/notifications';
+  // 클릭 시 열 URL 결정
+  // 1. payload.data.url이 있으면 해당 URL 사용
+  // 2. 없으면 기본 URL(홈페이지) 사용
+  const urlToOpen = event.notification.data?.url ||
+      (new URL('/', self.location.origin).href);
 
-  // 동일한 URL의 창이 이미 열려있는지 확인
-  event.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    })
-    .then((clientList) => {
-      // 이미 열려있는 창이 있는지 확인
-      for (const client of clientList) {
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
+  // 클라이언트 창 처리
+  const promiseChain = clients.matchAll({
+    type: 'window',
+    includeUncontrolled: true
+  })
+      .then((windowClients) => {
+        // 이미 열린 탭이 있는지 확인
+        for (let i = 0; i < windowClients.length; i++) {
+          const client = windowClients[i];
+          if (client.url === urlToOpen && 'focus' in client) {
+            return client.focus();
+          }
         }
-      }
-      
-      // 새 창 열기
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
-    })
-  );
-}); 
+
+        // 새 탭 열기
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      });
+
+  event.waitUntil(promiseChain);
+});
+
+// 푸시 구독 변경 이벤트 핸들러 (선택 사항)
+self.addEventListener('pushsubscriptionchange', (event) => {
+  console.log('[firebase-messaging-sw.js] 푸시 구독 변경됨:', event);
+
+  // 구독 변경 시 서버에 알리는 로직을 추가할 수 있습니다
+  // 예: 새 토큰을 서버에 등록하는 등의 작업
+});
