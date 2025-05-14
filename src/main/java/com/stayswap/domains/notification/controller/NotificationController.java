@@ -1,5 +1,6 @@
 package com.stayswap.domains.notification.controller;
 
+import com.stayswap.domains.notification.model.dto.request.TestNotificationRequest;
 import com.stayswap.domains.notification.model.dto.response.NotificationResponse;
 import com.stayswap.domains.notification.service.NotificationService;
 import com.stayswap.domains.user.model.dto.request.DeviceRegistrationRequest;
@@ -49,5 +50,18 @@ public class NotificationController {
     public ResponseEntity<Long> getUnreadCount(@UserInfo UserInfoDto userInfo) {
         long count = notificationService.countUnreadNotifications(userInfo.getUserId());
         return ResponseEntity.ok(count);
+    }
+
+    @Operation(summary = "테스트 알림 전송", description = "자신에게 테스트 알림을 전송합니다. (개발용)")
+    @PostMapping("/test")
+    public ResponseEntity<String> sendTestNotification(
+            @UserInfo UserInfoDto userInfo,
+            @RequestBody(required = false) TestNotificationRequest request) {
+        
+        String title = request != null ? request.getTitle() : null;
+        String content = request != null ? request.getContent() : null;
+        
+        notificationService.createTestNotification(userInfo.getUserId(), title, content);
+        return ResponseEntity.ok("테스트 알림이 발송되었습니다.");
     }
 }

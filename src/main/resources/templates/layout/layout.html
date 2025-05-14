@@ -129,49 +129,11 @@
     }
 </script>
 
-<!-- 기타 스크립트 -->
+<!-- 기타 스크립트들 -->
 <script th:src="@{/js/main.js}"></script>
-
-<!-- FCM 스크립트 - Firebase 초기화 후 로드 -->
-<script>
-    console.log('🔍 FCM 스크립트 로드 준비');
-    document.addEventListener('DOMContentLoaded', function() {
-        // 디버그 목적으로 추가
-        window.checkFirebaseInit = function() {
-            console.log('🔍 Firebase 초기화 상태:', window.fcmDebug);
-            return window.fcmDebug.firebaseInitialized;
-        };
-        
-        // Firebase 초기화 확인 후 FCM 스크립트 로드
-        if (window.fcmDebug.firebaseInitialized) {
-            console.log('✅ Firebase가 초기화되었습니다. FCM 스크립트 로드 중...');
-            
-            // 스크립트 요소 생성 및 추가
-            const script = document.createElement('script');
-            script.src = '/js/fcm-token.js';
-            script.onload = function() {
-                console.log('✅ FCM 스크립트 로드 완료');
-                window.fcmDebug.scriptLoaded = true;
-                
-                // 디버그 스크립트 로드
-                const debugScript = document.createElement('script');
-                debugScript.src = '/js/debug.js';
-                debugScript.onload = function() {
-                    console.log('✅ 디버그 스크립트 로드 완료');
-                };
-                document.body.appendChild(debugScript);
-            };
-            script.onerror = function() {
-                console.error('❌ FCM 스크립트 로드 실패');
-                window.fcmDebug.errors.push('FCM 스크립트 로드 실패');
-            };
-            document.body.appendChild(script);
-        } else {
-            console.error('❌ Firebase가 초기화되지 않았습니다. FCM 스크립트를 로드할 수 없습니다.');
-            window.fcmDebug.errors.push('Firebase 초기화 안됨, FCM 스크립트 로드 불가');
-        }
-    });
-</script>
+<script th:src="@{/js/fcm-token.js}"></script>
+<script th:src="@{/js/notification.js}"></script>
+<script th:src="@{/js/debug.js}"></script>
 
 <!-- *** 헤더 UI 제어 전용 스크립트 *** -->
 <script>

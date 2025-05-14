@@ -157,4 +157,23 @@ public class NotificationService {
         
         return notificationRepository.countByRecipientAndIsRead(user, false);
     }
+
+    /**
+     * 테스트 알림 생성 (사용자 자신에게 발송)
+     */
+    public void createTestNotification(Long userId, String title, String content) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+
+        NotificationMessage message = NotificationMessage.builder()
+                .recipientId(userId)
+                .senderId(userId) // 자신에게 보내는 알림이므로 발신자도 동일
+                .type(NotificationType.TEST_NOTIFICATION)
+                .title(title != null ? title : "테스트 알림입니다")
+                .content(content != null ? content : "이것은 테스트 알림입니다.")
+                .referenceId(0L) // 테스트 알림이므로 참조 ID는 0으로 설정
+                .build();
+        
+        sendNotification(message);
+    }
 } 
