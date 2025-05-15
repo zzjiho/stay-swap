@@ -15,8 +15,14 @@ public class SwapDailyJob {
     private final NotificationService notificationService;
 
     public void run() {
-        log.info("체크인 당일 알림 발송 작업 시작");
+        log.info("알림 발송 작업 시작");
+        
+        // 체크인 알림 발송
         notificationService.createCheckinNotification();
-        log.info("체크인 당일 알림 발송 작업 완료");
+        
+        // 체크아웃 알림 발송
+        notificationService.createCheckoutNotification();
+        
+        log.info("알림 발송 작업 완료");
     }
 }

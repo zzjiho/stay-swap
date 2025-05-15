@@ -8,6 +8,7 @@ public enum NotificationType {
     BOOKING_REJECTED("숙박 거절"),
     SWAP_REJECTED("교환 거절"),
     CHECK_IN("체크인 알림"),
+    CHECK_OUT("체크아웃 알림"),
     TEST_NOTIFICATION("테스트 알림");
 
     private final String description;
