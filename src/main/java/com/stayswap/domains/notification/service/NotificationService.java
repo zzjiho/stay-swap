@@ -20,6 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static com.stayswap.global.code.ErrorCode.*;
 
+/**
+ * 코어 알림 서비스
+ * 알림 전송, 저장, 조회 등의 기본 기능을 담당
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -35,46 +39,11 @@ public class NotificationService {
      * 알림 메시지를 RabbitMQ로 전송
      */
     public void sendNotification(NotificationMessage message) {
-
         rabbitTemplate.convertAndSend(
                 RabbitMQConfig.NOTIFICATION_EXCHANGE,
                 RabbitMQConfig.NOTIFICATION_ROUTING_KEY, message
         );
         log.info("알림 메시지 전송 완료: {}", message);
-    }
-
-    /**
-     * 숙박 요청 알림 생성
-     */
-    public void createBookingRequestNotification(Long recipientId, Long senderId, Long bookingId) {
-
-        NotificationMessage message = NotificationMessage.builder()
-                .recipientId(recipientId)
-                .senderId(senderId)
-                .type(NotificationType.BOOKING_REQUEST)
-                .title("숙박 요청이 도착했습니다")
-                .content("새로운 숙박 요청이 있습니다. 확인해주세요.")
-                .referenceId(bookingId)
-                .build();
-        
-        sendNotification(message);
-    }
-
-    /**
-     * 교환 요청 알림 생성
-     */
-    public void createSwapRequestNotification(Long recipientId, Long senderId, Long swapId) {
-
-        NotificationMessage message = NotificationMessage.builder()
-                .recipientId(recipientId)
-                .senderId(senderId)
-                .type(NotificationType.SWAP_REQUEST)
-                .title("숙소 교환 요청이 도착했습니다")
-                .content("새로운 숙소 교환 요청이 있습니다. 확인해주세요.")
-                .referenceId(swapId)
-                .build();
-        
-        sendNotification(message);
     }
 
     /**
@@ -97,7 +66,6 @@ public class NotificationService {
      * 알림 저장
      */
     private Notification saveNotification(NotificationMessage message) {
-
         User recipient = userRepository.findById(message.getRecipientId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         
@@ -121,7 +89,6 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public Page<NotificationResponse> getNotifications(Long userId, Pageable pageable) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         
@@ -133,7 +100,6 @@ public class NotificationService {
      * 알림 읽음 처리
      */
     public NotificationResponse markAsRead(Long notificationId, Long userId) {
-
         Notification notification = notificationRepository.findById(notificationId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_RESOURCE));
         
@@ -151,29 +117,9 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public long countUnreadNotifications(Long userId) {
-
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         
         return notificationRepository.countByRecipientAndIsRead(user, false);
-    }
-
-    /**
-     * 테스트 알림 생성 (사용자 자신에게 발송)
-     */
-    public void createTestNotification(Long userId, String title, String content) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
-
-        NotificationMessage message = NotificationMessage.builder()
-                .recipientId(userId)
-                .senderId(userId) // 자신에게 보내는 알림이므로 발신자도 동일
-                .type(NotificationType.TEST_NOTIFICATION)
-                .title(title != null ? title : "테스트 알림입니다")
-                .content(content != null ? content : "이것은 테스트 알림입니다.")
-                .referenceId(0L) // 테스트 알림이므로 참조 ID는 0으로 설정
-                .build();
-        
-        sendNotification(message);
     }
 } 

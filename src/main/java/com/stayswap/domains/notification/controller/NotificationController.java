@@ -3,6 +3,7 @@ package com.stayswap.domains.notification.controller;
 import com.stayswap.domains.notification.model.dto.request.TestNotificationRequest;
 import com.stayswap.domains.notification.model.dto.response.NotificationResponse;
 import com.stayswap.domains.notification.service.NotificationService;
+import com.stayswap.domains.notification.service.TestNotificationService;
 import com.stayswap.domains.user.model.dto.request.DeviceRegistrationRequest;
 import com.stayswap.domains.user.service.UserDeviceService;
 import com.stayswap.resolver.userinfo.UserInfo;
@@ -24,6 +25,7 @@ public class NotificationController {
 
     private final NotificationService notificationService;
     private final UserDeviceService userDeviceService;
+    private final TestNotificationService testNotificationService;
 
     @Operation(summary = "알림 목록 조회", description = "사용자의 알림 목록을 조회합니다.")
     @GetMapping
@@ -60,8 +62,8 @@ public class NotificationController {
         
         String title = request != null ? request.getTitle() : null;
         String content = request != null ? request.getContent() : null;
-        
-        notificationService.createTestNotification(userInfo.getUserId(), title, content);
+
+        testNotificationService.createTestNotification(userInfo.getUserId(), title, content);
         return ResponseEntity.ok("테스트 알림이 발송되었습니다.");
     }
 }
