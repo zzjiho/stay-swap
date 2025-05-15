@@ -4,6 +4,7 @@ import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
 import com.stayswap.domains.notification.service.SwapRequestNotificationService;
 import com.stayswap.domains.swap.constant.SwapStatus;
+import com.stayswap.domains.swap.constant.SwapType;
 import com.stayswap.domains.swap.model.dto.request.StayRequest;
 import com.stayswap.domains.swap.model.dto.request.SwapRequest;
 import com.stayswap.domains.swap.model.dto.response.StayResponse;
@@ -88,6 +89,16 @@ public class SwapServiceImpl implements SwapService {
         
         swap.accept();
         
+        // 알림 전송 - 교환 요청인 경우와 숙박 요청인 경우 구분
+        Long requesterId = swap.getRequester().getId();
+        if (swap.getSwapType() == SwapType.SWAP) {
+            // 교환 요청인 경우
+            swapRequestNotificationService.createSwapAcceptedNotification(requesterId, userId, swapId);
+        } else {
+            // 숙박 요청인 경우
+            swapRequestNotificationService.createBookingAcceptedNotification(requesterId, userId, swapId);
+        }
+        
         return SwapResponse.of(swap);
     }
 
@@ -102,6 +113,16 @@ public class SwapServiceImpl implements SwapService {
         }
 
         swap.reject();
+        
+        // 알림 전송 - 교환 요청인 경우와 숙박 요청인 경우 구분
+        Long requesterId = swap.getRequester().getId();
+        if (swap.getSwapType() == SwapType.SWAP) {
+            // 교환 요청인 경우
+            swapRequestNotificationService.createSwapRejectedNotification(requesterId, userId, swapId);
+        } else {
+            // 숙박 요청인 경우
+            swapRequestNotificationService.createBookingRejectedNotification(requesterId, userId, swapId);
+        }
         
         return SwapResponse.of(swap);
     }
