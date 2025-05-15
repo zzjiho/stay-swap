@@ -1,6 +1,6 @@
 package com.stayswap.scheduler.swap;
 
-import com.stayswap.domains.notification.service.NotificationService;
+import com.stayswap.domains.notification.service.CheckInOutNotificationService;
 import com.stayswap.domains.swap.service.SwapServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,16 +12,16 @@ import org.springframework.stereotype.Component;
 public class SwapDailyJob {
 
     private final SwapServiceImpl swapServiceImpl;
-    private final NotificationService notificationService;
+    private final CheckInOutNotificationService checkInOutNotificationService;
 
     public void run() {
         log.info("알림 발송 작업 시작");
         
         // 체크인 알림 발송
-        notificationService.createCheckinNotification();
+        checkInOutNotificationService.createCheckinNotification();
         
         // 체크아웃 알림 발송
-        notificationService.createCheckoutNotification();
+        checkInOutNotificationService.createCheckoutNotification();
         
         log.info("알림 발송 작업 완료");
     }

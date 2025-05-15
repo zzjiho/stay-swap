@@ -2,18 +2,16 @@ package com.stayswap.domains.swap.service;
 
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
-import com.stayswap.domains.notification.service.NotificationService;
+import com.stayswap.domains.notification.service.SwapRequestNotificationService;
 import com.stayswap.domains.swap.constant.SwapStatus;
-import com.stayswap.domains.swap.constant.SwapType;
-import com.stayswap.domains.swap.model.dto.request.SwapRequest;
 import com.stayswap.domains.swap.model.dto.request.StayRequest;
-import com.stayswap.domains.swap.model.dto.response.SwapResponse;
+import com.stayswap.domains.swap.model.dto.request.SwapRequest;
 import com.stayswap.domains.swap.model.dto.response.StayResponse;
+import com.stayswap.domains.swap.model.dto.response.SwapResponse;
 import com.stayswap.domains.swap.model.entity.Swap;
 import com.stayswap.domains.swap.repository.SwapRepository;
 import com.stayswap.domains.user.model.entity.User;
 import com.stayswap.domains.user.repository.UserRepository;
-import com.stayswap.global.code.ErrorCode;
 import com.stayswap.global.error.exception.BusinessException;
 import com.stayswap.global.error.exception.ForbiddenException;
 import com.stayswap.global.error.exception.NotFoundException;
@@ -21,10 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.naming.AuthenticationException;
-
 import static com.stayswap.global.code.ErrorCode.*;
-import static com.stayswap.global.code.ErrorCode.NOT_MY_HOUSE;
 
 @Service
 @Transactional
@@ -34,7 +29,7 @@ public class SwapServiceImpl implements SwapService {
     private final SwapRepository swapRepository;
     private final UserRepository userRepository;
     private final HouseRepository houseRepository;
-    private final NotificationService notificationService;
+    private final SwapRequestNotificationService swapRequestNotificationService;
 
     @Override
     public SwapResponse createSwapRequest(Long requesterId, SwapRequest request) {
@@ -55,7 +50,7 @@ public class SwapServiceImpl implements SwapService {
         
         // 알림 전송
         Long recipientId = targetHouse.getUser().getId();
-        notificationService.createSwapRequestNotification(recipientId, requesterId, savedSwap.getId());
+        swapRequestNotificationService.createSwapRequestNotification(recipientId, requesterId, savedSwap.getId());
 
         return SwapResponse.of(savedSwap);
     }
@@ -72,7 +67,7 @@ public class SwapServiceImpl implements SwapService {
         
         // 알림 전송
         Long recipientId = targetHouse.getUser().getId();
-        notificationService.createBookingRequestNotification(recipientId, requesterId, savedSwap.getId());
+        swapRequestNotificationService.createBookingRequestNotification(recipientId, requesterId, savedSwap.getId());
 
         return StayResponse.of(savedSwap);
     }
