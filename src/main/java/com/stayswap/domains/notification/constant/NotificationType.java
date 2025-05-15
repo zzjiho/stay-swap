@@ -7,6 +7,7 @@ public enum NotificationType {
     SWAP_ACCEPTED("교환 승인"),
     BOOKING_REJECTED("숙박 거절"),
     SWAP_REJECTED("교환 거절"),
+    CHECK_IN("체크인 알림"),
     TEST_NOTIFICATION("테스트 알림");
 
     private final String description;
