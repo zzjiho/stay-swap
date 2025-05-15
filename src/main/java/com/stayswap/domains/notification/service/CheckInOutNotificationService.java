@@ -152,8 +152,8 @@ public class CheckInOutNotificationService {
                 .recipientId(requesterId)
                 .senderId(hostId)
                 .type(NotificationType.CHECK_IN)
-                .title("체크인 안내")
-                .content("오늘은 체크인 날입니다. 호스트가 기다리고 있어요.")
+                .title("[체크인 안내]")
+                .content("오늘은 체크인 날입니다. 호스트가 기다리고 있어요!")
                 .referenceId(swapId)
                 .build();
         
@@ -168,7 +168,7 @@ public class CheckInOutNotificationService {
                 .recipientId(hostId)
                 .senderId(requesterId)
                 .type(NotificationType.CHECK_IN)
-                .title("게스트 도착 안내")
+                .title("[게스트 도착 안내]")
                 .content("오늘은 게스트가 도착하는 날입니다. 환영 준비는 완료되셨나요?")
                 .referenceId(swapId)
                 .build();
@@ -184,8 +184,8 @@ public class CheckInOutNotificationService {
                 .recipientId(recipientId)
                 .senderId(senderId)
                 .type(NotificationType.CHECK_IN)
-                .title("숙소 교환 체크인")
-                .content("오늘은 숙소 교환 체크인 날입니다. 즐거운 여행 되세요.")
+                .title("[숙소 교환 체크인]")
+                .content("오늘은 숙소 교환 체크인 날입니다. 즐거운 여행 되세요!")
                 .referenceId(swapId)
                 .build();
         
@@ -200,8 +200,8 @@ public class CheckInOutNotificationService {
                 .recipientId(requesterId)
                 .senderId(hostId)
                 .type(NotificationType.CHECK_OUT)
-                .title("체크아웃 안내")
-                .content("오늘은 체크아웃 날입니다. 이용해 주셔서 감사합니다.")
+                .title("[체크아웃 안내]")
+                .content("오늘은 체크아웃 날입니다. 이용해 주셔서 감사합니다!")
                 .referenceId(swapId)
                 .build();
         
@@ -216,7 +216,7 @@ public class CheckInOutNotificationService {
                 .recipientId(hostId)
                 .senderId(requesterId)
                 .type(NotificationType.CHECK_OUT)
-                .title("게스트 체크아웃 안내")
+                .title("[게스트 체크아웃 안내]")
                 .content("오늘은 게스트 체크아웃 날입니다. 좋은 만남이 되셨나요?")
                 .referenceId(swapId)
                 .build();
@@ -232,7 +232,7 @@ public class CheckInOutNotificationService {
                 .recipientId(recipientId)
                 .senderId(senderId)
                 .type(NotificationType.CHECK_OUT)
-                .title("숙소 교환 체크아웃")
+                .title("[숙소 교환 체크아웃]")
                 .content("오늘은 숙소 교환 체크아웃 날입니다. 즐거운 시간 되셨나요?")
                 .referenceId(swapId)
                 .build();
