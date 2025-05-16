@@ -5,6 +5,7 @@ import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
+import com.stayswap.domains.house.model.dto.response.MyHouseResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -21,4 +22,6 @@ public interface HouseRepositoryCustom {
     HostDetailResponse getHostDetailById(Long hostId);
     
     List<HouseImageResponse> getHouseImages(Long houseId);
+    
+    Page<MyHouseResponse> getMyHouses(Long userId, Pageable pageable);
 } 

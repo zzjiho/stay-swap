@@ -13,6 +13,7 @@ import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
 import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
+import com.stayswap.domains.house.model.dto.response.MyHouseResponse;
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.model.entity.HouseImage;
 import com.stayswap.domains.house.model.entity.HouseOption;
@@ -58,11 +59,11 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         houseImage.imageUrl,
                         queryFactory.select(review.rating.avg().coalesce(0.0))
                                 .from(review)
-                                .join(review.swap).on(review.swap.house.id.eq(house.id))
+                                .where(review.targetHouse.id.eq(house.id))
                                 .where(review.rating.isNotNull()),
                         queryFactory.select(review.count().coalesce(0L))
                                 .from(review)
-                                .join(review.swap).on(review.swap.house.id.eq(house.id))
+                                .where(review.targetHouse.id.eq(house.id))
                 ))
                 .from(house)
                 .leftJoin(house.houseOption, houseOption)
@@ -107,14 +108,12 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         // 평점
                         queryFactory.select(review.rating.avg().coalesce(0.0))
                                 .from(review)
-                                .join(review.swap)
-                                .where(review.swap.house.id.eq(house.id))
+                                .where(review.targetHouse.id.eq(house.id))
                                 .where(review.rating.isNotNull()),
                         // 리뷰 수
                         queryFactory.select(review.count().coalesce(0L))
                                 .from(review)
-                                .join(review.swap)
-                                .where(review.swap.house.id.eq(house.id)),
+                                .where(review.targetHouse.id.eq(house.id)),
                         house.user.id,
                         // 편의시설 - 순서 수정
                         Projections.constructor(
@@ -204,6 +203,40 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                 .from(houseImage)
                 .where(houseImage.house.id.eq(houseId))
                 .fetch();
+    }
+
+    @Override
+    public Page<MyHouseResponse> getMyHouses(Long userId, Pageable pageable) {
+        QueryResults<MyHouseResponse> results = queryFactory
+                .select(Projections.constructor(
+                        MyHouseResponse.class,
+                        house.id,
+                        house.title,
+                        houseImage.imageUrl,
+                        queryFactory.select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .where(review.targetHouse.id.eq(house.id))
+                                .where(review.rating.isNotNull()),
+                        queryFactory.select(review.count().coalesce(0L))
+                                .from(review)
+                                .where(review.targetHouse.id.eq(house.id)),
+                        house.regTime
+                ))
+                .from(house)
+                .leftJoin(houseImage).on(houseImage.house.id.eq(house.id))
+                .where(
+                        house.user.id.eq(userId),
+                        isMainImage()
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize())
+                .orderBy(house.updateTime.desc())
+                .fetchResults();
+
+        List<MyHouseResponse> content = results.getResults();
+        long total = results.getTotal();
+
+        return new PageImpl<>(content, pageable, total);
     }
 
     /**
@@ -316,7 +349,7 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                     orderSpecifiers.add(new OrderSpecifier<>(Order.DESC,
                         queryFactory.select(review.rating.avg())
                             .from(review)
-                            .join(review.swap).on(review.swap.house.id.eq(house.id))
+                            .where(review.targetHouse.id.eq(house.id))
                             .where(review.rating.isNotNull())));
                     break;
                 case "recommended":

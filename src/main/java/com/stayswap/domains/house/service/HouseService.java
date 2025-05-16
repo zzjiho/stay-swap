@@ -7,6 +7,7 @@ import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
 import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
+import com.stayswap.domains.house.model.dto.response.MyHouseResponse;
 import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
 import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
 import com.stayswap.domains.house.model.entity.House;
@@ -136,5 +137,15 @@ public class HouseService {
         }
         
         return houseRepository.getHouseImages(houseId);
+    }
+    
+    // 내 숙소 목록 조회
+    @Transactional(readOnly = true)
+    public Page<MyHouseResponse> getMyHouses(Long userId, Pageable pageable) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException(NOT_EXISTS_USER);
+        }
+        
+        return houseRepository.getMyHouses(userId, pageable);
     }
 }
