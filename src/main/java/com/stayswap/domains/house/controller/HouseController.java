@@ -8,6 +8,7 @@ import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
 import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
 import com.stayswap.domains.house.model.dto.response.HouseListResponse;
+import com.stayswap.domains.house.model.dto.response.MyHouseResponse;
 import com.stayswap.domains.house.model.dto.response.PopularHouseResponse;
 import com.stayswap.domains.house.model.dto.response.RecentHouseResponse;
 import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
@@ -15,6 +16,8 @@ import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
 import com.stayswap.domains.house.service.HouseRedisService;
 import com.stayswap.domains.house.service.HouseService;
 import com.stayswap.global.model.RestApiResponse;
+import com.stayswap.resolver.userinfo.UserInfo;
+import com.stayswap.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -147,5 +150,18 @@ public class HouseController {
             @PathVariable("houseId") Long houseId) {
         
         return RestApiResponse.success(houseService.getHouseImages(houseId));
+    }
+
+    @Operation(
+            summary = "내 숙소 목록 조회 API",
+            description = "사용자가 등록한 숙소 목록을 조회합니다. 무한 스크롤 구현을 위한 API입니다." +
+                    " 숙소의 기본 정보, 평점, 리뷰 수를 포함합니다."
+    )
+    @GetMapping("/my")
+    public RestApiResponse<Page<MyHouseResponse>> getMyHouses(
+            @UserInfo UserInfoDto userInfo,
+            @PageableDefault(size = 10) Pageable pageable) {
+        
+        return RestApiResponse.success(houseService.getMyHouses(userInfo.getUserId(), pageable));
     }
 }
