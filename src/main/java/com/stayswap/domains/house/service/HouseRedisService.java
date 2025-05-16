@@ -35,7 +35,7 @@ public class HouseRedisService {
         if (cachedHouses == null || cachedHouses.isEmpty()) {
 
             // DB에서 최근 등록된 숙소 조회
-            List<House> recentHouses = houseRepository.findTop10ByIsActiveTrueOrderByRegTimeDesc();
+            List<House> recentHouses = houseRepository.findTop10ByIsActiveTrueAndIsDeleteFalseOrderByRegTimeDesc();
             
             cachedHouses = recentHouses.stream()
                     .map(house -> {

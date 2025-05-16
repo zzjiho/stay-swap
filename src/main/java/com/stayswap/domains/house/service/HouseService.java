@@ -148,4 +148,20 @@ public class HouseService {
         
         return houseRepository.getMyHouses(userId, pageable);
     }
+    
+    // 숙소 삭제
+    public void deleteHouse(Long houseId, Long userId) {
+        House house = houseRepository.findById(houseId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
+                
+        if (!house.getUser().getId().equals(userId)) {
+            throw new ForbiddenException(NOT_AUTHORIZED);
+        }
+        
+        house.delete();
+        
+        // 캐시 무효화
+        houseRedisService.invalidateRecentHousesCache();
+        houseRedisService.invalidatePopularHousesCache();
+    }
 }

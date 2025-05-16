@@ -1,18 +1,9 @@
 package com.stayswap.domains.house.controller;
 
-import com.stayswap.domains.house.constant.HouseType;
 import com.stayswap.domains.house.model.dto.request.CreateHouseRequest;
 import com.stayswap.domains.house.model.dto.request.HouseSearchRequest;
 import com.stayswap.domains.house.model.dto.request.UpdateHouseRequest;
-import com.stayswap.domains.house.model.dto.response.CreateHouseResponse;
-import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
-import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
-import com.stayswap.domains.house.model.dto.response.HouseListResponse;
-import com.stayswap.domains.house.model.dto.response.MyHouseResponse;
-import com.stayswap.domains.house.model.dto.response.PopularHouseResponse;
-import com.stayswap.domains.house.model.dto.response.RecentHouseResponse;
-import com.stayswap.domains.house.model.dto.response.UpdateHouseResponse;
-import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
+import com.stayswap.domains.house.model.dto.response.*;
 import com.stayswap.domains.house.service.HouseRedisService;
 import com.stayswap.domains.house.service.HouseService;
 import com.stayswap.global.model.RestApiResponse;
@@ -25,13 +16,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -87,7 +76,8 @@ public class HouseController {
             @ModelAttribute @Valid HouseSearchRequest request,
             @PageableDefault(size = 10) Pageable pageable) {
         
-        return RestApiResponse.success(houseService.getHouseList(request, pageable));
+        return RestApiResponse.success(
+                houseService.getHouseList(request, pageable));
     }
 
     @Operation(
@@ -163,5 +153,18 @@ public class HouseController {
             @PageableDefault(size = 10) Pageable pageable) {
         
         return RestApiResponse.success(houseService.getMyHouses(userInfo.getUserId(), pageable));
+    }
+    
+    @Operation(
+            summary = "숙소 삭제 API",
+            description = "숙소를 소프트 삭제합니다. 실제로 데이터베이스에서 삭제하지 않고 isDelete 필드를 true로 설정합니다."
+    )
+    @PostMapping("/delete/{houseId}")
+    public RestApiResponse<Void> deleteHouse(
+            @PathVariable("houseId") Long houseId,
+            @UserInfo UserInfoDto userInfo) {
+
+        houseService.deleteHouse(houseId, userInfo.getUserId());
+        return RestApiResponse.success(null);
     }
 }
