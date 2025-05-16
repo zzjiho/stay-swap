@@ -9,14 +9,7 @@ import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.stayswap.domains.house.model.dto.request.HouseSearchRequest;
-import com.stayswap.domains.house.model.dto.response.HouseDetailResponse;
-import com.stayswap.domains.house.model.dto.response.HostDetailResponse;
-import com.stayswap.domains.house.model.dto.response.HouseListResponse;
-import com.stayswap.domains.house.model.dto.response.HouseImageResponse;
-import com.stayswap.domains.house.model.dto.response.MyHouseResponse;
-import com.stayswap.domains.house.model.entity.House;
-import com.stayswap.domains.house.model.entity.HouseImage;
-import com.stayswap.domains.house.model.entity.HouseOption;
+import com.stayswap.domains.house.model.dto.response.*;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -25,10 +18,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.CollectionUtils;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.stayswap.domains.house.model.entity.QHouse.house;
 import static com.stayswap.domains.house.model.entity.QHouseImage.houseImage;
@@ -139,7 +130,8 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                 .from(house)
                 .join(house.user, user)
                 .join(house.houseOption, houseOption)
-                .where(house.id.eq(houseId))
+                .where(house.id.eq(houseId)
+                        .and(house.isDelete.isFalse()))
                 .fetchOne();
     }
 
@@ -226,6 +218,7 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                 .leftJoin(houseImage).on(houseImage.house.id.eq(house.id))
                 .where(
                         house.user.id.eq(userId),
+                        house.isDelete.isFalse(),
                         isMainImage()
                 )
                 .offset(pageable.getOffset())
@@ -260,7 +253,7 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
     }
 
     private BooleanExpression isActive() {
-        return house.isActive.isTrue();
+        return house.isActive.isTrue().and(house.isDelete.isFalse());
     }
 
     private BooleanExpression isMainImage() {

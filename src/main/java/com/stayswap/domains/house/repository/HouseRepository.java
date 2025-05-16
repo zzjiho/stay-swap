@@ -11,7 +11,7 @@ import java.util.List;
 @Repository
 public interface HouseRepository extends JpaRepository<House, Long>, HouseRepositoryCustom {
     
-    List<House> findTop10ByIsActiveTrueOrderByRegTimeDesc();
+    List<House> findTop10ByIsActiveTrueAndIsDeleteFalseOrderByRegTimeDesc();
     
     @Query(value = "select h.* from house h " +
             "join (select r.target_house_id, avg(r.rating) as avg_rating, count(r.review_id) as review_count " +
@@ -19,7 +19,7 @@ public interface HouseRepository extends JpaRepository<House, Long>, HouseReposi
             "      group by r.target_house_id " +
             "      having avg(r.rating) >= :minRating) as ratings " +
             "on h.house_id = ratings.target_house_id " +
-            "where h.is_active = true " +
+            "where h.is_active = true and h.is_delete = false " +
             "order by ratings.review_count desc, ratings.avg_rating desc " +
             "limit 10", nativeQuery = true)
     List<House> findPopularHousesByRatingAndReviewCount(@Param("minRating") Double minRating);

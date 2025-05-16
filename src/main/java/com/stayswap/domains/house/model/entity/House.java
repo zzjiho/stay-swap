@@ -55,6 +55,9 @@ public class House extends BaseTimeEntity {
     @Column(name = "is_active")
     private Boolean isActive;
 
+    @Column(name = "is_delete")
+    private Boolean isDelete;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
@@ -79,6 +82,7 @@ public class House extends BaseTimeEntity {
                 .district(district)
                 .petsAllowed(petsAllowed)
                 .isActive(true)
+                .isDelete(false)
                 .user(user)
                 .houseOption(houseOption)
                 .build();
@@ -104,5 +108,9 @@ public class House extends BaseTimeEntity {
         if (houseOption != null) {
             this.houseOption = houseOption;
         }
+    }
+    
+    public void delete() {
+        this.isDelete = true;
     }
 }

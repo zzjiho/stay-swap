@@ -54,7 +54,6 @@ public enum ErrorCode {
     NOT_MY_INTRODUCTION(FORBIDDEN, false, "F006", "자신의 소개만 수정할 수 있습니다.");
 
 
-
     private final HttpStatusCode statusCode;
     private final boolean notification;
     private final String code;
