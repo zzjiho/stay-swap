@@ -10,6 +10,7 @@ import com.stayswap.domains.user.model.dto.response.UpdateIntroductionResponse;
 import com.stayswap.domains.user.model.entity.User;
 import com.stayswap.domains.user.repository.UserRepository;
 import com.stayswap.domains.user.repository.nickname.GenerateRandomNicknameRepository;
+import com.stayswap.domains.review.repository.ReviewRepository;
 import com.stayswap.global.error.exception.AuthenticationException;
 import com.stayswap.global.error.exception.BusinessException;
 import com.stayswap.global.error.exception.ForbiddenException;
@@ -32,6 +33,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final GenerateRandomNicknameRepository nicknameRepository;
+    private final ReviewRepository reviewRepository;
 
     /**
      * 회원가입
@@ -81,7 +83,11 @@ public class UserService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         
-        return UserInfoResponse.from(user);
+        Integer joinYear = user.getRegTime().getYear();
+        
+        Long reviewCount = reviewRepository.countByTargetHouseUserId(userId);
+        
+        return UserInfoResponse.from(user, joinYear, reviewCount);
     }
 
     /**
