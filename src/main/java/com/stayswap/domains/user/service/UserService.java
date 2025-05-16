@@ -1,10 +1,12 @@
 package com.stayswap.domains.user.service;
 
 import com.stayswap.domains.user.model.dto.request.UpdateNicknameRequest;
+import com.stayswap.domains.user.model.dto.request.UpdateIntroductionRequest;
 import com.stayswap.domains.user.model.dto.response.GetNicknameResponse;
 import com.stayswap.domains.user.model.dto.response.LogoutResponse;
 import com.stayswap.domains.user.model.dto.response.UpdateNicknameResponse;
 import com.stayswap.domains.user.model.dto.response.UserInfoResponse;
+import com.stayswap.domains.user.model.dto.response.UpdateIntroductionResponse;
 import com.stayswap.domains.user.model.entity.User;
 import com.stayswap.domains.user.repository.UserRepository;
 import com.stayswap.domains.user.repository.nickname.GenerateRandomNicknameRepository;
@@ -143,6 +145,22 @@ public class UserService {
         user.updateRefreshTokenNow(now);
 
         return LogoutResponse.of(user);
+    }
+
+    /**
+     * 사용자 소개 수정
+     */
+    public UpdateIntroductionResponse updateIntroduction(UpdateIntroductionRequest request, Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+
+        if (!user.getId().equals(userId)) {
+            throw new ForbiddenException(NOT_MY_INTRODUCTION);
+        }
+
+        user.updateIntroduction(request.getIntroduction());
+
+        return UpdateIntroductionResponse.from(user.getIntroduction());
     }
 
 }

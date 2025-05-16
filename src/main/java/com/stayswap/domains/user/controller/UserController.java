@@ -1,8 +1,10 @@
 package com.stayswap.domains.user.controller;
 
+import com.stayswap.domains.user.model.dto.request.UpdateIntroductionRequest;
 import com.stayswap.domains.user.model.dto.request.UpdateNicknameRequest;
 import com.stayswap.domains.user.model.dto.response.GetNicknameResponse;
 import com.stayswap.domains.user.model.dto.response.LogoutResponse;
+import com.stayswap.domains.user.model.dto.response.UpdateIntroductionResponse;
 import com.stayswap.domains.user.model.dto.response.UpdateNicknameResponse;
 import com.stayswap.domains.user.model.dto.response.UserInfoResponse;
 import com.stayswap.domains.user.service.UserService;
@@ -57,6 +59,19 @@ public class UserController {
 
         return RestApiResponse.success(
                 userService.updateNickname(request, userInfo.getUserId()));
+    }
+
+    @Operation(
+            summary = "사용자 소개 수정 API",
+            description = "사용자 소개를 수정합니다."
+    )
+    @PostMapping("/introduction")
+    public RestApiResponse<UpdateIntroductionResponse> updateIntroduction(
+            @RequestBody @Valid UpdateIntroductionRequest request,
+            @UserInfo UserInfoDto userInfo) {
+
+        return RestApiResponse.success(
+                userService.updateIntroduction(request, userInfo.getUserId()));
     }
 
     @Operation(

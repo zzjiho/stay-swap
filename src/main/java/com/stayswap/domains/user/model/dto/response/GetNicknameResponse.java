@@ -15,8 +15,11 @@ public class GetNicknameResponse {
 
     @Schema(description = "프로필 사진", example = "http://t1.kakaocdn.net/account_images/default_profile.R110x110")
     private String profile;
+    
+    @Schema(description = "사용자 소개", example = "안녕하세요, 여행을 좋아하는 홍길동입니다.")
+    private String introduction;
 
     public static GetNicknameResponse of(User user) {
-        return new GetNicknameResponse(user.getNickname(), user.getProfile());
+        return new GetNicknameResponse(user.getNickname(), user.getProfile(), user.getIntroduction());
     }
 }

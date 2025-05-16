@@ -29,6 +29,9 @@ public class UserInfoResponse {
     @Schema(description = "프로필 이미지 URL", example = "http://example.com/profile.jpg")
     private String profile;
 
+    @Schema(description = "사용자 소개", example = "안녕하세요, 여행을 좋아하는 홍길동입니다.")
+    private String introduction;
+
     @Schema(description = "사용자 타입", example = "KAKAO")
     private UserType userType;
 
@@ -42,6 +45,7 @@ public class UserInfoResponse {
                 .email(user.getEmail())
                 .nickname(user.getNickname())
                 .profile(user.getProfile())
+                .introduction(user.getIntroduction())
                 .userType(user.getUserType())
                 .role(user.getRole())
                 .build();
