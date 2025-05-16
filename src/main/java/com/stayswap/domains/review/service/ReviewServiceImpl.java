@@ -4,6 +4,7 @@ import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.house.repository.HouseRepository;
 import com.stayswap.domains.house.service.HouseRedisService;
 import com.stayswap.domains.review.model.dto.request.ReviewRequest;
+import com.stayswap.domains.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.domains.review.model.dto.response.ReviewResponse;
 import com.stayswap.domains.review.model.entity.Review;
 import com.stayswap.domains.review.repository.ReviewRepository;
@@ -17,12 +18,17 @@ import com.stayswap.global.error.exception.BusinessException;
 import com.stayswap.global.error.exception.ForbiddenException;
 import com.stayswap.global.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.stream.Collectors;
 
 import static com.stayswap.global.code.ErrorCode.*;
 
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class ReviewServiceImpl implements ReviewService {
 
@@ -32,7 +38,6 @@ public class ReviewServiceImpl implements ReviewService {
     private final HouseRedisService houseRedisService;
 
     @Override
-    @Transactional
     public ReviewResponse createReview(Long userId, ReviewRequest request) {
 
         User user = userRepository.findById(userId)
@@ -81,5 +86,14 @@ public class ReviewServiceImpl implements ReviewService {
         houseRedisService.invalidatePopularHousesCache();
 
         return ReviewResponse.of(savedReview);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ReceivedReviewResponse> getReceivedReviews(Long userId, Pageable pageable) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+        
+        return reviewRepository.findReceivedReviews(userId, pageable);
     }
 } 
