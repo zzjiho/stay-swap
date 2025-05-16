@@ -3,6 +3,7 @@ package com.stayswap.domains.review.controller;
 import com.stayswap.domains.review.model.dto.request.ReviewRequest;
 import com.stayswap.domains.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.domains.review.model.dto.response.ReviewResponse;
+import com.stayswap.domains.review.model.dto.response.WrittenReviewResponse;
 import com.stayswap.domains.review.service.ReviewService;
 import com.stayswap.global.model.RestApiResponse;
 import com.stayswap.resolver.userinfo.UserInfo;
@@ -49,5 +50,18 @@ public class ReviewController {
             
         return RestApiResponse.success(
                 reviewService.getReceivedReviews(userInfo.getUserId(), pageable));
+    }
+    
+    @Operation(
+            summary = "내가 작성한 리뷰 목록 조회 API",
+            description = "내가 작성한 리뷰 목록을 조회합니다. 리뷰 대상 숙소 정보(이름, 이미지)를 포함합니다. 무한 스크롤 구현을 위한 페이징 기능을 제공합니다."
+    )
+    @GetMapping("/written")
+    public RestApiResponse<Page<WrittenReviewResponse>> getWrittenReviews(
+            @UserInfo UserInfoDto userInfo,
+            @PageableDefault(size = 10) Pageable pageable) {
+            
+        return RestApiResponse.success(
+                reviewService.getWrittenReviews(userInfo.getUserId(), pageable));
     }
 } 

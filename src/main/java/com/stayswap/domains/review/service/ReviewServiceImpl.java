@@ -1,11 +1,15 @@
 package com.stayswap.domains.review.service;
 
 import com.stayswap.domains.house.model.entity.House;
+import com.stayswap.domains.house.model.entity.HouseImage;
+import com.stayswap.domains.house.repository.HouseImageRepository;
 import com.stayswap.domains.house.repository.HouseRepository;
+import com.stayswap.domains.house.service.HouseImgService;
 import com.stayswap.domains.house.service.HouseRedisService;
 import com.stayswap.domains.review.model.dto.request.ReviewRequest;
 import com.stayswap.domains.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.domains.review.model.dto.response.ReviewResponse;
+import com.stayswap.domains.review.model.dto.response.WrittenReviewResponse;
 import com.stayswap.domains.review.model.entity.Review;
 import com.stayswap.domains.review.repository.ReviewRepository;
 import com.stayswap.domains.swap.constant.SwapStatus;
@@ -23,6 +27,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.stayswap.global.code.ErrorCode.*;
@@ -36,6 +41,8 @@ public class ReviewServiceImpl implements ReviewService {
     private final SwapRepository swapRepository;
     private final UserRepository userRepository;
     private final HouseRedisService houseRedisService;
+    private final HouseImageRepository houseImageRepository;
+    private final HouseImgService houseImgService;
 
     @Override
     public ReviewResponse createReview(Long userId, ReviewRequest request) {
@@ -96,4 +103,13 @@ public class ReviewServiceImpl implements ReviewService {
         
         return reviewRepository.findReceivedReviews(userId, pageable);
     }
-} 
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<WrittenReviewResponse> getWrittenReviews(Long userId, Pageable pageable) {
+        userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+        
+        return reviewRepository.findWrittenReviewsWithQueryDsl(userId, pageable);
+    }
+}
