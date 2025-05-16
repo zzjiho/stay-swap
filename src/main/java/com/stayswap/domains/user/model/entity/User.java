@@ -39,6 +39,9 @@ public class User extends BaseTimeEntity {
 
     @Column(length = 200)
     private String profile;
+    
+    @Column(length = 500)
+    private String introduction;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
@@ -63,5 +66,12 @@ public class User extends BaseTimeEntity {
      */
     public void updateNickname(String nickname) {
         this.nickname = nickname;
+    }
+    
+    /**
+     * 소개 수정
+     */
+    public void updateIntroduction(String introduction) {
+        this.introduction = introduction;
     }
 }
