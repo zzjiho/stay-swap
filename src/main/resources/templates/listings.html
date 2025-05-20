@@ -7,6 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <link rel="stylesheet" th:href="@{/css/listings.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
 <div th:replace="~{layout/layout :: header}"></div>
@@ -108,9 +109,9 @@
                 </div>
                 <div class="sort-options">
                     <select id="sort-select" class="sort-select">
-                        <option value="recommended">추천순</option>
-                        <option value="price_low">가격 낮은순</option>
-                        <option value="price_high">가격 높은순</option>
+                        <option value="review_count">리뷰순</option>
+<!--                        <option value="price_low">가격 낮은순</option>-->
+<!--                        <option value="price_high">가격 높은순</option>-->
                         <option value="rating">평점순</option>
                     </select>
                 </div>

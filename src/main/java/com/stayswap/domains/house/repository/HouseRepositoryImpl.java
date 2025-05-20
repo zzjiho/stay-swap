@@ -345,14 +345,22 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                             .where(review.targetHouse.id.eq(house.id))
                             .where(review.rating.isNotNull())));
                     break;
-                case "recommended":
+                case "review_count":
+                    orderSpecifiers.add(new OrderSpecifier<>(Order.DESC,
+                        queryFactory.select(review.count())
+                            .from(review)
+                            .where(review.targetHouse.id.eq(house.id))));
+                    break;
                 default:
                     orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, house.id));
                     break;
             }
         } else {
-            // 기본 정렬: 최신순
-            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, house.id));
+            // 기본 정렬: 리뷰순
+            orderSpecifiers.add(new OrderSpecifier<>(Order.DESC,
+                queryFactory.select(review.count())
+                    .from(review)
+                    .where(review.targetHouse.id.eq(house.id))));
         }
 
         return orderSpecifiers.toArray(new OrderSpecifier[0]);
