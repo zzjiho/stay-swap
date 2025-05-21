@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>서울 강남 모던 아파트 - StaySwap</title>
+    <title>숙소 상세 - StaySwap</title>
     <link rel="stylesheet" href="/css/main.css">
     <link rel="stylesheet" href="/css/listing-detail.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -76,21 +76,21 @@
                     김민수님이 호스팅하는 숙소
                 </h2>
                 <div class="host-info">
-                    <img id="host-image" class="host-image" src="/images/host-1.jpg" alt="호스트 이미지">
+                    <img id="host-profile-image" class="host-image" src="/images/host-1.jpg" alt="호스트 이미지">
                     <div class="host-details">
-                        <h3 id="host-detail-name" class="host-name">
+                        <h3 id="host-name" class="host-name">
                             김민수
                         </h3>
-                        <div class="host-meta">
-                                <span id="host-joined">
-                                    2020년에 가입
-                                </span>
+                        <div id="host-info-section" class="host-meta">
+                            <span id="host-joined">
+                                2020년에 가입
+                            </span>
                             <span id="host-reviews">
-                                    후기 28개
-                                </span>
+                                후기 28개
+                            </span>
                             <span id="host-rating">
-                                    총 평점: 4.5
-                                </span>
+                                총 평점: 4.5
+                            </span>
 <!--                            <span id="host-response-rate">-->
 <!--                                    응답률: 98%-->
 <!--                                </span>-->
@@ -161,31 +161,31 @@
             </div>
 
             <!-- 예약 옵션 탭 -->
-            <div class="booking-options-section">
-                <h2 class="section-title">예약 옵션</h2>
-                <div class="booking-tabs">
-                    <div class="booking-tab active">기본 교환</div>
-                    <div class="booking-tab">LiveLocal</div>
-                    <div class="booking-tab">TimeBank</div>
-                </div>
-                <div class="booking-tab-panes">
-                    <!-- 기본 교환 탭 -->
-                    <div class="booking-tab-pane active">
-                        <p>기본 교환은 숙소 포인트만으로 교환하는 방식입니다. 추가 옵션을 선택하지 않으면 기본 교환으로 진행됩니다.</p>
-                    </div>
+<!--            <div class="booking-options-section">-->
+<!--                <h2 class="section-title">예약 옵션</h2>-->
+<!--                <div class="booking-tabs">-->
+<!--                    <div class="booking-tab active">기본 교환</div>-->
+<!--                    <div class="booking-tab">LiveLocal</div>-->
+<!--                    <div class="booking-tab">TimeBank</div>-->
+<!--                </div>-->
+<!--                <div class="booking-tab-panes">-->
+<!--                    &lt;!&ndash; 기본 교환 탭 &ndash;&gt;-->
+<!--                    <div class="booking-tab-pane active">-->
+<!--                        <p>기본 교환은 숙소 포인트만으로 교환하는 방식입니다. 추가 옵션을 선택하지 않으면 기본 교환으로 진행됩니다.</p>-->
+<!--                    </div>-->
 
-                    <!-- LiveLocal 탭 -->
-                    <div class="booking-tab-pane" id="livelocal-container">
-                        <!-- 동적으로 생성됨 -->
-                    </div>
+<!--                    &lt;!&ndash; LiveLocal 탭 &ndash;&gt;-->
+<!--                    <div class="booking-tab-pane" id="livelocal-container">-->
+<!--                        &lt;!&ndash; 동적으로 생성됨 &ndash;&gt;-->
+<!--                    </div>-->
 
-                    <!-- TimeBank 탭 -->
-                    <div class="booking-tab-pane" id="timebank-container">
-                        <!-- 동적으로 생성됨 -->
-                    </div>
-                </div>
-                <button id="options-apply-btn" class="btn btn-secondary">옵션 적용하기</button>
-            </div>
+<!--                    &lt;!&ndash; TimeBank 탭 &ndash;&gt;-->
+<!--                    <div class="booking-tab-pane" id="timebank-container">-->
+<!--                        &lt;!&ndash; 동적으로 생성됨 &ndash;&gt;-->
+<!--                    </div>-->
+<!--                </div>-->
+<!--                <button id="options-apply-btn" class="btn btn-secondary">옵션 적용하기</button>-->
+<!--            </div>-->
         </div>
 
         <!-- 오른쪽 컬럼: 예약 사이드바 -->
@@ -195,12 +195,12 @@
                 <div class="sidebar-rating">
                     <i class="fas fa-star"></i>
                     <span id="sidebar-rating">4.9</span>
-                    <span>· 후기 28개</span>
+                    <span>· 후기 <span id="sidebar-review-count">28</span>개</span>
                 </div>
             </div>
-            <div class="sidebar-points" id="summary-points">
-                500 포인트
-            </div>
+<!--            <div class="sidebar-points" id="summary-points">-->
+<!--                500 포인트-->
+<!--            </div>-->
             <div class="booking-form">
                 <div class="form-group">
                     <label class="form-label">체크인</label>
@@ -220,25 +220,25 @@
                     </select>
                 </div>
             </div>
-            <div class="booking-summary">
-                <h3 class="summary-title">요금 세부 정보</h3>
-                <div class="summary-item">
-                    <span>기본 교환 포인트</span>
-                    <span id="listing-points">500 P</span>
-                </div>
-                <div class="summary-item">
-                    <span>LiveLocal 경험</span>
-                    <span id="livelocal-points">0 P</span>
-                </div>
-                <div class="summary-item">
-                    <span>TimeBank 서비스</span>
-                    <span id="timebank-points">0 P</span>
-                </div>
-                <div class="summary-total">
-                    <span>총 포인트</span>
-                    <span id="total-points">500 P</span>
-                </div>
-            </div>
+<!--            <div class="booking-summary">-->
+<!--                <h3 class="summary-title">요금 세부 정보</h3>-->
+<!--                <div class="summary-item">-->
+<!--                    <span>기본 교환 포인트</span>-->
+<!--                    <span id="listing-points">500 P</span>-->
+<!--                </div>-->
+<!--                <div class="summary-item">-->
+<!--                    <span>LiveLocal 경험</span>-->
+<!--                    <span id="livelocal-points">0 P</span>-->
+<!--                </div>-->
+<!--                <div class="summary-item">-->
+<!--                    <span>TimeBank 서비스</span>-->
+<!--                    <span id="timebank-points">0 P</span>-->
+<!--                </div>-->
+<!--                <div class="summary-total">-->
+<!--                    <span>총 포인트</span>-->
+<!--                    <span id="total-points">500 P</span>-->
+<!--                </div>-->
+<!--            </div>-->
             <div class="button-container">
                 <button id="exchange-request-btn" class="btn btn-primary btn-block">교환 요청</button>
                 <button id="stay-request-btn" class="btn btn-primary btn-block">숙박 요청</button>

@@ -8,6 +8,8 @@ import com.stayswap.domains.house.model.dto.response.HouseListResponse;
 import com.stayswap.domains.house.model.dto.response.MyHouseResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.repository.query.Param;
+
 
 import java.util.List;
 
@@ -15,7 +17,7 @@ public interface HouseRepositoryCustom {
     
     Page<HouseListResponse> getHouseList(HouseSearchRequest request, Pageable pageable);
     
-    HouseDetailResponse getHouseDetail(Long houseId);
+    HouseDetailResponse getHouseDetail(@Param("houseId") Long houseId);
     
     Long getHostIdByHouseId(Long houseId);
     

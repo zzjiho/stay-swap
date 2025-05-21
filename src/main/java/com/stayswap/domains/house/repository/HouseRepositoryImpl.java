@@ -164,17 +164,14 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                     .where(house.user.id.eq(hostId))
                     .where(review.rating.isNotNull()));
 
-        NumberExpression<Integer> joinYear = Expressions.numberTemplate(Integer.class,
-                "YEAR({0})", user.regTime);
-
         // 호스트 정보 조회
         return queryFactory
             .select(Projections.constructor(
                 HostDetailResponse.class,
                 user.id,
-                user.userName,
+                user.nickname,
                 user.profile,
-                joinYear,
+                user.regTime.year(),
                 reviewCount,
                 avgRating
             ))

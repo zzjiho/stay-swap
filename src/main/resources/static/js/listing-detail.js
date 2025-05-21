@@ -1,7 +1,27 @@
 $(document).ready(function() {
+    console.log('listing-detail.js 로드됨');
+    
+    // 페이지 로드 시 URL에서 id 파라미터 가져오기 (houseId 대신 id 사용)
+    const urlParams = new URLSearchParams(window.location.search);
+    const houseId = urlParams.get('id'); // houseId 대신 id 사용
+    
+    console.log('URL 파라미터:', window.location.search);
+    console.log('추출된 houseId:', houseId);
+
+    // houseId가 있으면 API 호출
+    if (houseId) {
+        console.log('유효한 houseId가 있어 API 호출 시작');
+        fetchHouseDetail(houseId);
+        fetchHouseImages(houseId); // 숙소 이미지 API 호출 추가
+    } else {
+        console.error('houseId가 없어 API를 호출할 수 없습니다');
+        alert('유효한 숙소 ID가 없습니다. URL에 ?id=숫자 형식으로 숙소 ID를 포함해주세요.');
+    }
+
     // 탭 전환 기능
     $('.booking-tab').on('click', function() {
         const tabIndex = $(this).index();
+        console.log('탭 클릭됨:', tabIndex);
 
         // 탭 활성화
         $('.booking-tab').removeClass('active');
@@ -13,7 +33,8 @@ $(document).ready(function() {
     });
 
     // 갤러리 기능
-    const images = [
+    // 기본 이미지 배열 (API에서 이미지를 가져오기 전에 사용될 기본 이미지)
+    let images = [
         '/images/listing-detail-1.jpg',
         '/images/listing-detail-2.jpg',
         '/images/listing-detail-3.jpg',
@@ -92,114 +113,6 @@ $(document).ready(function() {
         }
     });
 
-    // LiveLocal 경험 데이터 (실제로는 API에서 가져옴)
-    const liveLocalExperiences = [
-        {
-            id: 1,
-            title: '현지인 맛집 투어',
-            description: '강남 현지인들만 아는 숨은 맛집을 소개해드립니다.',
-            duration: 3,
-            points: 100
-        },
-        {
-            id: 2,
-            title: '한강 자전거 투어',
-            description: '한강을 따라 자전거를 타며 서울의 아름다운 경치를 감상하세요.',
-            duration: 2,
-            points: 80
-        }
-    ];
-
-    // TimeBank 서비스 데이터 (실제로는 API에서 가져옴)
-    const timeBankServices = [
-        {
-            id: 1,
-            title: '한국어 회화 수업',
-            description: '기초적인 한국어 회화를 배워보세요.',
-            duration: 1,
-            points: 50
-        },
-        {
-            id: 2,
-            title: '한식 요리 클래스',
-            description: '김치찌개와 불고기 등 한국 전통 요리를 배워보세요.',
-            duration: 2,
-            points: 70
-        }
-    ];
-
-    // LiveLocal 경험 렌더링
-    function renderLiveLocalExperiences() {
-        const container = $('#livelocal-container');
-        container.empty();
-
-        if (liveLocalExperiences.length === 0) {
-            container.html('<p>제공되는 LiveLocal 경험이 없습니다.</p>');
-            return;
-        }
-
-        liveLocalExperiences.forEach(exp => {
-            const option = $('<div>').addClass('booking-option');
-            option.html(`
-                <div class="booking-option-info">
-                    <h5>${exp.title}</h5>
-                    <p>${exp.description}</p>
-                    <div class="booking-option-duration">
-                        <i class="far fa-clock"></i> ${exp.duration}시간
-                    </div>
-                </div>
-                <div class="booking-option-action">
-                    <div class="booking-option-price">${exp.points} P</div>
-                    <div class="booking-option-select">
-                        <label class="radio-label">
-                            <input type="radio" name="livelocal" value="${exp.id}"> 선택
-                        </label>
-                    </div>
-                </div>
-            `);
-
-            container.append(option);
-        });
-    }
-
-    // TimeBank 서비스 렌더링
-    function renderTimeBankServices() {
-        const container = $('#timebank-container');
-        container.empty();
-
-        if (timeBankServices.length === 0) {
-            container.html('<p>제공되는 TimeBank 서비스가 없습니다.</p>');
-            return;
-        }
-
-        timeBankServices.forEach(service => {
-            const option = $('<div>').addClass('booking-option');
-            option.html(`
-                <div class="booking-option-info">
-                    <h5>${service.title}</h5>
-                    <p>${service.description}</p>
-                    <div class="booking-option-duration">
-                        <i class="far fa-clock"></i> ${service.duration}시간
-                    </div>
-                </div>
-                <div class="booking-option-action">
-                    <div class="booking-option-price">${service.points} P</div>
-                    <div class="booking-option-select">
-                        <label class="radio-label">
-                            <input type="radio" name="timebank" value="${service.id}"> 선택
-                        </label>
-                    </div>
-                </div>
-            `);
-
-            container.append(option);
-        });
-    }
-
-    // 초기 데이터 렌더링
-    renderLiveLocalExperiences();
-    renderTimeBankServices();
-
     // 옵션 적용 버튼 클릭 이벤트
     $('#options-apply-btn').on('click', function() {
         let totalPoints = parseInt($('#listing-points').text());
@@ -234,31 +147,6 @@ $(document).ready(function() {
 
         alert('옵션이 적용되었습니다.');
     });
-
-    // 내 숙소 데이터 (실제로는 API에서 가져옴)
-    const myListings = [
-        {
-            id: 1,
-            title: '제주 바다 전망 빌라',
-            location: '제주 서귀포시',
-            image: '/images/my-listing-1.jpg',
-            points: 700
-        },
-        {
-            id: 2,
-            title: '부산 해운대 오션뷰 콘도',
-            location: '부산 해운대구',
-            image: '/images/my-listing-2.jpg',
-            points: 600
-        },
-        {
-            id: 3,
-            title: '강원도 평창 산장',
-            location: '강원 평창군',
-            image: '/images/my-listing-3.jpg',
-            points: 650
-        }
-    ];
 
     // 내 숙소 목록 렌더링
     function renderMyListings() {
@@ -417,4 +305,371 @@ $(document).ready(function() {
         // 성공 메시지
         alert('숙박 요청이 성공적으로 전송되었습니다.');
     });
+
+    // API로 숙소 상세 정보 가져오기
+    function fetchHouseDetail(houseId) {
+        console.log('API 호출 시작: houseId =', houseId);
+        
+        $.ajax({
+            url: `/api/house/${houseId}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('API 응답 성공:', response);
+                
+                if (response.httpStatus === 'OK') {
+                    console.log('숙소 데이터:', response.data);
+                    updateHouseDetailUI(response.data);
+                    
+                    // 호스트 정보 API 호출
+                    fetchHostDetail(houseId);
+                } else {
+                    console.error('API 요청 실패:', response.message);
+                    alert('숙소 정보를 불러오는 데 실패했습니다.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('API 호출 오류:', error);
+                console.error('상태 코드:', xhr.status);
+                console.error('응답 텍스트:', xhr.responseText);
+                alert('서버 연결에 문제가 발생했습니다.');
+            }
+        });
+    }
+
+    // 호스트 상세 정보 API 호출 함수
+    function fetchHostDetail(houseId) {
+        console.log('호스트 정보 API 호출 시작: houseId =', houseId);
+        
+        $.ajax({
+            url: `/api/house/${houseId}/host`,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('호스트 API 응답 성공:', response);
+                
+                if (response.httpStatus === 'OK') {
+                    console.log('호스트 데이터:', response.data);
+                    updateHostDetailUI(response.data);
+                } else {
+                    console.error('호스트 API 요청 실패:', response.message);
+                    console.log('호스트 정보를 불러오는 데 실패했습니다.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('호스트 API 호출 오류:', error);
+                console.error('상태 코드:', xhr.status);
+                console.error('응답 텍스트:', xhr.responseText);
+                console.log('호스트 정보를 불러오는 데 실패했습니다.');
+            }
+        });
+    }
+
+    // 호스트 상세 정보 UI 업데이트 함수
+    function updateHostDetailUI(hostData) {
+        console.log('호스트 UI 업데이트 시작:', hostData);
+        try {
+            // 호스트 이름 업데이트
+            if (hostData.hostName) {
+                $('#host-name-title').text(`${hostData.hostName}님이 호스팅하는 숙소`);
+                $('#host-name').text(hostData.hostName);
+            }
+            
+            // 호스트 프로필 이미지 업데이트
+            if (hostData.profile) {
+                $('#host-profile-image').attr('src', hostData.profile);
+            }
+            
+            // 호스트 정보 섹션 초기화 및 업데이트
+            const hostInfoSection = $('#host-info-section');
+            hostInfoSection.empty();
+            
+            // 가입 년도 추가
+            if (hostData.joinedAt) {
+                hostInfoSection.append(`<span id="host-joined">${hostData.joinedAt}년에 가입</span>`);
+            }
+            
+            // 리뷰 수 추가
+            if (hostData.reviewCount !== undefined) {
+                hostInfoSection.append(`<span id="host-reviews">후기 ${hostData.reviewCount}개</span>`);
+            }
+            
+            // 평점 추가
+            if (hostData.avgRating !== undefined) {
+                hostInfoSection.append(`<span id="host-rating">총 평점: ${hostData.avgRating.toFixed(1)}</span>`);
+            }
+            
+            console.log('호스트 UI 업데이트 완료');
+        } catch (e) {
+            console.error('호스트 UI 업데이트 중 오류 발생:', e);
+        }
+    }
+
+    // 숙소 상세 정보로 UI 업데이트
+    function updateHouseDetailUI(houseData) {
+        console.log('UI 업데이트 시작:', houseData);
+        try {
+            // 제목 및 기본 정보 업데이트
+            if (houseData.title) {
+                console.log('제목 업데이트:', houseData.title);
+                $('#listing-title').text(houseData.title);
+            }
+            
+            if (houseData.description) {
+                $('#listing-description').text(houseData.description);
+            }
+            
+            if (houseData.city && houseData.district) {
+                $('#listing-location').text(`${houseData.city} ${houseData.district}`);
+            }
+
+            // 평점 및 리뷰 업데이트
+            if (houseData.avgRating !== undefined) {
+                const rating = houseData.avgRating.toFixed(1);
+                console.log('평점 업데이트:', rating);
+                $('#listing-rating, #sidebar-rating').text(rating);
+            }
+            
+            if (houseData.reviewCount !== undefined) {
+                $('#listing-reviews').text(`(${houseData.reviewCount})`);
+                $('#sidebar-review-count').text(houseData.reviewCount);
+            }
+
+            // 편의시설 업데이트
+            if (houseData.amenityInfo) {
+                console.log('편의시설 업데이트');
+                updateAmenities(houseData.amenityInfo);
+            } else {
+                console.warn('편의시설 정보가 없습니다');
+            }
+
+            // 특징 배지 업데이트
+            console.log('특징 배지 업데이트');
+            updateFeatureBadges(houseData);
+
+            // 호스트 정보 업데이트 - 호스트 상세 정보는 별도 API 호출 필요할 수 있음
+            if (houseData.hostId) {
+                $('#host-name-title').text(`호스트 ID ${houseData.hostId}님이 호스팅하는 숙소`);
+            }
+
+            // 숙소 규칙 정보 추가 (HTML에 해당 요소가 있는 경우)
+            if (houseData.rule && $('#listing-rules').length) {
+                $('#listing-rules').text(houseData.rule);
+            }
+
+            console.log('UI 업데이트 완료');
+        } catch (e) {
+            console.error('UI 업데이트 중 오류 발생:', e);
+        }
+    }
+
+    // 편의시설 UI 업데이트
+    function updateAmenities(amenityInfo) {
+        try {
+            console.log('편의시설 업데이트 시작:', amenityInfo);
+            const amenitiesContainer = $('#amenities-container');
+            
+            if (!amenitiesContainer.length) {
+                console.warn('amenities-container 요소를 찾을 수 없습니다');
+                return;
+            }
+            
+            amenitiesContainer.empty();
+
+            if (!amenityInfo) {
+                console.warn('편의시설 정보가 없습니다');
+                return;
+            }
+
+            // 편의시설 매핑 객체 - API 필드명과, 화면에 표시할 텍스트
+            const amenitiesMap = {
+                hasFreeWifi: '무선 인터넷',
+                hasAirConditioner: '에어컨',
+                hasTV: 'TV',
+                hasWashingMachine: '세탁기',
+                hasKitchen: '주방',
+                hasDryer: '건조기',
+                hasIron: '다리미',
+                hasRefrigerator: '냉장고',
+                hasMicrowave: '전자레인지',
+                hasFreeParking: '무료 주차',
+                hasBalconyTerrace: '발코니/테라스',
+                hasPetsAllowed: '반려동물 동반 가능',
+                hasSmokingAllowed: '흡연 가능',
+                hasElevator: '엘리베이터'
+            };
+
+            let addedCount = 0;
+            // 활성화된 편의시설만 표시
+            for (const [key, value] of Object.entries(amenitiesMap)) {
+                if (amenityInfo[key]) {
+                    const amenityElement = $('<div>').addClass('amenity');
+                    amenityElement.html(`
+                        <i class="fas fa-check"></i>
+                        <span>${value}</span>
+                    `);
+                    amenitiesContainer.append(amenityElement);
+                    addedCount++;
+                }
+            }
+            console.log(`기본 편의시설 ${addedCount}개 추가됨`);
+
+            // 기타 편의시설이 있으면 추가
+            if (amenityInfo.otherAmenities) {
+                const otherAmenities = amenityInfo.otherAmenities.split(',');
+                otherAmenities.forEach(amenity => {
+                    const trimmedAmenity = amenity.trim();
+                    if (trimmedAmenity) {
+                        const amenityElement = $('<div>').addClass('amenity');
+                        amenityElement.html(`
+                            <i class="fas fa-check"></i>
+                            <span>${trimmedAmenity}</span>
+                        `);
+                        amenitiesContainer.append(amenityElement);
+                    }
+                });
+                console.log(`기타 편의시설 ${otherAmenities.length}개 추가됨`);
+            }
+
+            // 기타 특징이 있으면 추가
+            if (amenityInfo.otherFeatures) {
+                const otherFeatures = amenityInfo.otherFeatures.split(',');
+                otherFeatures.forEach(feature => {
+                    const trimmedFeature = feature.trim();
+                    if (trimmedFeature) {
+                        const featureElement = $('<div>').addClass('amenity');
+                        featureElement.html(`
+                            <i class="fas fa-check"></i>
+                            <span>${trimmedFeature}</span>
+                        `);
+                        amenitiesContainer.append(featureElement);
+                    }
+                });
+                console.log(`기타 특징 ${otherFeatures.length}개 추가됨`);
+            }
+            
+            console.log('편의시설 업데이트 완료');
+        } catch (e) {
+            console.error('편의시설 업데이트 중 오류 발생:', e);
+        }
+    }
+
+    // 특징 배지 업데이트
+    function updateFeatureBadges(houseData) {
+        try {
+            console.log('배지 업데이트 시작');
+            const featuresContainer = $('#listing-features');
+            if (!featuresContainer.length) {
+                console.warn('listing-features 요소를 찾을 수 없습니다');
+                return;
+            }
+            
+            featuresContainer.empty();
+
+            // 반려동물 허용 여부에 따라 배지 추가
+            if (houseData.petsAllowed) {
+                console.log('반려동물 동반 가능 배지 추가');
+                featuresContainer.append('<span class="badge badge-outline">반려동물 동반 가능</span>');
+            }
+
+            // 무료 주차 여부에 따라 배지 추가
+            if (houseData.amenityInfo && houseData.amenityInfo.hasFreeParking) {
+                console.log('무료 주차 배지 추가');
+                featuresContainer.append('<span class="badge badge-outline">무료 주차</span>');
+            }
+
+            // 기본 배지 추가 (LiveLocal)
+            featuresContainer.append('<span class="badge badge-outline">LiveLocal</span>');
+
+            // 숙소 유형 배지 추가
+            if (houseData.houseType) {
+                let houseTypeText = houseData.houseType;
+                // 숙소 유형 매핑 (필요에 따라 조정)
+                const houseTypeMap = {
+                    'APT': '아파트',
+                    'HOUSE': '단독주택',
+                    'VILLA': '빌라',
+                    'PENSION': '펜션',
+                    'HOTEL': '호텔'
+                };
+
+                if (houseTypeMap[houseData.houseType]) {
+                    houseTypeText = houseTypeMap[houseData.houseType];
+                }
+
+                console.log('숙소 유형 배지 추가:', houseTypeText);
+                featuresContainer.append(`<span class="badge badge-outline">${houseTypeText}</span>`);
+            }
+
+            // 침실, 침대, 욕실 정보 배지 추가
+            if (houseData.bedrooms !== undefined) {
+                featuresContainer.append(`<span class="badge badge-outline">침실 ${houseData.bedrooms}개</span>`);
+            }
+            
+            if (houseData.bed !== undefined) {
+                featuresContainer.append(`<span class="badge badge-outline">침대 ${houseData.bed}개</span>`);
+            }
+            
+            if (houseData.bathrooms !== undefined) {
+                featuresContainer.append(`<span class="badge badge-outline">욕실 ${houseData.bathrooms}개</span>`);
+            }
+            
+            if (houseData.maxGuests !== undefined) {
+                featuresContainer.append(`<span class="badge badge-outline">최대 ${houseData.maxGuests}명</span>`);
+            }
+
+            // 크기 정보가 있으면 추가
+            if (houseData.size) {
+                featuresContainer.append(`<span class="badge badge-outline">${houseData.size}평</span>`);
+            }
+            
+            console.log('배지 업데이트 완료');
+        } catch (e) {
+            console.error('배지 업데이트 중 오류 발생:', e);
+        }
+    }
+
+    // 숙소 이미지 API 호출 함수
+    function fetchHouseImages(houseId) {
+        console.log('숙소 이미지 API 호출 시작: houseId =', houseId);
+        
+        $.ajax({
+            url: `/api/house/${houseId}/images`,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('이미지 API 응답 성공:', response);
+                
+                if (response.httpStatus === 'OK' && response.data && response.data.length > 0) {
+                    console.log('이미지 데이터:', response.data);
+                    
+                    // 이미지 URL 배열 추출
+                    const apiImages = response.data.map(image => image.imageUrl);
+                    console.log('추출된 이미지 URL:', apiImages);
+                    
+                    if (apiImages.length > 0) {
+                        // API에서 가져온 이미지로 갤러리 업데이트
+                        images = apiImages;
+                        currentImageIndex = 0;
+                        
+                        // 첫 번째 이미지 표시
+                        $('#gallery-main-image').attr('src', images[0]);
+                        
+                        // 도트 갱신
+                        createGalleryDots();
+                        
+                        console.log('갤러리 이미지 업데이트 완료');
+                    }
+                } else {
+                    console.log('이미지가 없거나 응답이 비어있습니다. 기본 이미지를 사용합니다.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('이미지 API 호출 오류:', error);
+                console.error('상태 코드:', xhr.status);
+                console.error('응답 텍스트:', xhr.responseText);
+                console.log('기본 이미지를 사용합니다.');
+            }
+        });
+    }
 });

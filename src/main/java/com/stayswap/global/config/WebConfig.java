@@ -71,7 +71,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/token/refresh",
                         "/v3/api-docs/**",
                         "/api/config/firebase",
-                        "/api/house",
+                        "/api/house/**",
                         "/api/health-check");
 
     }

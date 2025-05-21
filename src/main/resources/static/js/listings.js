@@ -182,7 +182,7 @@ $(document).ready(function() {
             // 숙소 카드 HTML 생성
             const card = $('<div>').addClass('listing-card');
             card.html(`
-                <a href="/page/listings/${listing.houseId}" class="listing-link">
+                <a href="/page/listing-detail?id=${listing.houseId}" class="listing-link">
                     <div class="listing-image">
                         <img src="${listing.mainImageUrl || '/images/placeholder.jpg'}" alt="${listing.title}">
                         <div class="listing-rating">

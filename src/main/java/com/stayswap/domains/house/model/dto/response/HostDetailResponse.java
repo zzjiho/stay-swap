@@ -20,7 +20,7 @@ public class HostDetailResponse {
     private String hostName;
 
     @Schema(description = "호스트 프로필 이미지", example = "https://example.com/profile.jpg")
-    private String profileImage;
+    private String profile;
 
     @Schema(description = "가입 년도", example = "2020")
     private Integer joinedAt;
