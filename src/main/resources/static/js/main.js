@@ -824,3 +824,45 @@ async function registerFCMToken() {
         return false;
     }
 }
+
+// 인기 숙소 로드 함수
+function loadPopularHouses() {
+    $.ajax({
+        url: '/api/house/popular',
+        method: 'GET',
+        data: { limit: 3 },
+        success: function(response) {
+            if (response.httpStatus === 'OK' && response.data) {
+                const popularHousesContainer = $('#popular-houses');
+                popularHousesContainer.empty();
+
+                response.data.forEach(house => {
+                    const houseCard = `
+                        <div class="property-card">
+                            <div class="property-image">
+                                <img src="${house.thumbnailUrl}" alt="${house.title}">
+                                <div class="property-rating">
+                                    <i class="fas fa-star"></i> ${house.rating} (${house.reviewCount})
+                                </div>
+                            </div>
+                            <div class="property-content">
+                                <h3 class="property-title">${house.title}</h3>
+                                <p class="property-location">${house.city} ${house.district}</p>
+                                <a href="/page/listing-detail?id=${house.houseId}" class="btn btn-primary btn-block">자세히 보기</a>
+                            </div>
+                        </div>
+                    `;
+                    popularHousesContainer.append(houseCard);
+                });
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('인기 숙소 로드 실패:', error);
+        }
+    });
+}
+
+// 페이지 로드 시 인기 숙소 로드
+$(document).ready(function() {
+    loadPopularHouses();
+});

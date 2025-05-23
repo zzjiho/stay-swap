@@ -1,5 +1,8 @@
-$(document).ready(function() {
+document.addEventListener('DOMContentLoaded', function() {
     console.log('listing-detail.js 로드됨');
+    
+    // 로딩 스피너 표시
+    $('#loading-overlay').show();
     
     // 페이지 로드 시 URL에서 id 파라미터 가져오기
     const urlParams = new URLSearchParams(window.location.search);
@@ -11,11 +14,26 @@ $(document).ready(function() {
     // houseId가 있으면 API 호출
     if (houseId) {
         console.log('유효한 houseId가 있어 API 호출 시작');
-        fetchHouseDetail(houseId);
-        fetchHouseImages(houseId); // 숙소 이미지 API 호출 추가
+        Promise.all([
+            fetchHouseDetail(houseId),
+            fetchHouseImages(houseId)
+        ]).then(() => {
+            // 모든 API 호출이 완료되면 로딩 스피너 숨기기
+            $('#loading-overlay').hide();
+            // 콘텐츠 표시
+            $('.listing-detail-container').css('visibility', 'visible');
+        }).catch(error => {
+            console.error('API 호출 중 오류 발생:', error);
+            $('#loading-overlay').hide();
+            // 에러가 발생해도 콘텐츠는 표시
+            $('.listing-detail-container').css('visibility', 'visible');
+        });
     } else {
         console.error('houseId가 없어 API를 호출할 수 없습니다');
         alert('유효한 숙소 ID가 없습니다. URL에 ?id=숫자 형식으로 숙소 ID를 포함해주세요.');
+        $('#loading-overlay').hide();
+        // 에러가 발생해도 콘텐츠는 표시
+        $('.listing-detail-container').css('visibility', 'visible');
     }
 
     // 탭 전환 기능
@@ -430,7 +448,7 @@ $(document).ready(function() {
     function fetchHouseDetail(houseId) {
         console.log('API 호출 시작: houseId =', houseId);
         
-        $.ajax({
+        return $.ajax({
             url: `/api/house/${houseId}`,
             type: 'GET',
             dataType: 'json',
@@ -442,7 +460,7 @@ $(document).ready(function() {
                     updateHouseDetailUI(response.data);
                     
                     // 호스트 정보 API 호출
-                    fetchHostDetail(houseId);
+                    return fetchHostDetail(houseId);
                 } else {
                     console.error('API 요청 실패:', response.message);
                     alert('숙소 정보를 불러오는 데 실패했습니다.');
