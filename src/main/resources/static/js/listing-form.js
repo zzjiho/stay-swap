@@ -11,6 +11,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentStep = 1;
     const totalSteps = steps.length;
 
+    // 업로드된 이미지 파일들을 저장할 배열
+    let uploadedImages = [];
+
     // 단계 이동 함수
     function goToStep(step) {
         // 현재 단계 숨기기
@@ -105,29 +108,18 @@ document.addEventListener('DOMContentLoaded', function() {
             case 3:
                 // 3단계: 사진 및 설명 검사
                 const description = document.getElementById('listing-description').value;
-                const imagePreviewContainer = document.getElementById('image-preview-container');
 
                 if (!description || description.length < 100) {
                     alert('숙소 설명은 최소 100자 이상 작성해주세요.');
                     isValid = false;
-                } else if (imagePreviewContainer.children.length === 0) {
+                } else if (uploadedImages.length === 0) {
                     alert('최소 1장 이상의 숙소 사진을 업로드해주세요.');
                     isValid = false;
                 }
                 break;
 
             case 4:
-                // 4단계: 교환 옵션 검사
-                const points = document.getElementById('listing-points').value;
-
-                if (!points || points < 100) {
-                    alert('교환 포인트는 최소 100 이상이어야 합니다.');
-                    isValid = false;
-                }
-                break;
-
-            case 5:
-                // 5단계: 약관 동의 검사
+                // 4단계: 약관 동의 검사
                 const termsAgree = document.getElementById('terms-agree').checked;
 
                 if (!termsAgree) {
@@ -144,6 +136,9 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateReviewContent() {
         // 기본 정보 검토
         const reviewBasicInfo = document.getElementById('review-basic-info');
+        const propertyTypeValue = document.querySelector('input[name="property-type"]:checked').value;
+        const propertyTypeText = getPropertyTypeText(propertyTypeValue);
+
         reviewBasicInfo.innerHTML = `
             <div class="review-item">
                 <span class="review-label">숙소 이름:</span>
@@ -151,7 +146,7 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
             <div class="review-item">
                 <span class="review-label">숙소 유형:</span>
-                <span class="review-value">${document.querySelector('input[name="property-type"]:checked').value}</span>
+                <span class="review-value">${propertyTypeText}</span>
             </div>
             <div class="review-item">
                 <span class="review-label">숙소 크기:</span>
@@ -256,29 +251,33 @@ document.addEventListener('DOMContentLoaded', function() {
             reviewPhotosDescription.innerHTML += imagesHTML;
         }
 
-        // 교환 옵션 검토
+        // 교환 옵션 검토 섹션 숨기기 (4단계 제거됨)
         const reviewExchangeOptions = document.getElementById('review-exchange-options');
-        reviewExchangeOptions.innerHTML = `
-            <div class="review-item">
-                <span class="review-label">교환 포인트:</span>
-                <span class="review-value">${document.getElementById('listing-points').value} P</span>
-            </div>
-        `;
+        reviewExchangeOptions.style.display = 'none';
+    }
 
-        // 교환 유형 추가
-        const exchangeTypes = [];
-        document.querySelectorAll('input[name="exchange-types"]:checked').forEach(input => {
-            exchangeTypes.push(input.nextElementSibling.textContent.trim());
-        });
+    // 숙소 유형 텍스트 변환 함수
+    function getPropertyTypeText(value) {
+        const typeMap = {
+            'apartment': '아파트',
+            'house': '주택',
+            'villa': '빌라',
+            'op': '오피스텔',
+            'other': '기타'
+        };
+        return typeMap[value] || value;
+    }
 
-        if (exchangeTypes.length > 0) {
-            reviewExchangeOptions.innerHTML += `
-                <div class="review-item">
-                    <span class="review-label">교환 유형:</span>
-                    <span class="review-value">${exchangeTypes.join(', ')}</span>
-                </div>
-            `;
-        }
+    // 숙소 유형을 API 형식으로 변환
+    function getHouseTypeForAPI(value) {
+        const typeMap = {
+            'apartment': 'APT',
+            'house': 'HOUSE',
+            'villa': 'VILA',
+            'op': 'OP',
+            'other': 'OTHER'
+        };
+        return typeMap[value] || 'OTHER';
     }
 
     // 이미지 업로드 관련 기능
@@ -320,7 +319,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // 파일 처리 함수
     function handleFiles(files) {
         // 최대 10개 파일 제한
-        if (imagePreviewContainer.children.length + files.length > 10) {
+        if (uploadedImages.length + files.length > 10) {
             alert('최대 10장까지만 업로드할 수 있습니다.');
             return;
         }
@@ -340,12 +339,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 continue;
             }
 
+            // 파일을 업로드 배열에 추가
+            uploadedImages.push(file);
+
             // 이미지 미리보기 생성
             const reader = new FileReader();
 
             reader.onload = function(e) {
                 const previewDiv = document.createElement('div');
                 previewDiv.className = 'image-preview';
+                previewDiv.setAttribute('data-file-index', uploadedImages.length - 1);
 
                 const img = document.createElement('img');
                 img.src = e.target.result;
@@ -357,7 +360,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 // 이미지 삭제 버튼 이벤트
                 removeButton.addEventListener('click', function() {
+                    const fileIndex = parseInt(previewDiv.getAttribute('data-file-index'));
+                    // 업로드 배열에서 파일 제거
+                    uploadedImages.splice(fileIndex, 1);
+                    // 미리보기 제거
                     previewDiv.remove();
+                    // 인덱스 재정렬
+                    updateFileIndices();
                 });
 
                 previewDiv.appendChild(img);
@@ -369,148 +378,152 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // LiveLocal 경험 추가 버튼
-    const addExperienceBtn = document.getElementById('add-experience-btn');
-    const experienceList = document.getElementById('experience-list');
+    // 파일 인덱스 업데이트 함수
+    function updateFileIndices() {
+        const previews = imagePreviewContainer.querySelectorAll('.image-preview');
+        previews.forEach((preview, index) => {
+            preview.setAttribute('data-file-index', index);
+        });
+    }
 
-    addExperienceBtn.addEventListener('click', function() {
-        const experienceItem = document.createElement('div');
-        experienceItem.className = 'experience-item';
-        experienceItem.innerHTML = `
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">경험 제목</label>
-                    <input type="text" name="experience-title[]" class="form-control" placeholder="예: 강남 맛집 투어">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">소요 시간</label>
-                    <div class="input-group">
-                        <input type="number" name="experience-duration[]" class="form-control" min="1" placeholder="0">
-                        <span class="input-group-text">시간</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">추가 포인트</label>
-                    <div class="input-group">
-                        <input type="number" name="experience-points[]" class="form-control" min="0" placeholder="0">
-                        <span class="input-group-text">P</span>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">경험 설명</label>
-                <textarea name="experience-description[]" class="form-control" rows="2" placeholder="경험에 대한 설명을 입력해주세요."></textarea>
-            </div>
-            <button type="button" class="btn btn-outline remove-item">
-                <i class="fas fa-trash"></i> 삭제
-            </button>
-        `;
+    // 폼 데이터 생성 함수
+    function createFormData() {
+        const formData = new FormData();
 
-        // 삭제 버튼 이벤트
-        const removeButton = experienceItem.querySelector('.remove-item');
-        removeButton.addEventListener('click', function() {
-            experienceItem.remove();
+        // 숙소 정보 객체 생성
+        const houseRequest = {
+            title: document.getElementById('listing-title').value,
+            description: document.getElementById('listing-description').value,
+            rule: document.getElementById('listing-rules').value || null,
+            houseType: getHouseTypeForAPI(document.querySelector('input[name="property-type"]:checked').value),
+            size: parseFloat(document.getElementById('listing-size').value),
+            bedrooms: parseInt(document.getElementById('listing-bedrooms').value),
+            bed: parseInt(document.getElementById('listing-beds').value),
+            bathrooms: parseInt(document.getElementById('listing-bathrooms').value),
+            maxGuests: parseInt(document.getElementById('listing-guests').value),
+            address: document.getElementById('listing-address').value,
+            city: document.getElementById('listing-city').value,
+            district: document.getElementById('listing-district').value,
+            petsAllowed: document.querySelector('input[name="features"][value="pets"]')?.checked || false,
+            options: {
+                hasFreeWifi: document.querySelector('input[name="amenities"][value="wifi"]')?.checked || false,
+                hasAirConditioner: document.querySelector('input[name="amenities"][value="aircon"]')?.checked || false,
+                hasTV: document.querySelector('input[name="amenities"][value="tv"]')?.checked || false,
+                hasWashingMachine: document.querySelector('input[name="amenities"][value="washer"]')?.checked || false,
+                hasKitchen: document.querySelector('input[name="amenities"][value="kitchen"]')?.checked || false,
+                hasDryer: document.querySelector('input[name="amenities"][value="hairdryer"]')?.checked || false,
+                hasIron: document.querySelector('input[name="amenities"][value="iron"]')?.checked || false,
+                hasRefrigerator: document.querySelector('input[name="amenities"][value="fridge"]')?.checked || false,
+                hasMicrowave: document.querySelector('input[name="amenities"][value="microwave"]')?.checked || false,
+                otherAmenities: null,
+                hasFreeParking: document.querySelector('input[name="features"][value="parking"]')?.checked || false,
+                hasBalconyTerrace: document.querySelector('input[name="features"][value="balcony"]')?.checked || false,
+                hasPetsAllowed: document.querySelector('input[name="features"][value="pets"]')?.checked || false,
+                hasSmokingAllowed: document.querySelector('input[name="features"][value="smoking"]')?.checked || false,
+                hasElevator: document.querySelector('input[name="features"][value="elevator"]')?.checked || false,
+                otherFeatures: null
+            }
+        };
+
+        // JSON 데이터를 Blob으로 변환하여 추가
+        const requestBlob = new Blob([JSON.stringify(houseRequest)], {
+            type: 'application/json'
+        });
+        formData.append('request', requestBlob);
+
+        // 이미지 파일들 추가
+        uploadedImages.forEach((file, index) => {
+            formData.append('images', file);
         });
 
-        experienceList.appendChild(experienceItem);
-    });
+        return formData;
+    }
 
-    // TimeBank 서비스 추가 버튼
-    const addServiceBtn = document.getElementById('add-service-btn');
-    const serviceList = document.getElementById('service-list');
-
-    addServiceBtn.addEventListener('click', function() {
-        const serviceItem = document.createElement('div');
-        serviceItem.className = 'service-item';
-        serviceItem.innerHTML = `
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">서비스 제목</label>
-                    <input type="text" name="service-title[]" class="form-control" placeholder="예: 한국어 회화 레슨">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">소요 시간</label>
-                    <div class="input-group">
-                        <input type="number" name="service-duration[]" class="form-control" min="1" placeholder="0">
-                        <span class="input-group-text">시간</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">추가 포인트</label>
-                    <div class="input-group">
-                        <input type="number" name="service-points[]" class="form-control" min="0" placeholder="0">
-                        <span class="input-group-text">P</span>
-                    </div>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="form-label">서비스 설명</label>
-                <textarea name="service-description[]" class="form-control" rows="2" placeholder="서비스에 대한 설명을 입력해주세요."></textarea>
-            </div>
-            <button type="button" class="btn btn-outline remove-item">
-                <i class="fas fa-trash"></i> 삭제
-            </button>
-        `;
-
-        // 삭제 버튼 이벤트
-        const removeButton = serviceItem.querySelector('.remove-item');
-        removeButton.addEventListener('click', function() {
-            serviceItem.remove();
-        });
-
-        serviceList.appendChild(serviceItem);
-    });
-
-    // 교환 유형에 따른 섹션 표시/숨김
-    const liveLocalCheckbox = document.querySelector('input[name="exchange-types"][value="livelocal"]');
-    const timeBankCheckbox = document.querySelector('input[name="exchange-types"][value="timebank"]');
-    const liveLocalSection = document.getElementById('livelocal-section');
-    const timeBankSection = document.getElementById('timebank-section');
-
-    // 초기 상태 설정
-    liveLocalSection.style.display = liveLocalCheckbox.checked ? 'block' : 'none';
-    timeBankSection.style.display = timeBankCheckbox.checked ? 'block' : 'none';
-
-    // 체크박스 변경 이벤트
-    liveLocalCheckbox.addEventListener('change', function() {
-        liveLocalSection.style.display = this.checked ? 'block' : 'none';
-    });
-
-    timeBankCheckbox.addEventListener('change', function() {
-        timeBankSection.style.display = this.checked ? 'block' : 'none';
-    });
+    // 로딩 상태 관리 함수
+    function setLoading(isLoading) {
+        if (isLoading) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 등록 중...';
+        } else {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '숙소 등록하기';
+        }
+    }
 
     // 폼 제출 이벤트
     form.addEventListener('submit', function(e) {
         e.preventDefault();
 
-        // 마지막 단계 유효성 검사
-        if (validateStep(totalSteps)) {
-            // 폼 데이터 수집
-            const formData = new FormData(form);
-
-            // API 호출 (실제 구현 시)
-            // fetch('/api/listings', {
-            //     method: 'POST',
-            //     body: formData
-            // })
-            // .then(response => response.json())
-            // .then(data => {
-            //     if (data.success) {
-            //         alert('숙소가 성공적으로 등록되었습니다.');
-            //         window.location.href = '/host/listings';
-            //     } else {
-            //         alert(data.message || '숙소 등록에 실패했습니다.');
-            //     }
-            // })
-            // .catch(error => {
-            //     console.error('Error:', error);
-            //     alert('숙소 등록 중 오류가 발생했습니다.');
-            // });
-
-            // 임시 구현 (API 연동 전)
-            alert('숙소가 성공적으로 등록되었습니다.');
-            window.location.href = '/host/listings';
+        // 인증 토큰 체크
+        if (!window.auth?.accessToken) {
+            alert('로그인이 필요한 서비스입니다.');
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.href);
+            return;
         }
+
+        // 마지막 단계 유효성 검사
+        if (!validateStep(totalSteps)) {
+            return;
+        }
+
+        // 로딩 상태 시작
+        setLoading(true);
+
+        // 폼 데이터 생성
+        const formData = createFormData();
+
+        // jQuery AJAX 요청 (사용자 정보는 서버에서 자동 처리)
+        $.ajax({
+            url: `/api/house`,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'Authorization': 'Bearer ' + window.auth.accessToken
+            },
+            success: function(response) {
+                console.log('숙소 등록 성공:', response);
+                alert('숙소가 성공적으로 등록되었습니다.');
+
+                // 성공 시 리다이렉트
+                window.location.href = '/page/listings';
+            },
+            error: function(xhr, status, error) {
+                console.error('숙소 등록 실패:', xhr.responseText);
+
+                let errorMessage = '숙소 등록 중 오류가 발생했습니다.';
+
+                try {
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse.message) {
+                        errorMessage = errorResponse.message;
+                    } else if (errorResponse.errors && errorResponse.errors.length > 0) {
+                        errorMessage = errorResponse.errors[0].message;
+                    }
+                } catch (e) {
+                    console.error('Error parsing response:', e);
+                }
+
+                alert(errorMessage);
+            },
+            complete: function() {
+                // 로딩 상태 종료
+                setLoading(false);
+            }
+        });
     });
+
+    // 디버깅을 위한 콘솔 로그 함수
+    function debugFormData() {
+        const formData = createFormData();
+        console.log('Form Data Contents:');
+
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ', pair[1]);
+        }
+    }
+
+    // 개발자 도구에서 디버깅할 수 있도록 전역 함수로 노출
+    window.debugFormData = debugFormData;
 });

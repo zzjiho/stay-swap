@@ -7,6 +7,7 @@
     <link rel="stylesheet" th:href="@{/css/main.css}">
     <link rel="stylesheet" th:href="@{/css/listing-form.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 </head>
 <body>
 <!-- 헤더 포함 -->
@@ -35,12 +36,12 @@
                 <div class="step-number">3</div>
                 <div class="step-label">사진 및 설명</div>
             </div>
-            <div class="progress-step" data-step="4">
-                <div class="step-number">4</div>
-                <div class="step-label">교환 옵션</div>
-            </div>
+<!--            <div class="progress-step" data-step="4">-->
+<!--                <div class="step-number">4</div>-->
+<!--                <div class="step-label">교환 옵션</div>-->
+<!--            </div>-->
             <div class="progress-step" data-step="5">
-                <div class="step-number">5</div>
+                <div class="step-number">4</div>
                 <div class="step-label">검토 및 등록</div>
             </div>
         </div>
@@ -291,121 +292,121 @@
         </div>
 
         <!-- 4단계: 교환 옵션 -->
-        <div class="form-step" id="step-4">
-            <h2 class="step-title">교환 옵션</h2>
-            <p class="step-description">숙소 교환에 대한 옵션을 설정해주세요.</p>
+<!--        <div class="form-step" id="step-4">-->
+<!--            <h2 class="step-title">교환 옵션</h2>-->
+<!--            <p class="step-description">숙소 교환에 대한 옵션을 설정해주세요.</p>-->
 
-            <div class="form-group">
-                <label for="listing-points" class="form-label">교환 포인트</label>
-                <div class="input-group">
-                    <input type="number" id="listing-points" name="points" class="form-control" min="100" placeholder="0" required>
-                    <span class="input-group-text">P</span>
-                </div>
-                <div class="form-hint">숙소 크기, 위치, 편의시설 등을 고려하여 적절한 포인트를 설정해주세요.</div>
-            </div>
+<!--            <div class="form-group">-->
+<!--                <label for="listing-points" class="form-label">교환 포인트</label>-->
+<!--                <div class="input-group">-->
+<!--                    <input type="number" id="listing-points" name="points" class="form-control" min="100" placeholder="0" required>-->
+<!--                    <span class="input-group-text">P</span>-->
+<!--                </div>-->
+<!--                <div class="form-hint">숙소 크기, 위치, 편의시설 등을 고려하여 적절한 포인트를 설정해주세요.</div>-->
+<!--            </div>-->
 
-            <div class="form-group">
-                <label class="form-label">교환 유형</label>
-                <div class="checkbox-group">
-                    <label class="checkbox-item">
-                        <input type="checkbox" name="exchange-types" value="basic" checked>
-                        <span>기본 교환</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" name="exchange-types" value="livelocal">
-                        <span>LiveLocal</span>
-                    </label>
-                    <label class="checkbox-item">
-                        <input type="checkbox" name="exchange-types" value="timebank">
-                        <span>TimeBank</span>
-                    </label>
-                </div>
-            </div>
+<!--            <div class="form-group">-->
+<!--                <label class="form-label">교환 유형</label>-->
+<!--                <div class="checkbox-group">-->
+<!--                    <label class="checkbox-item">-->
+<!--                        <input type="checkbox" name="exchange-types" value="basic" checked>-->
+<!--                        <span>기본 교환</span>-->
+<!--                    </label>-->
+<!--                    <label class="checkbox-item">-->
+<!--                        <input type="checkbox" name="exchange-types" value="livelocal">-->
+<!--                        <span>LiveLocal</span>-->
+<!--                    </label>-->
+<!--                    <label class="checkbox-item">-->
+<!--                        <input type="checkbox" name="exchange-types" value="timebank">-->
+<!--                        <span>TimeBank</span>-->
+<!--                    </label>-->
+<!--                </div>-->
+<!--            </div>-->
 
-            <div class="exchange-option-section" id="livelocal-section">
-                <h3 class="section-subtitle">LiveLocal 경험 제공</h3>
-                <p class="section-description">현지인만 알 수 있는 특별한 경험을 제공해보세요.</p>
+<!--            <div class="exchange-option-section" id="livelocal-section">-->
+<!--                <h3 class="section-subtitle">LiveLocal 경험 제공</h3>-->
+<!--                <p class="section-description">현지인만 알 수 있는 특별한 경험을 제공해보세요.</p>-->
 
-                <div class="experience-list" id="experience-list">
-                    <div class="experience-item">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">경험 제목</label>
-                                <input type="text" name="experience-title[]" class="form-control" placeholder="예: 강남 맛집 투어">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">소요 시간</label>
-                                <div class="input-group">
-                                    <input type="number" name="experience-duration[]" class="form-control" min="1" placeholder="0">
-                                    <span class="input-group-text">시간</span>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">추가 포인트</label>
-                                <div class="input-group">
-                                    <input type="number" name="experience-points[]" class="form-control" min="0" placeholder="0">
-                                    <span class="input-group-text">P</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">경험 설명</label>
-                            <textarea name="experience-description[]" class="form-control" rows="2" placeholder="경험에 대한 설명을 입력해주세요."></textarea>
-                        </div>
-                    </div>
-                </div>
+<!--                <div class="experience-list" id="experience-list">-->
+<!--                    <div class="experience-item">-->
+<!--                        <div class="form-row">-->
+<!--                            <div class="form-group">-->
+<!--                                <label class="form-label">경험 제목</label>-->
+<!--                                <input type="text" name="experience-title[]" class="form-control" placeholder="예: 강남 맛집 투어">-->
+<!--                            </div>-->
+<!--                            <div class="form-group">-->
+<!--                                <label class="form-label">소요 시간</label>-->
+<!--                                <div class="input-group">-->
+<!--                                    <input type="number" name="experience-duration[]" class="form-control" min="1" placeholder="0">-->
+<!--                                    <span class="input-group-text">시간</span>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div class="form-group">-->
+<!--                                <label class="form-label">추가 포인트</label>-->
+<!--                                <div class="input-group">-->
+<!--                                    <input type="number" name="experience-points[]" class="form-control" min="0" placeholder="0">-->
+<!--                                    <span class="input-group-text">P</span>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                        <div class="form-group">-->
+<!--                            <label class="form-label">경험 설명</label>-->
+<!--                            <textarea name="experience-description[]" class="form-control" rows="2" placeholder="경험에 대한 설명을 입력해주세요."></textarea>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
 
-                <button type="button" class="btn btn-outline" id="add-experience-btn">
-                    <i class="fas fa-plus"></i> 경험 추가
-                </button>
-            </div>
+<!--                <button type="button" class="btn btn-outline" id="add-experience-btn">-->
+<!--                    <i class="fas fa-plus"></i> 경험 추가-->
+<!--                </button>-->
+<!--            </div>-->
 
-            <div class="exchange-option-section" id="timebank-section">
-                <h3 class="section-subtitle">TimeBank 서비스 제공</h3>
-                <p class="section-description">당신의 시간과 재능을 공유해보세요.</p>
+<!--            <div class="exchange-option-section" id="timebank-section">-->
+<!--                <h3 class="section-subtitle">TimeBank 서비스 제공</h3>-->
+<!--                <p class="section-description">당신의 시간과 재능을 공유해보세요.</p>-->
 
-                <div class="service-list" id="service-list">
-                    <div class="service-item">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label class="form-label">서비스 제목</label>
-                                <input type="text" name="service-title[]" class="form-control" placeholder="예: 한국어 회화 레슨">
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">소요 시간</label>
-                                <div class="input-group">
-                                    <input type="number" name="service-duration[]" class="form-control" min="1" placeholder="0">
-                                    <span class="input-group-text">시간</span>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">추가 포인트</label>
-                                <div class="input-group">
-                                    <input type="number" name="service-points[]" class="form-control" min="0" placeholder="0">
-                                    <span class="input-group-text">P</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">서비스 설명</label>
-                            <textarea name="service-description[]" class="form-control" rows="2" placeholder="서비스에 대한 설명을 입력해주세요."></textarea>
-                        </div>
-                    </div>
-                </div>
+<!--                <div class="service-list" id="service-list">-->
+<!--                    <div class="service-item">-->
+<!--                        <div class="form-row">-->
+<!--                            <div class="form-group">-->
+<!--                                <label class="form-label">서비스 제목</label>-->
+<!--                                <input type="text" name="service-title[]" class="form-control" placeholder="예: 한국어 회화 레슨">-->
+<!--                            </div>-->
+<!--                            <div class="form-group">-->
+<!--                                <label class="form-label">소요 시간</label>-->
+<!--                                <div class="input-group">-->
+<!--                                    <input type="number" name="service-duration[]" class="form-control" min="1" placeholder="0">-->
+<!--                                    <span class="input-group-text">시간</span>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                            <div class="form-group">-->
+<!--                                <label class="form-label">추가 포인트</label>-->
+<!--                                <div class="input-group">-->
+<!--                                    <input type="number" name="service-points[]" class="form-control" min="0" placeholder="0">-->
+<!--                                    <span class="input-group-text">P</span>-->
+<!--                                </div>-->
+<!--                            </div>-->
+<!--                        </div>-->
+<!--                        <div class="form-group">-->
+<!--                            <label class="form-label">서비스 설명</label>-->
+<!--                            <textarea name="service-description[]" class="form-control" rows="2" placeholder="서비스에 대한 설명을 입력해주세요."></textarea>-->
+<!--                        </div>-->
+<!--                    </div>-->
+<!--                </div>-->
 
-                <button type="button" class="btn btn-outline" id="add-service-btn">
-                    <i class="fas fa-plus"></i> 서비스 추가
-                </button>
-            </div>
+<!--                <button type="button" class="btn btn-outline" id="add-service-btn">-->
+<!--                    <i class="fas fa-plus"></i> 서비스 추가-->
+<!--                </button>-->
+<!--            </div>-->
 
-            <div class="form-actions">
-                <button type="button" class="btn btn-secondary prev-step">이전 단계</button>
-                <button type="button" class="btn btn-primary next-step">다음 단계</button>
-            </div>
-        </div>
+<!--            <div class="form-actions">-->
+<!--                <button type="button" class="btn btn-secondary prev-step">이전 단계</button>-->
+<!--                <button type="button" class="btn btn-primary next-step">다음 단계</button>-->
+<!--            </div>-->
+<!--        </div>-->
 
         <!-- 5단계: 검토 및 등록 -->
-        <div class="form-step" id="step-5">
+        <div class="form-step" id="step-4">
             <h2 class="step-title">검토 및 등록</h2>
             <p class="step-description">입력한 정보를 확인하고 숙소를 등록해주세요.</p>
 
