@@ -39,13 +39,13 @@ public class HouseController {
     )
     @PostMapping("")
     public RestApiResponse<CreateHouseResponse> createHouse(
-            @RequestParam("userId") Long userId,
+            @UserInfo UserInfoDto userInfo,
             @Valid @RequestPart(value = "request") CreateHouseRequest request,
             @RequestPart(required = false, value = "images") List<MultipartFile> images,
             BindingResult bindingResult) throws IOException {
 
         return RestApiResponse.success(
-                houseService.createHouse(userId, request, images));
+                houseService.createHouse(userInfo.getUserId(), request, images));
     }
     
     @Operation(
