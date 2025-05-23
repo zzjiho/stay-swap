@@ -1,9 +1,9 @@
 $(document).ready(function() {
     console.log('listing-detail.js 로드됨');
     
-    // 페이지 로드 시 URL에서 id 파라미터 가져오기 (houseId 대신 id 사용)
+    // 페이지 로드 시 URL에서 id 파라미터 가져오기
     const urlParams = new URLSearchParams(window.location.search);
-    const houseId = urlParams.get('id'); // houseId 대신 id 사용
+    const houseId = urlParams.get('id');
     
     console.log('URL 파라미터:', window.location.search);
     console.log('추출된 houseId:', houseId);
@@ -148,27 +148,76 @@ $(document).ready(function() {
         alert('옵션이 적용되었습니다.');
     });
 
+    // 토큰 체크 함수
+    function checkAuthToken() {
+        if (!window.auth?.accessToken) {
+            alert('로그인이 필요한 서비스입니다.');
+            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.href);
+            return false;
+        }
+        return true;
+    }
+
+    // 내 숙소 목록을 가져오는 API 호출 함수
+    function fetchMyListings() {
+        if (!checkAuthToken()) return Promise.reject('No token');
+
+        console.log('현재 window.auth 상태:', window.auth);
+        console.log('사용할 accessToken:', window.auth.accessToken);
+
+        return $.ajax({
+            url: '/api/house/my',
+            type: 'GET',
+            dataType: 'json',
+            headers: {
+                'Authorization': 'Bearer ' + window.auth.accessToken
+            },
+            success: function(response) {
+                console.log('내 숙소 목록 API 응답:', response);
+                if (response.httpStatus === 'OK' && response.data) {
+                    const myListings = response.data.content; // Page 객체에서 content 추출
+                    renderMyListings(myListings);
+                } else {
+                    console.error('API 응답이 올바르지 않습니다:', response);
+                    $('.my-listings-container').html('<p class="p-4 text-center">숙소 목록을 불러오는데 실패했습니다.</p>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('내 숙소 목록 API 호출 실패:', {
+                    status: status,
+                    error: error,
+                    response: xhr.responseText
+                });
+                $('.my-listings-container').html('<p class="p-4 text-center">숙소 목록을 불러오는데 실패했습니다.</p>');
+            }
+        });
+    }
+
     // 내 숙소 목록 렌더링
-    function renderMyListings() {
+    function renderMyListings(myListings) {
+        console.log('렌더링할 숙소 목록:', myListings);
         const container = $('.my-listings-container');
         container.empty();
 
-        if (myListings.length === 0) {
+        if (!myListings || myListings.length === 0) {
             container.html('<p class="p-4 text-center">등록된 숙소가 없습니다.</p>');
             return;
         }
 
         myListings.forEach(listing => {
+            console.log('숙소 데이터:', listing);
             const item = $('<div>').addClass('my-listing-item').attr('data-id', listing.id);
             item.html(`
                 <div class="my-listing-image">
-                    <img src="${listing.image}" alt="${listing.title}">
+                    <img src="${listing.thumbnailUrl || '/images/default-house.jpg'}" alt="${listing.title}">
                 </div>
                 <div class="my-listing-info">
                     <div class="my-listing-title">${listing.title}</div>
-                    <div class="my-listing-location">${listing.location}</div>
+                    <div class="my-listing-rating">
+                        <span class="rating">★ ${listing.averageRating.toFixed(1)}</span>
+                        <span class="review-count">(${listing.reviewCount})</span>
+                    </div>
                 </div>
-                <div class="my-listing-points">${listing.points} P</div>
             `);
 
             // 숙소 선택 이벤트
@@ -195,10 +244,19 @@ $(document).ready(function() {
 
     // 교환 요청 버튼 클릭 이벤트
     $('#exchange-request-btn').on('click', function() {
+        console.log('교환 요청 버튼 클릭됨');
+        
+        if (!checkAuthToken()) {
+            console.log('인증 토큰 없음');
+            return;
+        }
+
         // 체크인/체크아웃 날짜 확인
         const checkinDate = $('#checkin-date').val();
         const checkoutDate = $('#checkout-date').val();
         const guestCount = $('#guest-count').val();
+
+        console.log('날짜 정보:', { checkinDate, checkoutDate, guestCount });
 
         if (!checkinDate || !checkoutDate) {
             alert('체크인/체크아웃 날짜를 선택해주세요.');
@@ -216,15 +274,22 @@ $(document).ready(function() {
         $('#popup-checkout').text(formatDate(checkoutDate));
         $('#popup-guests').text(guestCount);
 
+        console.log('내 숙소 목록 가져오기 시작');
         // 내 숙소 목록 렌더링
-        renderMyListings();
-
-        // 팝업 열기
-        openPopup('exchange-popup');
+        fetchMyListings().then(function() {
+            console.log('내 숙소 목록 가져오기 완료');
+            // 팝업 열기
+            openPopup('exchange-popup');
+        }).fail(function(error) {
+            console.error('내 숙소 목록 가져오기 실패:', error);
+            alert('내 숙소 목록을 불러오는데 실패했습니다.');
+        });
     });
 
     // 숙박 요청 버튼 클릭 이벤트
     $('#stay-request-btn').on('click', function() {
+        if (!checkAuthToken()) return;
+
         // 체크인/체크아웃 날짜 확인
         const checkinDate = $('#checkin-date').val();
         const checkoutDate = $('#checkout-date').val();
@@ -258,6 +323,49 @@ $(document).ready(function() {
         closePopup(popupId);
     });
 
+    // 교환 요청 API 호출 함수
+    function requestSwapExchange(listingId, checkinDate, checkoutDate, guestCount, message) {
+        if (!checkAuthToken()) return Promise.reject('No token');
+
+        return $.ajax({
+            url: '/api/house/swap',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'Authorization': 'Bearer ' + window.auth.accessToken
+            },
+            data: JSON.stringify({
+                requesterHouseId: listingId,
+                targetHouseId: houseId,
+                startDate: checkinDate,
+                endDate: checkoutDate,
+                guest: parseInt(guestCount),
+                message: message
+            })
+        });
+    }
+
+    // 숙박 요청 API 호출 함수
+    function requestStay(checkinDate, checkoutDate, guestCount, totalPoints, message) {
+        if (!checkAuthToken()) return Promise.reject('No token');
+
+        return $.ajax({
+            url: '/api/house/stay',
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'Authorization': 'Bearer ' + window.auth.accessToken
+            },
+            data: JSON.stringify({
+                targetHouseId: houseId,
+                startDate: checkinDate,
+                endDate: checkoutDate,
+                guest: parseInt(guestCount),
+                message: message
+            })
+        });
+    }
+
     // 교환 요청 확인 버튼 클릭 이벤트
     $('#exchange-confirm').on('click', function() {
         const selectedListing = $('.my-listing-item.selected');
@@ -270,40 +378,52 @@ $(document).ready(function() {
         const listingId = selectedListing.data('id');
         const message = $('#exchange-message-text').val();
 
-        // 실제 구현 시 API 호출
-        console.log('교환 요청:', {
+        // API 호출
+        requestSwapExchange(
             listingId,
-            checkinDate: $('#checkin-date').val(),
-            checkoutDate: $('#checkout-date').val(),
-            guestCount: $('#guest-count').val(),
+            $('#checkin-date').val(),
+            $('#checkout-date').val(),
+            $('#guest-count').val(),
             message
+        ).then(function(response) {
+            if (response.httpStatus === 'OK') {
+                // 팝업 닫기
+                closePopup('exchange-popup');
+                // 성공 메시지
+                alert('교환 요청이 성공적으로 전송되었습니다.');
+            } else {
+                alert('교환 요청 전송에 실패했습니다: ' + response.message);
+            }
+        }).fail(function(xhr, status, error) {
+            console.error('교환 요청 API 호출 실패:', error);
+            alert('서버 연결에 문제가 발생했습니다.');
         });
-
-        // 팝업 닫기
-        closePopup('exchange-popup');
-
-        // 성공 메시지
-        alert('교환 요청이 성공적으로 전송되었습니다.');
     });
 
     // 숙박 요청 확인 버튼 클릭 이벤트
     $('#stay-confirm').on('click', function() {
         const message = $('#stay-message-text').val();
 
-        // 실제 구현 시 API 호출
-        console.log('숙박 요청:', {
-            checkinDate: $('#checkin-date').val(),
-            checkoutDate: $('#checkout-date').val(),
-            guestCount: $('#guest-count').val(),
-            totalPoints: $('#total-points').text(),
+        // API 호출
+        requestStay(
+            $('#checkin-date').val(),
+            $('#checkout-date').val(),
+            $('#guest-count').val(),
+            $('#total-points').text(),
             message
+        ).then(function(response) {
+            if (response.httpStatus === 'OK') {
+                // 팝업 닫기
+                closePopup('stay-popup');
+                // 성공 메시지
+                alert('숙박 요청이 성공적으로 전송되었습니다.');
+            } else {
+                alert('숙박 요청 전송에 실패했습니다: ' + response.message);
+            }
+        }).fail(function(xhr, status, error) {
+            console.error('숙박 요청 API 호출 실패:', error);
+            alert('서버 연결에 문제가 발생했습니다.');
         });
-
-        // 팝업 닫기
-        closePopup('stay-popup');
-
-        // 성공 메시지
-        alert('숙박 요청이 성공적으로 전송되었습니다.');
     });
 
     // API로 숙소 상세 정보 가져오기

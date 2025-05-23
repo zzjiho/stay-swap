@@ -23,6 +23,7 @@ public class StayResponse {
     private SwapType swapType;
     private SwapStatus swapStatus;
     private String message;
+    private Integer guest;
     
     public static StayResponse of(Swap swap) {
         return StayResponse.builder()
@@ -34,6 +35,7 @@ public class StayResponse {
                 .swapType(swap.getSwapType())
                 .swapStatus(swap.getSwapStatus())
                 .message(swap.getMessage())
+                .guest(swap.getGuest())
                 .build();
     }
 } 

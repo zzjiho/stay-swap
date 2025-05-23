@@ -24,6 +24,7 @@ public class SwapResponse {
     private SwapType swapType;
     private SwapStatus swapStatus;
     private String message;
+    private Integer guest;
     
     public static SwapResponse of(Swap swap) {
         return SwapResponse.builder()
@@ -36,6 +37,7 @@ public class SwapResponse {
                 .swapType(swap.getSwapType())
                 .swapStatus(swap.getSwapStatus())
                 .message(swap.getMessage())
+                .guest(swap.getGuest())
                 .build();
     }
 } 

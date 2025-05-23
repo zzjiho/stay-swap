@@ -1,13 +1,10 @@
 package com.stayswap.domains.swap.model.entity;
 
-import com.stayswap.domains.common.entity.BaseEntity;
 import com.stayswap.domains.common.entity.BaseTimeEntity;
 import com.stayswap.domains.house.model.entity.House;
 import com.stayswap.domains.swap.constant.SwapStatus;
 import com.stayswap.domains.swap.constant.SwapType;
 import com.stayswap.domains.user.model.entity.User;
-import com.stayswap.domains.swap.model.dto.response.SwapResponse;
-import com.stayswap.domains.swap.model.dto.response.StayResponse;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -43,6 +40,8 @@ public class Swap extends BaseTimeEntity {
 
     @Column(name = "response_at")
     private LocalDateTime responseAt;
+
+    private Integer guest;
 
     @ManyToOne
     @JoinColumn(name = "requester_id", nullable = false)

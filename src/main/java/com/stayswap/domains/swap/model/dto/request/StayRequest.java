@@ -5,6 +5,7 @@ import com.stayswap.domains.swap.constant.SwapStatus;
 import com.stayswap.domains.swap.constant.SwapType;
 import com.stayswap.domains.swap.model.entity.Swap;
 import com.stayswap.domains.user.model.entity.User;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -30,6 +31,10 @@ public class StayRequest {
     private LocalDate endDate;
 
     private String message;
+
+    @NotNull(message = "게스트 수는 필수값입니다.")
+    @Min(value = 1, message = "게스트 수는 최소 1명 이상이어야 합니다.")
+    private Integer guest;
     
     public Swap toEntity(User requester, House targetHouse) {
         return Swap.builder()
@@ -38,6 +43,7 @@ public class StayRequest {
                 .swapStatus(SwapStatus.PENDING)
                 .swapType(SwapType.STAY)
                 .message(this.message)
+                .guest(this.guest)
                 .requester(requester)
                 .house(targetHouse)
                 .build();
