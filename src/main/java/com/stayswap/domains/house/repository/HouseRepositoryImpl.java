@@ -348,6 +348,9 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                             .from(review)
                             .where(review.targetHouse.id.eq(house.id))));
                     break;
+                case "latest":
+                    orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, house.regTime));
+                    break;
                 default:
                     orderSpecifiers.add(new OrderSpecifier<>(Order.DESC, house.id));
                     break;
