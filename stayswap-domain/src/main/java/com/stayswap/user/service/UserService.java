@@ -1,5 +1,9 @@
 package com.stayswap.user.service;
 
+import com.stayswap.error.exception.AuthenticationException;
+import com.stayswap.error.exception.BusinessException;
+import com.stayswap.error.exception.ForbiddenException;
+import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.review.repository.ReviewRepository;
 import com.stayswap.user.model.dto.request.UpdateIntroductionRequest;
 import com.stayswap.user.model.dto.request.UpdateNicknameRequest;
@@ -7,10 +11,6 @@ import com.stayswap.user.model.dto.response.*;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import com.stayswap.user.repository.nickname.GenerateRandomNicknameRepository;
-import com.stayswap.error.exception.AuthenticationException;
-import com.stayswap.error.exception.BusinessException;
-import com.stayswap.error.exception.ForbiddenException;
-import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

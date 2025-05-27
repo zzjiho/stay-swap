@@ -3,7 +3,6 @@ package com.stayswap.review.repository;
 import com.stayswap.house.model.entity.House;
 import com.stayswap.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.review.model.entity.Review;
-import com.stayswap.review.repository.ReviewRepositoryCustom;
 import com.stayswap.swap.model.entity.Swap;
 import com.stayswap.user.model.entity.User;
 import org.springframework.data.domain.Page;

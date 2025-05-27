@@ -1,13 +1,13 @@
 package com.stayswap.review.controller;
 
+import com.stayswap.model.RestApiResponse;
+import com.stayswap.resolver.userinfo.UserInfo;
+import com.stayswap.resolver.userinfo.UserInfoDto;
 import com.stayswap.review.model.dto.request.ReviewRequest;
 import com.stayswap.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.review.model.dto.response.ReviewResponse;
 import com.stayswap.review.model.dto.response.WrittenReviewResponse;
 import com.stayswap.review.service.ReviewService;
-import com.stayswap.global.model.RestApiResponse;
-import com.stayswap.resolver.userinfo.UserInfo;
-import com.stayswap.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

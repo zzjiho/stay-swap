@@ -1,6 +1,6 @@
 package com.stayswap.external.kakao.client;
 
-import com.stayswap.external.oauth.kakao.dto.KakaoUserInfoResponseDto;
+import com.stayswap.external.kakao.dto.KakaoUserInfoResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;

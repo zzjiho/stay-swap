@@ -7,11 +7,9 @@ import com.stayswap.login.dto.OauthLoginDto;
 import com.stayswap.user.constant.Role;
 import com.stayswap.user.constant.UserType;
 import com.stayswap.user.model.entity.User;
-import com.stayswap.external.oauth.kakao.service.SocialLoginApiServiceFactory;
-import com.stayswap.external.oauth.model.OAuthAttributes;
-import com.stayswap.external.oauth.service.SocialLoginApiService;
 import com.stayswap.jwt.dto.JwtTokenDto;
 import com.stayswap.jwt.service.TokenManager;
+import com.stayswap.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,7 +24,7 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class OauthLoginService {
 
-    private final com.stayswap.user.service.UserService userService;
+    private final UserService userService;
     private final TokenManager tokenManager;
 
     public OauthLoginDto.Response oauthLogin(String accessToken, UserType userType) {

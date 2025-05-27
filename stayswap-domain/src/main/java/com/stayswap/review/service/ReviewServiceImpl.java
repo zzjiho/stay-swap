@@ -1,6 +1,8 @@
 package com.stayswap.review.service;
 
-import com.stayswap.code.ErrorCode;
+import com.stayswap.error.exception.BusinessException;
+import com.stayswap.error.exception.ForbiddenException;
+import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.house.model.entity.House;
 import com.stayswap.house.repository.HouseImageRepository;
 import com.stayswap.house.service.HouseImgService;
@@ -16,9 +18,6 @@ import com.stayswap.swap.model.entity.Swap;
 import com.stayswap.swap.repository.SwapRepository;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
-import com.stayswap.error.exception.BusinessException;
-import com.stayswap.error.exception.ForbiddenException;
-import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

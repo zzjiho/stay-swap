@@ -1,13 +1,13 @@
 package com.stayswap.swap.controller;
 
+import com.stayswap.model.RestApiResponse;
+import com.stayswap.resolver.userinfo.UserInfo;
+import com.stayswap.resolver.userinfo.UserInfoDto;
 import com.stayswap.swap.model.dto.request.StayRequest;
 import com.stayswap.swap.model.dto.request.SwapRequest;
 import com.stayswap.swap.model.dto.response.StayResponse;
 import com.stayswap.swap.model.dto.response.SwapResponse;
 import com.stayswap.swap.service.SwapService;
-import com.stayswap.global.model.RestApiResponse;
-import com.stayswap.resolver.userinfo.UserInfo;
-import com.stayswap.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;

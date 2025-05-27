@@ -1,5 +1,7 @@
 package com.stayswap.jwt.service;
 
+import com.stayswap.code.ErrorCode;
+import com.stayswap.error.exception.AuthenticationException;
 import com.stayswap.user.constant.Role;
 import com.stayswap.jwt.constant.GrantType;
 import com.stayswap.jwt.constant.TokenType;
@@ -11,6 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+
+import static com.stayswap.code.ErrorCode.*;
 
 @Slf4j
 @RequiredArgsConstructor

@@ -1,10 +1,10 @@
 package com.stayswap.user.controller;
 
+import com.stayswap.model.RestApiResponse;
 import com.stayswap.user.model.dto.request.UpdateIntroductionRequest;
 import com.stayswap.user.model.dto.request.UpdateNicknameRequest;
 import com.stayswap.user.model.dto.response.*;
 import com.stayswap.user.service.UserService;
-import com.stayswap.global.model.RestApiResponse;
 import com.stayswap.resolver.userinfo.UserInfo;
 import com.stayswap.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;

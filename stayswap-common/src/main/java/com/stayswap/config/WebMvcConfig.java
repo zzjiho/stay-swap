@@ -1,6 +1,5 @@
 package com.stayswap.config;
 
-import com.stayswap.config.FirebaseConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

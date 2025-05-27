@@ -1,10 +1,10 @@
 package com.stayswap.swap.controller;
 
+import com.stayswap.model.RestApiResponse;
 import com.stayswap.swap.constant.SwapStatus;
 import com.stayswap.swap.constant.SwapType;
 import com.stayswap.swap.model.dto.response.SwapListResponse;
 import com.stayswap.swap.service.SwapListService;
-import com.stayswap.global.model.RestApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,5 @@
 package com.stayswap.house.service;
 
-import com.stayswap.code.ErrorCode;
 import com.stayswap.common.dto.response.FileUploadResponse;
 import com.stayswap.error.exception.InvalidException;
 import com.stayswap.error.exception.NotFoundException;
@@ -16,7 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
-import static com.stayswap.code.ErrorCode.*;
+import static com.stayswap.code.ErrorCode.INVALID_FILE_COUNT_TOO_MANY;
+import static com.stayswap.code.ErrorCode.NOT_EXISTS_HOUSE;
 
 
 @Service

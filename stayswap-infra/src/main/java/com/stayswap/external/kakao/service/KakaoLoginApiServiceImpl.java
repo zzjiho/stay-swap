@@ -1,11 +1,11 @@
 package com.stayswap.external.kakao.service;
 
-import com.stayswap.user.constant.UserType;
-import com.stayswap.external.oauth.kakao.client.KakaoUserInfoClient;
-import com.stayswap.external.oauth.kakao.dto.KakaoUserInfoResponseDto;
-import com.stayswap.external.oauth.model.OAuthAttributes;
-import com.stayswap.external.oauth.service.SocialLoginApiService;
+import com.stayswap.external.kakao.client.KakaoUserInfoClient;
+import com.stayswap.external.kakao.dto.KakaoUserInfoResponseDto;
+import com.stayswap.external.model.OAuthAttributes;
+import com.stayswap.external.service.SocialLoginApiService;
 import com.stayswap.jwt.constant.GrantType;
+import com.stayswap.user.constant.UserType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

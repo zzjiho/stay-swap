@@ -1,12 +1,11 @@
 package com.stayswap.user.service;
 
-import com.stayswap.code.ErrorCode;
+import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.user.model.dto.request.DeviceRegistrationRequest;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.model.entity.UserDevice;
 import com.stayswap.user.repository.UserDeviceRepository;
 import com.stayswap.user.repository.UserRepository;
-import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -15,7 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
-import static com.stayswap.code.ErrorCode.*;
+import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 
 
 @Slf4j

@@ -5,7 +5,6 @@ import com.amazonaws.services.s3.model.CannedAccessControlList;
 import com.amazonaws.services.s3.model.DeleteObjectRequest;
 import com.amazonaws.services.s3.model.ObjectMetadata;
 import com.amazonaws.services.s3.model.PutObjectRequest;
-import com.stayswap.code.ErrorCode;
 import com.stayswap.common.dto.response.FileUploadResponse;
 import com.stayswap.error.exception.InvalidException;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.UUID;
 
-import static com.stayswap.code.ErrorCode.*;
+import static com.stayswap.code.ErrorCode.INVALID_UPLOAD_FILE_EXTENSION;
 
 
 @Component

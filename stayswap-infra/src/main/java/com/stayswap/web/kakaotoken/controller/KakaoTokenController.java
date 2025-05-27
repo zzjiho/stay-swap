@@ -1,5 +1,7 @@
 package com.stayswap.web.kakaotoken.controller;
 
+import com.stayswap.error.exception.Custom404Exception;
+import com.stayswap.util.EnvironmentUtil;
 import com.stayswap.web.kakaotoken.client.KakaoTokenClient;
 import com.stayswap.web.kakaotoken.dto.KakaoTokenDto;
 import com.stayswap.web.kakaotoken.util.KakaoApiUtil;
@@ -16,9 +18,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 @Slf4j
 @Controller
