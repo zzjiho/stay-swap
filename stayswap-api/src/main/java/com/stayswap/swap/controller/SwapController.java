@@ -1,8 +1,8 @@
 package com.stayswap.swap.controller;
 
 import com.stayswap.model.RestApiResponse;
-import com.stayswap.resolver.userinfo.UserInfo;
-import com.stayswap.resolver.userinfo.UserInfoDto;
+import com.stayswap.common.resolver.userinfo.UserInfo;
+import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import com.stayswap.swap.model.dto.request.StayRequest;
 import com.stayswap.swap.model.dto.request.SwapRequest;
 import com.stayswap.swap.model.dto.response.StayResponse;

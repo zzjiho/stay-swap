@@ -1,8 +1,8 @@
 package com.stayswap.login.service;
 
-import com.stayswap.external.kakao.service.SocialLoginApiServiceFactory;
-import com.stayswap.external.model.OAuthAttributes;
-import com.stayswap.external.service.SocialLoginApiService;
+import com.stayswap.login.external.kakao.service.SocialLoginApiServiceFactory;
+import com.stayswap.login.external.model.OAuthAttributes;
+import com.stayswap.login.external.service.SocialLoginApiService;
 import com.stayswap.login.dto.OauthLoginDto;
 import com.stayswap.jwt.constant.Role;
 import com.stayswap.user.constant.UserType;

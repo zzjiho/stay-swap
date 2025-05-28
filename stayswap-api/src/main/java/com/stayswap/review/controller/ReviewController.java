@@ -1,8 +1,8 @@
 package com.stayswap.review.controller;
 
 import com.stayswap.model.RestApiResponse;
-import com.stayswap.resolver.userinfo.UserInfo;
-import com.stayswap.resolver.userinfo.UserInfoDto;
+import com.stayswap.common.resolver.userinfo.UserInfo;
+import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import com.stayswap.review.model.dto.request.ReviewRequest;
 import com.stayswap.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.review.model.dto.response.ReviewResponse;

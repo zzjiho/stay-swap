@@ -15,8 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 
-import static com.stayswap.code.ErrorCode.INVALID_FILE_COUNT_TOO_MANY;
-import static com.stayswap.code.ErrorCode.NOT_EXISTS_HOUSE;
+import static com.stayswap.code.ErrorCode.*;
 
 
 @Service
