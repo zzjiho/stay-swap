@@ -1,8 +1,8 @@
 package com.stayswap.user.model.entity;
 
 import com.stayswap.common.entity.BaseTimeEntity;
-import com.stayswap.common.token.TokenInfo;
-import com.stayswap.user.constant.Role;
+import com.stayswap.jwt.constant.Role;
+import com.stayswap.jwt.dto.JwtTokenDto;
 import com.stayswap.user.constant.UserType;
 import com.stayswap.util.DateTimeUtils;
 import jakarta.persistence.*;
@@ -52,9 +52,9 @@ public class User extends BaseTimeEntity {
 
     private LocalDateTime tokenExpirationTime;
 
-    public void updateRefreshToken(TokenInfo tokenInfo) {
-        refreshToken = tokenInfo.getRefreshToken();
-        tokenExpirationTime = DateTimeUtils.convertToLocalDateTime(tokenInfo.getRefreshTokenExpireTime());
+    public void updateRefreshToken(JwtTokenDto jwtTokenDto) {
+        refreshToken = jwtTokenDto.getRefreshToken();
+        tokenExpirationTime = DateTimeUtils.convertToLocalDateTime(jwtTokenDto.getRefreshTokenExpireTime());
     }
 
     public void updateRefreshTokenNow(LocalDateTime tokenExpirationTime) {

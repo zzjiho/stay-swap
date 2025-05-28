@@ -12,6 +12,10 @@ import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
+import static com.stayswap.house.model.entity.QHouse.house;
+import static com.stayswap.house.model.entity.QHouseImage.houseImage;
+import static com.stayswap.review.model.entity.QReview.review;
+
 
 @RequiredArgsConstructor
 public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {

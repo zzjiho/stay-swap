@@ -1,6 +1,6 @@
 package com.stayswap.external.model;
 
-import com.stayswap.user.constant.Role;
+import com.stayswap.jwt.constant.Role;
 import com.stayswap.user.constant.UserType;
 import com.stayswap.user.model.entity.User;
 import lombok.Builder;

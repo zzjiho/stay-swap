@@ -4,7 +4,7 @@ import com.stayswap.external.kakao.service.SocialLoginApiServiceFactory;
 import com.stayswap.external.model.OAuthAttributes;
 import com.stayswap.external.service.SocialLoginApiService;
 import com.stayswap.login.dto.OauthLoginDto;
-import com.stayswap.user.constant.Role;
+import com.stayswap.jwt.constant.Role;
 import com.stayswap.user.constant.UserType;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.jwt.dto.JwtTokenDto;

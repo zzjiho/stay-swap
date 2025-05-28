@@ -21,6 +21,11 @@ import org.springframework.util.CollectionUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.stayswap.house.model.entity.QHouse.house;
+import static com.stayswap.house.model.entity.QHouseImage.houseImage;
+import static com.stayswap.house.model.entity.QHouseOption.houseOption;
+import static com.stayswap.review.model.entity.QReview.review;
+import static com.stayswap.user.model.entity.QUser.user;
 import static org.springframework.util.StringUtils.hasText;
 
 @RequiredArgsConstructor

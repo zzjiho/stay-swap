@@ -1,7 +1,6 @@
 dependencies {
     implementation(project(":stayswap-domain"))
     implementation(project(":stayswap-common"))
-    implementation(project(":stayswap-infra"))
 
     // web
     implementation("org.springframework.boot:spring-boot-starter-web")

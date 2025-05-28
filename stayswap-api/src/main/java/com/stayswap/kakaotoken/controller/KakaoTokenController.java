@@ -1,11 +1,14 @@
-package com.stayswap.web.kakaotoken.controller;
+package com.stayswap.kakaotoken.controller;
 
 import com.stayswap.error.exception.Custom404Exception;
+import com.stayswap.kakaotoken.client.KakaoTokenClient;
+import com.stayswap.kakaotoken.dto.KakaoTokenDto;
+import com.stayswap.kakaotoken.util.KakaoApiUtil;
+import com.stayswap.kakaotoken.util.RequestUrlUtil;
+import com.stayswap.login.dto.OauthLoginDto;
+import com.stayswap.login.service.OauthLoginService;
+import com.stayswap.user.constant.UserType;
 import com.stayswap.util.EnvironmentUtil;
-import com.stayswap.web.kakaotoken.client.KakaoTokenClient;
-import com.stayswap.web.kakaotoken.dto.KakaoTokenDto;
-import com.stayswap.web.kakaotoken.util.KakaoApiUtil;
-import com.stayswap.web.kakaotoken.util.RequestUrlUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

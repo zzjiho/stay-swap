@@ -1,6 +1,6 @@
 package com.stayswap.resolver.userinfo;
 
-import com.stayswap.user.constant.Role;
+import com.stayswap.jwt.constant.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

@@ -1,12 +1,12 @@
 package com.stayswap.notification.service;
 
+import com.stayswap.config.RabbitMQConfig;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
 import com.stayswap.notification.model.dto.response.NotificationResponse;
 import com.stayswap.notification.model.entity.Notification;
 import com.stayswap.notification.repository.NotificationRepository;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
-import com.stayswap.config.RabbitMQConfig;
 import com.stayswap.error.exception.AuthenticationException;
 import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;

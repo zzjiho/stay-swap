@@ -4,7 +4,7 @@ public enum Role {
 
     ROLE_USER, ROLE_ADMIN;
 
-    public static Role from(String role) {
-        return Role.valueOf(role);
+    public static com.stayswap.jwt.constant.Role from(String role) {
+        return com.stayswap.jwt.constant.Role.valueOf(role);
     }
 }

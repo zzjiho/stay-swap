@@ -1,9 +1,8 @@
 package com.stayswap.jwt.service;
 
-import com.stayswap.code.ErrorCode;
 import com.stayswap.error.exception.AuthenticationException;
-import com.stayswap.user.constant.Role;
 import com.stayswap.jwt.constant.GrantType;
+import com.stayswap.jwt.constant.Role;
 import com.stayswap.jwt.constant.TokenType;
 import com.stayswap.jwt.dto.JwtTokenDto;
 import io.jsonwebtoken.*;
@@ -14,7 +13,8 @@ import lombok.extern.slf4j.Slf4j;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
-import static com.stayswap.code.ErrorCode.*;
+import static com.stayswap.code.ErrorCode.NOT_VALID_TOKEN;
+import static com.stayswap.code.ErrorCode.TOKEN_EXPIRED;
 
 @Slf4j
 @RequiredArgsConstructor

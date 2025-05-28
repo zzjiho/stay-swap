@@ -3,7 +3,7 @@ package com.stayswap.resolver;
 import com.stayswap.jwt.service.TokenManager;
 import com.stayswap.resolver.userinfo.UserInfo;
 import com.stayswap.resolver.userinfo.UserInfoDto;
-import com.stayswap.user.constant.Role;
+import com.stayswap.jwt.constant.Role;
 import io.jsonwebtoken.Claims;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

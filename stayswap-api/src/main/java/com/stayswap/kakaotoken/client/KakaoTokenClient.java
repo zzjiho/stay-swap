@@ -1,6 +1,6 @@
-package com.stayswap.web.kakaotoken.client;
+package com.stayswap.kakaotoken.client;
 
-import com.stayswap.web.kakaotoken.dto.KakaoTokenDto;
+import com.stayswap.kakaotoken.dto.KakaoTokenDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.cloud.openfeign.SpringQueryMap;
 import org.springframework.web.bind.annotation.PostMapping;

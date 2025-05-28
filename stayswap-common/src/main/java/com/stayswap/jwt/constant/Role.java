@@ -1,4 +1,4 @@
-package com.stayswap.user.constant;
+package com.stayswap.jwt.constant;
 
 public enum Role {
 

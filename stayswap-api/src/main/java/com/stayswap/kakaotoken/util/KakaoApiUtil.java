@@ -1,4 +1,4 @@
-package com.stayswap.web.kakaotoken.util;
+package com.stayswap.kakaotoken.util;
 
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;

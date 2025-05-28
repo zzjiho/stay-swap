@@ -1,8 +1,8 @@
 package com.stayswap.notification.consumer;
 
+import com.stayswap.config.RabbitMQConfig;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
 import com.stayswap.notification.service.NotificationService;
-import com.stayswap.global.config.RabbitMQConfig;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;

@@ -1,4 +1,4 @@
-package com.stayswap.web.kakaotoken.dto;
+package com.stayswap.kakaotoken.dto;
 
 import lombok.*;
 
