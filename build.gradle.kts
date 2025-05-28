@@ -10,7 +10,7 @@ java {
 	}
 }
 
-extra["springCloudVersion"] = "2023.0.2"
+extra["springCloudVersion"] = "2024.0.0"
 
 allprojects {
 	group = "com.stayswap"

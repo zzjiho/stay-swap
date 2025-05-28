@@ -38,4 +38,6 @@ out/
 
 ### Q파일 ignore ###
 /src/main/generated/
+**/Q*.java
+**/Q*.class
 
