@@ -6,6 +6,9 @@ dependencies {
 
     // mongoDB
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
+
+    // kafka
+    api("org.springframework.cloud:spring-cloud-starter-stream-kafka")
 }
 
 // ✅ QueryDsl Q클래스 생성 설정

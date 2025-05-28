@@ -33,7 +33,7 @@ public class NotificationService {
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
     private final RabbitTemplate rabbitTemplate;
-    private final FCMService fcmService;
+    private final PushNotificationService pushNotificationService;
 
     /**
      * 알림 메시지를 RabbitMQ로 전송
@@ -52,8 +52,8 @@ public class NotificationService {
     public void processNotification(NotificationMessage message) {
         Notification notification = saveNotification(message);
         
-        // FCM 푸시 알림 전송 (사용자의 모든 기기에)
-        fcmService.sendPushNotificationToUser(
+        // 푸시 알림 전송 (사용자의 모든 기기에)
+        pushNotificationService.sendPushNotificationToUser(
                 notification.getRecipient().getId(),
                 notification.getTitle(),
                 notification.getContent(),
