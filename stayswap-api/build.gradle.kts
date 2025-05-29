@@ -9,7 +9,20 @@ dependencies {
     implementation("nz.net.ultraq.thymeleaf:thymeleaf-layout-dialect")
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
-    // spring-doc
-    implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
-    implementation("commons-codec:commons-codec:1.15")
+    // validation
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    
+    // JWT
+    implementation("io.jsonwebtoken:jjwt:0.12.3")
+    
+    // firebase
+    implementation("com.google.firebase:firebase-admin:9.4.3")
+
+    // xml 관련
+    implementation("javax.xml.bind:jaxb-api:2.3.1")
+}
+
+// ✅ bootJar 활성화
+tasks.bootJar {
+    enabled = true
 }
