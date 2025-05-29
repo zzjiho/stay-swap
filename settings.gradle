@@ -1,1 +1,6 @@
 rootProject.name = 'stayswap'
+include 'stayswap-api'
+include 'stayswap-domain'
+include 'stayswap-common'
+include 'stayswap-batch'
+
