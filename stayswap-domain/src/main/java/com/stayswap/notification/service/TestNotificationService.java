@@ -2,7 +2,6 @@ package com.stayswap.notification.service;
 
 import com.stayswap.notification.constant.NotificationType;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -29,8 +28,9 @@ public class TestNotificationService {
      * 테스트 알림 생성 (사용자 자신에게 발송)
      */
     public void createTestNotification(Long userId, String title, String content) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException(NOT_EXISTS_USER);
+        }
 
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(userId)

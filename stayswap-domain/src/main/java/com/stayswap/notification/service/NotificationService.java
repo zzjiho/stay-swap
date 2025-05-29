@@ -1,17 +1,15 @@
 package com.stayswap.notification.service;
 
-import com.stayswap.config.RabbitMQConfig;
+import com.stayswap.notification.model.document.NotificationDocument;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
 import com.stayswap.notification.model.dto.response.NotificationResponse;
-import com.stayswap.notification.model.entity.Notification;
-import com.stayswap.notification.repository.NotificationRepository;
-import com.stayswap.user.model.entity.User;
+import com.stayswap.notification.repository.NotificationMongoRepository;
 import com.stayswap.user.repository.UserRepository;
 import com.stayswap.error.exception.AuthenticationException;
 import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,31 +28,28 @@ import static com.stayswap.code.ErrorCode.*;
 @Transactional
 public class NotificationService {
 
-    private final NotificationRepository notificationRepository;
+    private final NotificationMongoRepository notificationMongoRepository;
     private final UserRepository userRepository;
-    private final RabbitTemplate rabbitTemplate;
+    private final StreamBridge streamBridge;
     private final PushNotificationService pushNotificationService;
 
     /**
-     * 알림 메시지를 RabbitMQ로 전송
+     * 알림 메시지를 Kafka로 전송
      */
     public void sendNotification(NotificationMessage message) {
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.NOTIFICATION_EXCHANGE,
-                RabbitMQConfig.NOTIFICATION_ROUTING_KEY, message
-        );
+        streamBridge.send("notification-out-0", message);
         log.info("알림 메시지 전송 완료: {}", message);
     }
 
     /**
-     * 알림 저장 및 FCM 발송 처리 (RabbitMQ 컨슈머에서 호출)
+     * 알림 저장 및 FCM 발송 처리 (Kafka 컨슈머에서 호출)
      */
     public void processNotification(NotificationMessage message) {
-        Notification notification = saveNotification(message);
+        NotificationDocument notification = saveNotificationToMongo(message);
         
         // 푸시 알림 전송 (사용자의 모든 기기에)
         pushNotificationService.sendPushNotificationToUser(
-                notification.getRecipient().getId(),
+                notification.getRecipientId(),
                 notification.getTitle(),
                 notification.getContent(),
                 notification.getType(),
@@ -63,25 +58,22 @@ public class NotificationService {
     }
 
     /**
-     * 알림 저장
+     * 알림 MongoDB에 저장
      */
-    private Notification saveNotification(NotificationMessage message) {
-        User recipient = userRepository.findById(message.getRecipientId())
+    private NotificationDocument saveNotificationToMongo(NotificationMessage message) {
+        userRepository.findById(message.getSenderId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         
-        User sender = userRepository.findById(message.getSenderId())
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+        NotificationDocument notification = NotificationDocument.of(
+                message.getRecipientId(),
+                message.getSenderId(),
+                message.getType(),
+                message.getTitle(),
+                message.getContent(),
+                message.getReferenceId()
+        );
         
-        Notification notification = Notification.builder()
-                .recipient(recipient)
-                .sender(sender)
-                .type(message.getType())
-                .title(message.getTitle())
-                .content(message.getContent())
-                .referenceId(message.getReferenceId())
-                .build();
-        
-        return notificationRepository.save(notification);
+        return notificationMongoRepository.save(notification);
     }
 
     /**
@@ -89,27 +81,26 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public Page<NotificationResponse> getNotifications(Long userId, Pageable pageable) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
-        
-        return notificationRepository.findByRecipientOrderByRegTimeDesc(user, pageable)
-                .map(NotificationResponse::from);
+        // MongoDB에서 알림 조회
+        return notificationMongoRepository.findByRecipientIdOrderByCreatedAtDesc(userId, pageable)
+                .map(NotificationResponse::fromDocument);
     }
 
     /**
      * 알림 읽음 처리
      */
-    public NotificationResponse markAsRead(Long notificationId, Long userId) {
-        Notification notification = notificationRepository.findById(notificationId)
+    public NotificationResponse markAsRead(String notificationId, Long userId) {
+        NotificationDocument notification = notificationMongoRepository.findById(notificationId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_RESOURCE));
         
-        if (!notification.getRecipient().getId().equals(userId)) {
+        if (!notification.getRecipientId().equals(userId)) {
             throw new AuthenticationException(NOT_AUTHORIZED);
         }
         
         notification.markAsRead();
+        notificationMongoRepository.save(notification);
         
-        return NotificationResponse.from(notification);
+        return NotificationResponse.fromDocument(notification);
     }
 
     /**
@@ -117,9 +108,6 @@ public class NotificationService {
      */
     @Transactional(readOnly = true)
     public long countUnreadNotifications(Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
-        
-        return notificationRepository.countByRecipientAndIsRead(user, false);
+        return notificationMongoRepository.countByRecipientIdAndIsRead(userId, false);
     }
 } 
