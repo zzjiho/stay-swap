@@ -1,23 +1,19 @@
 package com.stayswap.notification.service;
 
+import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.notification.model.document.Notification;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.model.dto.response.NotificationResponse;
 import com.stayswap.notification.repository.NotificationMongoRepository;
 import com.stayswap.user.repository.UserRepository;
-import com.stayswap.error.exception.AuthenticationException;
-import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 
-import static com.stayswap.code.ErrorCode.*;
+import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 
 
 /**
@@ -82,5 +78,4 @@ public class NotificationService {
         // MongoDB에 저장
         return notificationMongoRepository.save(notification);
     }
-
 }
