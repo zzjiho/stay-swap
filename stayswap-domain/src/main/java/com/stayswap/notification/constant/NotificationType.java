@@ -9,6 +9,8 @@ public enum NotificationType {
     SWAP_REJECTED("교환 거절"),
     CHECK_IN("체크인 알림"),
     CHECK_OUT("체크아웃 알림"),
+    LIKE_ADDED("좋아요 추가"),
+    LIKE_REMOVED("좋아요 취소"),
     TEST_NOTIFICATION("테스트 알림");
 
     private final String description;
