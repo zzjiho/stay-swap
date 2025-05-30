@@ -72,7 +72,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/v3/api-docs/**",
                         "/api/config/firebase",
                         "/api/house/**",
-                        "/api/health-check");
+                        "/api/health-check",
+                        "/api/test/**");
 
     }
 

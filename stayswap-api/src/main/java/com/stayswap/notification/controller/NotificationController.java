@@ -1,24 +1,16 @@
 package com.stayswap.notification.controller;
 
+import com.stayswap.common.resolver.userinfo.UserInfo;
+import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import com.stayswap.model.RestApiResponse;
 import com.stayswap.notification.model.dto.request.TestNotificationRequest;
 import com.stayswap.notification.model.dto.response.NotificationListResponse;
-import com.stayswap.notification.model.dto.response.NotificationResponse;
 import com.stayswap.notification.service.NotificationListService;
 import com.stayswap.notification.service.NotificationService;
 import com.stayswap.notification.service.TestNotificationService;
-import com.stayswap.user.service.UserDeviceService;
-import com.stayswap.common.resolver.userinfo.UserInfo;
-import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.web.PageableDefault;
-import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;

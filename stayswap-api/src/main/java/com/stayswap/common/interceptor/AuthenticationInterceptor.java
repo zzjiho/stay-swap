@@ -34,7 +34,8 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             requestURI.equals("/api/oauth/login") || 
             requestURI.equals("/api/logout") ||
             requestURI.startsWith("/v3/api-docs") ||
-            requestURI.equals("/api/health-check")) {
+            requestURI.equals("/api/health-check") ||
+            requestURI.startsWith("/api/test/")) {
             return true;
         }
 

@@ -1,5 +1,6 @@
 package com.stayswap.common.config;
 
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 클라이언트에 Firebase 설정 정보를 제공하는 컨트롤러
  */
+@Hidden
 @RestController
 @RequestMapping("/api/config")
 @RequiredArgsConstructor
