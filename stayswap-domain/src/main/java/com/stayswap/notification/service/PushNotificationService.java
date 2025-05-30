@@ -21,8 +21,8 @@ public class PushNotificationService {
     /**
      * 특정 사용자의 모든 디바이스로 푸시 알림 전송
      */
-    public void sendPushNotificationToUser(Long userId, String title, String body, 
-                                         NotificationType type, Long referenceId) {
+    public void sendPushNotificationToUser(Long userId, String title, String body,
+                                           NotificationType type, Long referenceId) {
         fcmService.sendPushNotificationToUser(userId, title, body, type, referenceId);
     }
 

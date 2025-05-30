@@ -23,8 +23,8 @@ public class FCMService {
     /**
      * 특정 사용자의 모든 디바이스로 푸시 알림 전송
      */
-    public void sendPushNotificationToUser(Long userId, String title, String body, 
-                                          NotificationType type, Long referenceId) {
+    public void sendPushNotificationToUser(Long userId, String title, String body,
+                                           NotificationType type, Long referenceId) {
         
         // 사용자의 모든 활성 디바이스 FCM 토큰 조회
         List<String> tokens = userDeviceService.getActiveFcmTokensByUserId(userId);
