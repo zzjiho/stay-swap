@@ -1,6 +1,7 @@
 package com.stayswap.user.model.entity;
 
 import com.stayswap.common.entity.BaseTimeEntity;
+import com.stayswap.house.model.entity.HouseLike;
 import com.stayswap.jwt.constant.Role;
 import com.stayswap.jwt.dto.JwtTokenDto;
 import com.stayswap.user.constant.UserType;
@@ -9,6 +10,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Getter
@@ -51,6 +54,10 @@ public class User extends BaseTimeEntity {
     private String refreshToken;
 
     private LocalDateTime tokenExpirationTime;
+    
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<HouseLike> houseLikes = new ArrayList<>();
 
     public void updateRefreshToken(JwtTokenDto jwtTokenDto) {
         refreshToken = jwtTokenDto.getRefreshToken();

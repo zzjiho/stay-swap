@@ -29,4 +29,13 @@ public interface HouseRepository extends JpaRepository<House, Long>, HouseReposi
     
     @Query(value = "select count(r.review_id) from review r where r.target_house_id = :houseId", nativeQuery = true)
     Long getReviewCountByHouseId(@Param("houseId") Long houseId);
+    
+    @Query(value = "select count(hl.house_like_id) from house_like hl where hl.house_id = :houseId", nativeQuery = true)
+    Long getLikeCountByHouseId(@Param("houseId") Long houseId);
+    
+    @Query(value = "select h.* from house h " +
+            "join house_like hl on h.house_id = hl.house_id " +
+            "where hl.user_id = :userId " +
+            "and h.is_active = true and h.is_delete = false", nativeQuery = true)
+    List<House> findLikedHousesByUserId(@Param("userId") Long userId);
 }
