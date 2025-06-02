@@ -1,4 +1,4 @@
-package com.stayswap.notification.service;
+package com.stayswap.notification.service.reader;
 
 import com.stayswap.notification.model.document.Notification;
 import com.stayswap.notification.repository.NotificationMongoRepository;

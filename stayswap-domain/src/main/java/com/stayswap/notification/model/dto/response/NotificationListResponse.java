@@ -1,7 +1,5 @@
 package com.stayswap.notification.model.dto.response;
 
-import com.stayswap.notification.model.document.Notification;
-import com.stayswap.notification.service.NotificationService;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,7 +8,6 @@ import lombok.NoArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Getter
 @Builder

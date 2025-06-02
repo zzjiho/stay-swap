@@ -1,5 +1,7 @@
-package com.stayswap.notification.service;
+package com.stayswap.notification.service.facade;
 
+import com.stayswap.notification.service.domain.booking.BookingNotificationService;
+import com.stayswap.notification.service.domain.swap.SwapNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

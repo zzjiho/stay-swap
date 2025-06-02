@@ -1,6 +1,6 @@
 package com.stayswap.scheduler.swap;
 
-import com.stayswap.notification.service.CheckInOutNotificationService;
+import com.stayswap.notification.service.domain.checkinout.CheckInOutNotificationService;
 import com.stayswap.swap.service.SwapServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

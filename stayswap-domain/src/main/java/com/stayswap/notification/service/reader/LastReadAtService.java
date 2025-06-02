@@ -1,4 +1,4 @@
-package com.stayswap.notification.service;
+package com.stayswap.notification.service.reader;
 
 import com.stayswap.notification.repository.NotificationReadRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.stayswap.notification.service;
+package com.stayswap.notification.service.core;
 
 import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.notification.model.document.Notification;

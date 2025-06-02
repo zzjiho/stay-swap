@@ -1,7 +1,7 @@
 package com.stayswap.notification.consumer;
 
 import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.NotificationService;
+import com.stayswap.notification.service.core.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
