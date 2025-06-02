@@ -1,4 +1,4 @@
-package com.stayswap.notification.service;
+package com.stayswap.notification.service.integration;
 
 import com.google.firebase.messaging.*;
 import com.stayswap.notification.constant.NotificationType;

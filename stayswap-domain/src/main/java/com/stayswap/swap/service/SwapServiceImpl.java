@@ -5,7 +5,7 @@ import com.stayswap.error.exception.ForbiddenException;
 import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.house.model.entity.House;
 import com.stayswap.house.repository.HouseRepository;
-import com.stayswap.notification.service.SwapRequestNotificationService;
+import com.stayswap.notification.service.facade.SwapRequestNotificationService;
 import com.stayswap.swap.constant.SwapStatus;
 import com.stayswap.swap.constant.SwapType;
 import com.stayswap.swap.model.dto.request.StayRequest;

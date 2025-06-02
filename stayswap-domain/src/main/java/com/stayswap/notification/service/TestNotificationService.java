@@ -2,6 +2,7 @@ package com.stayswap.notification.service;
 
 import com.stayswap.notification.constant.NotificationType;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
+import com.stayswap.notification.service.core.NotificationService;
 import com.stayswap.user.repository.UserRepository;
 import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;

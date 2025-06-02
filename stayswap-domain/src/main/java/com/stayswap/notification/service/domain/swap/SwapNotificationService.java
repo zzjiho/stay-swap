@@ -1,7 +1,8 @@
-package com.stayswap.notification.service;
+package com.stayswap.notification.service.domain.swap;
 
 import com.stayswap.notification.constant.NotificationType;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
+import com.stayswap.notification.service.core.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

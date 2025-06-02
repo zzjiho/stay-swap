@@ -1,9 +1,7 @@
-package com.stayswap.notification.service;
+package com.stayswap.notification.service.reader;
 
-import com.stayswap.error.exception.AuthenticationException;
 import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.notification.model.document.Notification;
-import com.stayswap.notification.model.dto.request.NotificationMessage;
 import com.stayswap.notification.model.dto.response.NotificationListResponse;
 import com.stayswap.notification.model.dto.response.NotificationResponse;
 import com.stayswap.notification.repository.NotificationMongoRepository;
@@ -11,7 +9,6 @@ import com.stayswap.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
