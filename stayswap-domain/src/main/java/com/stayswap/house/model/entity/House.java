@@ -6,6 +6,9 @@ import com.stayswap.user.model.entity.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static jakarta.persistence.CascadeType.ALL;
 import static jakarta.persistence.FetchType.LAZY;
 
@@ -65,6 +68,10 @@ public class House extends BaseTimeEntity {
     @OneToOne(fetch = LAZY, cascade = ALL)
     @JoinColumn(name = "house_option_id")
     private HouseOption houseOption;
+    
+    @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<HouseLike> houseLikes = new ArrayList<>();
 
     public static House newHouse(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, String district, Boolean petsAllowed, User user, HouseOption houseOption) {
         return House.builder()
