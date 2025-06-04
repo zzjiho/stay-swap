@@ -19,4 +19,8 @@ public class NotificationMessage {
     
     // 이벤트 발생 시간 (null일 경우 현재 시간 사용)
     private Instant occurredAt;
+    
+    // 좋아요 알림 관련 필드
+    private Long accommodationId;    // 좋아요 받은 숙소 ID
+    private String accommodationName; // 숙소 이름
 } 

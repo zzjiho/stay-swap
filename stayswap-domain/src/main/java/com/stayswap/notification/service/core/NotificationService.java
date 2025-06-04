@@ -62,20 +62,7 @@ public class NotificationService {
      * 알림 MongoDB에 저장
      */
     private Notification saveNotificationToMongo(NotificationMessage message) {
-        Instant occurredAt = message.getOccurredAt() != null ?
-                message.getOccurredAt() : Instant.now();
-                
-        Notification notification = Notification.of(
-                message.getRecipientId(),
-                message.getSenderId(),
-                message.getType(),
-                message.getTitle(),
-                message.getContent(),
-                message.getReferenceId(),
-                occurredAt
-        );
-        
-        // MongoDB에 저장
+        Notification notification = Notification.of(message);
         return notificationMongoRepository.save(notification);
     }
 }

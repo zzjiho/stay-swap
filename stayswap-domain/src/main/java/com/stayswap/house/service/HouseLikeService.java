@@ -5,6 +5,7 @@ import com.stayswap.house.model.entity.House;
 import com.stayswap.house.model.entity.HouseLike;
 import com.stayswap.house.repository.HouseLikeRepository;
 import com.stayswap.house.repository.HouseRepository;
+import com.stayswap.notification.service.domain.house.HouseLikeNotificationService;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,7 @@ public class HouseLikeService {
     private final HouseLikeRepository houseLikeRepository;
     private final HouseRepository houseRepository;
     private final UserRepository userRepository;
+    private final HouseLikeNotificationService houseLikeNotificationService;
 
     /**
      * 숙소 좋아요 등록
@@ -39,6 +41,12 @@ public class HouseLikeService {
         
         HouseLike houseLike = HouseLike.of(user, house);
         houseLikeRepository.save(houseLike);
+        
+        houseLikeNotificationService.createHouseLikeAddedNotification(
+                house.getUser().getId(),
+                userId,
+                houseId
+        );
         
         return true;
     }
@@ -62,6 +70,12 @@ public class HouseLikeService {
         }
         
         houseLikeRepository.delete(houseLike);
+        
+        houseLikeNotificationService.createHouseLikeRemovedNotification(
+                house.getUser().getId(),
+                userId,
+                houseId
+        );
         
         return true;
     }
