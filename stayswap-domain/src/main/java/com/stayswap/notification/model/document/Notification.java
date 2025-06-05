@@ -1,6 +1,7 @@
 package com.stayswap.notification.model.document;
 
 import com.stayswap.notification.constant.NotificationType;
+import com.stayswap.notification.model.dto.request.NotificationMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,22 +43,35 @@ public abstract class Notification {
     public static Notification of(Long recipientId, Long senderId,
                                   NotificationType type, String title, String content, 
                                   Long referenceId, Instant occurredAt) {
+        return of(NotificationMessage.builder()
+                .recipientId(recipientId)
+                .senderId(senderId)
+                .type(type)
+                .title(title)
+                .content(content)
+                .referenceId(referenceId)
+                .occurredAt(occurredAt)
+                .build());
+    }
+    
+    public static Notification of(NotificationMessage message) {
         Instant now = Instant.now();
+        Instant occurredAt = message.getOccurredAt() != null ? message.getOccurredAt() : now;
         
-        switch (type) {
+        switch (message.getType()) {
             case BOOKING_REQUEST:
             case BOOKING_ACCEPTED:
             case BOOKING_REJECTED:
             case CHECK_IN:
             case CHECK_OUT:
                 return BookingNotification.builder()
-                        .recipientId(recipientId)
-                        .senderId(senderId)
-                        .type(type)
-                        .title(title)
-                        .content(content)
+                        .recipientId(message.getRecipientId())
+                        .senderId(message.getSenderId())
+                        .type(message.getType())
+                        .title(message.getTitle())
+                        .content(message.getContent())
                         .isRead(false)
-                        .referenceId(referenceId)
+                        .referenceId(message.getReferenceId())
                         .occurredAt(occurredAt)
                         .createdAt(now)
                         .lastUpdatedAt(now)
@@ -67,13 +81,13 @@ public abstract class Notification {
             case SWAP_ACCEPTED:
             case SWAP_REJECTED:
                 return SwapNotification.builder()
-                        .recipientId(recipientId)
-                        .senderId(senderId)
-                        .type(type)
-                        .title(title)
-                        .content(content)
+                        .recipientId(message.getRecipientId())
+                        .senderId(message.getSenderId())
+                        .type(message.getType())
+                        .title(message.getTitle())
+                        .content(message.getContent())
                         .isRead(false)
-                        .referenceId(referenceId)
+                        .referenceId(message.getReferenceId())
                         .occurredAt(occurredAt)
                         .createdAt(now)
                         .lastUpdatedAt(now)
@@ -82,28 +96,30 @@ public abstract class Notification {
             case LIKE_ADDED:
             case LIKE_REMOVED:
                 return LikeNotification.builder()
-                        .recipientId(recipientId)
-                        .senderId(senderId)
-                        .type(type)
-                        .title(title)
-                        .content(content)
+                        .recipientId(message.getRecipientId())
+                        .senderId(message.getSenderId())
+                        .type(message.getType())
+                        .title(message.getTitle())
+                        .content(message.getContent())
                         .isRead(false)
-                        .referenceId(referenceId)
+                        .referenceId(message.getReferenceId())
                         .occurredAt(occurredAt)
                         .createdAt(now)
                         .lastUpdatedAt(now)
+                        .accommodationId(message.getAccommodationId())
+                        .accommodationName(message.getAccommodationName())
                         .build();
                         
             case TEST_NOTIFICATION:
             default:
                 return TestNotification.builder()
-                        .recipientId(recipientId)
-                        .senderId(senderId)
-                        .type(type)
-                        .title(title)
-                        .content(content)
+                        .recipientId(message.getRecipientId())
+                        .senderId(message.getSenderId())
+                        .type(message.getType())
+                        .title(message.getTitle())
+                        .content(message.getContent())
                         .isRead(false)
-                        .referenceId(referenceId)
+                        .referenceId(message.getReferenceId())
                         .occurredAt(occurredAt)
                         .createdAt(now)
                         .lastUpdatedAt(now)

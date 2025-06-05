@@ -6,7 +6,7 @@ import com.stayswap.model.RestApiResponse;
 import com.stayswap.notification.model.dto.request.TestNotificationRequest;
 import com.stayswap.notification.model.dto.response.NotificationListResponse;
 import com.stayswap.notification.service.reader.NotificationListService;
-import com.stayswap.notification.service.core.NotificationService;
+import com.stayswap.notification.service.core.NotificationPublisher;
 import com.stayswap.notification.service.TestNotificationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -22,7 +22,7 @@ import java.time.Instant;
 public class NotificationController {
 
     private final TestNotificationService testNotificationService;
-    private final NotificationService notificationService;
+    private final NotificationPublisher notificationPublisher;
     private final NotificationListService notificationListService;
 
     @Operation(summary = "테스트 알림 전송", description = "자신에게 테스트 알림을 전송합니다. (개발용)")

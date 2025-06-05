@@ -11,8 +11,6 @@ import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-
 import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 
 
@@ -24,7 +22,7 @@ import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class NotificationService {
+public class NotificationPublisher {
 
     private final NotificationMongoRepository notificationMongoRepository;
     private final UserRepository userRepository;
@@ -62,20 +60,7 @@ public class NotificationService {
      * 알림 MongoDB에 저장
      */
     private Notification saveNotificationToMongo(NotificationMessage message) {
-        Instant occurredAt = message.getOccurredAt() != null ?
-                message.getOccurredAt() : Instant.now();
-                
-        Notification notification = Notification.of(
-                message.getRecipientId(),
-                message.getSenderId(),
-                message.getType(),
-                message.getTitle(),
-                message.getContent(),
-                message.getReferenceId(),
-                occurredAt
-        );
-        
-        // MongoDB에 저장
+        Notification notification = Notification.of(message);
         return notificationMongoRepository.save(notification);
     }
 }

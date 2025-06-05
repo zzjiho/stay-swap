@@ -2,7 +2,7 @@ package com.stayswap.notification.service.domain.swap;
 
 import com.stayswap.notification.constant.NotificationType;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.core.NotificationService;
+import com.stayswap.notification.service.core.NotificationPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 public class SwapNotificationService {
 
-    private final NotificationService notificationService;
+    private final NotificationPublisher notificationPublisher;
 
     /**
      * 교환 요청 알림 생성
@@ -33,7 +33,7 @@ public class SwapNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
         log.info("교환 요청 알림 생성 완료 - recipientId: {}, swapId: {}", recipientId, swapId);
     }
     
@@ -50,7 +50,7 @@ public class SwapNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
         log.info("교환 승인 알림 생성 완료 - recipientId: {}, swapId: {}", recipientId, swapId);
     }
     
@@ -67,7 +67,7 @@ public class SwapNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
         log.info("교환 거절 알림 생성 완료 - recipientId: {}, swapId: {}", recipientId, swapId);
     }
 } 

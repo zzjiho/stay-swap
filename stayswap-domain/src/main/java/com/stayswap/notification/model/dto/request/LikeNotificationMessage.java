@@ -9,7 +9,7 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class NotificationMessage {
+public class LikeNotificationMessage {
     private Long recipientId;
     private Long senderId;
     private NotificationType type;
