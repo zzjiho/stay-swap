@@ -2,7 +2,7 @@ package com.stayswap.notification.service.domain.checkinout;
 
 import com.stayswap.notification.constant.NotificationType;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.core.NotificationService;
+import com.stayswap.notification.service.core.NotificationPublisher;
 import com.stayswap.swap.constant.SwapStatus;
 import com.stayswap.swap.constant.SwapType;
 import com.stayswap.swap.model.entity.Swap;
@@ -26,7 +26,7 @@ import java.util.List;
 @Transactional
 public class CheckInOutNotificationService {
 
-    private final NotificationService notificationService;
+    private final NotificationPublisher notificationPublisher;
     private final SwapRepository swapRepository;
 
     /**
@@ -158,7 +158,7 @@ public class CheckInOutNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
     }
     
     /**
@@ -174,7 +174,7 @@ public class CheckInOutNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
     }
     
     /**
@@ -190,7 +190,7 @@ public class CheckInOutNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
     }
     
     /**
@@ -206,7 +206,7 @@ public class CheckInOutNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
     }
     
     /**
@@ -222,7 +222,7 @@ public class CheckInOutNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
     }
     
     /**
@@ -238,6 +238,6 @@ public class CheckInOutNotificationService {
                 .referenceId(swapId)
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
     }
 } 

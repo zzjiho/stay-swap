@@ -4,9 +4,9 @@ import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.house.model.entity.House;
 import com.stayswap.house.repository.HouseRepository;
 import com.stayswap.notification.constant.NotificationType;
-import com.stayswap.notification.model.document.LikeNotification;
+import com.stayswap.notification.model.dto.request.LikeNotificationMessage;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.core.NotificationService;
+import com.stayswap.notification.service.core.LikeNotificationPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -24,7 +24,7 @@ import static com.stayswap.code.ErrorCode.NOT_EXISTS_HOUSE;
 @Transactional
 public class HouseLikeNotificationService {
 
-    private final NotificationService notificationService;
+    private final LikeNotificationPublisher likeNotificationPublisher;
     private final HouseRepository houseRepository;
 
     /**
@@ -35,7 +35,7 @@ public class HouseLikeNotificationService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
                 
         String houseName = house.getTitle();
-        
+
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(recipientId)
                 .senderId(senderId)
@@ -46,8 +46,8 @@ public class HouseLikeNotificationService {
                 .accommodationId(houseId)
                 .accommodationName(houseName)
                 .build();
-        
-        notificationService.sendNotification(message);
+
+        likeNotificationPublisher.sendNotification(message);
         log.info("숙소 좋아요 추가 알림 생성 완료 - recipientId: {}, houseId: {}", recipientId, houseId);
     }
     
@@ -59,7 +59,7 @@ public class HouseLikeNotificationService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
                 
         String houseName = house.getTitle();
-        
+
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(recipientId)
                 .senderId(senderId)
@@ -70,8 +70,8 @@ public class HouseLikeNotificationService {
                 .accommodationId(houseId)
                 .accommodationName(houseName)
                 .build();
-        
-        notificationService.sendNotification(message);
+
+        likeNotificationPublisher.sendNotification(message);
         log.info("숙소 좋아요 취소 알림 생성 완료 - recipientId: {}, houseId: {}", recipientId, houseId);
     }
 } 

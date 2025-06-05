@@ -2,7 +2,7 @@ package com.stayswap.notification.service;
 
 import com.stayswap.notification.constant.NotificationType;
 import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.core.NotificationService;
+import com.stayswap.notification.service.core.NotificationPublisher;
 import com.stayswap.user.repository.UserRepository;
 import com.stayswap.error.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,7 @@ import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 @Transactional
 public class TestNotificationService {
 
-    private final NotificationService notificationService;
+    private final NotificationPublisher notificationPublisher;
     private final UserRepository userRepository;
 
     /**
@@ -42,7 +42,7 @@ public class TestNotificationService {
                 .referenceId(0L) // 테스트 알림이므로 참조 ID는 0으로 설정
                 .build();
         
-        notificationService.sendNotification(message);
+        notificationPublisher.sendNotification(message);
         log.info("테스트 알림 생성 완료 - userId: {}", userId);
     }
 } 
