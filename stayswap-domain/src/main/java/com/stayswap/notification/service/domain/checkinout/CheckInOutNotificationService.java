@@ -1,8 +1,8 @@
 package com.stayswap.notification.service.domain.checkinout;
 
 import com.stayswap.notification.constant.NotificationType;
-import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.core.NotificationPublisher;
+import com.stayswap.notification.dto.request.NotificationMessage;
+import com.stayswap.notification.producer.NotificationPublisher;
 import com.stayswap.swap.constant.SwapStatus;
 import com.stayswap.swap.constant.SwapType;
 import com.stayswap.swap.model.entity.Swap;

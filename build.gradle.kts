@@ -48,9 +48,6 @@ subprojects {
 		testRuntimeOnly("org.junit.platform:junit-platform-launcher")
 		testImplementation("org.junit.jupiter:junit-jupiter:5.8.1")
 
-		// feign
-		implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.2.1")
-
 		// springdoc
 		implementation("org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6")
 		implementation("commons-codec:commons-codec:1.15")

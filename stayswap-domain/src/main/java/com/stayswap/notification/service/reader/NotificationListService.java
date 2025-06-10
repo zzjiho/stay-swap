@@ -1,9 +1,9 @@
 package com.stayswap.notification.service.reader;
 
 import com.stayswap.error.exception.NotFoundException;
-import com.stayswap.notification.model.document.Notification;
-import com.stayswap.notification.model.dto.response.NotificationListResponse;
-import com.stayswap.notification.model.dto.response.NotificationResponse;
+import com.stayswap.notification.document.Notification;
+import com.stayswap.notification.dto.response.NotificationListResponse;
+import com.stayswap.notification.dto.response.NotificationResponse;
 import com.stayswap.notification.repository.NotificationMongoRepository;
 import com.stayswap.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;

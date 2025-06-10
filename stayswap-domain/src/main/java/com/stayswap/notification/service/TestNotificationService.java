@@ -1,16 +1,12 @@
 package com.stayswap.notification.service;
 
 import com.stayswap.notification.constant.NotificationType;
-import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.core.NotificationPublisher;
-import com.stayswap.user.repository.UserRepository;
-import com.stayswap.error.exception.NotFoundException;
+import com.stayswap.notification.dto.request.NotificationMessage;
+import com.stayswap.notification.producer.NotificationPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 
 /**
  * 테스트 알림 서비스
@@ -23,15 +19,11 @@ import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 public class TestNotificationService {
 
     private final NotificationPublisher notificationPublisher;
-    private final UserRepository userRepository;
 
     /**
      * 테스트 알림 생성 (사용자 자신에게 발송)
      */
     public void createTestNotification(Long userId, String title, String content) {
-        if (!userRepository.existsById(userId)) {
-            throw new NotFoundException(NOT_EXISTS_USER);
-        }
 
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(userId)
