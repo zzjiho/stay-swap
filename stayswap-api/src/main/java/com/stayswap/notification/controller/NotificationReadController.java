@@ -3,7 +3,7 @@ package com.stayswap.notification.controller;
 import com.stayswap.common.resolver.userinfo.UserInfo;
 import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import com.stayswap.model.RestApiResponse;
-import com.stayswap.notification.model.dto.response.SetLastReadAtResponse;
+import com.stayswap.notification.dto.response.SetLastReadAtResponse;
 import com.stayswap.notification.service.reader.LastReadAtService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

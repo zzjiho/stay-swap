@@ -18,6 +18,9 @@ dependencies {
     // firebase
     implementation("com.google.firebase:firebase-admin:9.4.3")
 
+    // feign
+    implementation("org.springframework.cloud:spring-cloud-starter-openfeign:4.2.1")
+
     // xml 관련
     implementation("javax.xml.bind:jaxb-api:2.3.1")
 }

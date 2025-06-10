@@ -3,4 +3,5 @@ include 'stayswap-api'
 include 'stayswap-domain'
 include 'stayswap-common'
 include 'stayswap-batch'
-
+include 'stayswap-consumer'
+include 'stayswap-producer'

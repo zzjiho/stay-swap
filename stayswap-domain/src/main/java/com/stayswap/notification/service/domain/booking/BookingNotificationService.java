@@ -1,8 +1,8 @@
 package com.stayswap.notification.service.domain.booking;
 
 import com.stayswap.notification.constant.NotificationType;
-import com.stayswap.notification.model.dto.request.NotificationMessage;
-import com.stayswap.notification.service.core.NotificationPublisher;
+import com.stayswap.notification.dto.request.NotificationMessage;
+import com.stayswap.notification.producer.NotificationPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

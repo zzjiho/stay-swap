@@ -1,6 +1,6 @@
 package com.stayswap.notification.service.reader;
 
-import com.stayswap.notification.model.document.Notification;
+import com.stayswap.notification.document.Notification;
 import com.stayswap.notification.repository.NotificationMongoRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

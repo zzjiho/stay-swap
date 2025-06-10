@@ -1,5 +1,6 @@
 dependencies {
     implementation(project(":stayswap-common"))
+    implementation(project(":stayswap-producer"))
 
     // mysql
     runtimeOnly("com.mysql:mysql-connector-j")
@@ -10,11 +11,6 @@ dependencies {
     // mongodb
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 
-    // kafka
-    implementation("org.springframework.cloud:spring-cloud-stream")
-    implementation("org.springframework.cloud:spring-cloud-stream-binder-kafka")
-    implementation("org.springframework.kafka:spring-kafka")
-    
     // jwt
     implementation("io.jsonwebtoken:jjwt:0.12.3")
     
