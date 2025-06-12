@@ -23,6 +23,11 @@ dependencies {
 
     // xml 관련
     implementation("javax.xml.bind:jaxb-api:2.3.1")
+
+    // kafka
+    implementation("org.springframework.cloud:spring-cloud-stream")
+    implementation("org.springframework.cloud:spring-cloud-stream-binder-kafka")
+    implementation("org.springframework.kafka:spring-kafka")
 }
 
 // ✅ bootJar 활성화
