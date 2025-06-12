@@ -15,8 +15,7 @@ public class FailedNotificationScheduler {
     /**
      * 실패한 알림 메시지 재처리 스케줄러 - 30분마다 실행
      */
-//    @Scheduled(cron = "0 */30 * * * ?")
-    @Scheduled(fixedDelay = 30000)
+    @Scheduled(fixedDelay = 60000)
     public void retryFailedNotifications() {
         log.info("실패한 알림 메시지 재처리 스케줄러 실행");
         failedNotificationJob.run();

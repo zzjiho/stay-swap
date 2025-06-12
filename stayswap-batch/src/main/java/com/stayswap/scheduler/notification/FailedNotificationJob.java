@@ -8,8 +8,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,149 +24,102 @@ public class FailedNotificationJob {
 
     private final FailedNotificationRepository failedNotificationRepository;
     private final StreamBridge streamBridge;
-
-    // 실패 유형별 최대 재시도 횟수
-    private static final Map<FailureType, Integer> MAX_RETRY_COUNT = new HashMap<>();
     
-    // 알림 타입별 기본 토픽 매핑
-    private static final String DEFAULT_NOTIFICATION_TOPIC = "notification";
-    private static final String DEFAULT_LIKE_NOTIFICATION_TOPIC = "likeNotification";
+    private static final int MAX_RETRY_COUNT = 3;
+    private static final int BATCH_SIZE = 100;
     
-    static {
-        MAX_RETRY_COUNT.put(FailureType.CONSUME_FAIL, 5);      // 일반 소비 실패: 5회 재시도
-        MAX_RETRY_COUNT.put(FailureType.FCM_ERROR, 3);         // FCM 에러: 3회 재시도
-        MAX_RETRY_COUNT.put(FailureType.USER_NOT_FOUND, 1);    // 사용자 없음: 1회만 재시도
-        MAX_RETRY_COUNT.put(FailureType.UNKNOWN, 3);           // 알 수 없는 오류: 3회 재시도
-    }
-
+    // 토픽 이름과 바인딩 이름 매핑
+    private static final Map<String, String> TOPIC_TO_BINDING = Map.of(
+            "notification", "notification-out-0",
+            "likeNotification", "likeNotification-out-0"
+    );
+    
+    /**
+     * 실패한 알림 메시지 재처리 스케줄러
+     */
     public void run() {
-        log.info("실패한 알림 메시지 재처리 작업 시작");
+        log.info("실패한 알림 메시지 재처리 스케줄러 시작");
         
-        List<FailedNotification> unprocessedNotifications = failedNotificationRepository.findByRetried(false);
-        log.info("재처리할 실패 메시지 수: {}", unprocessedNotifications.size());
+        List<FailedNotification> failedNotifications = failedNotificationRepository
+                .findByRetriedFalseAndRetryCountLessThan(MAX_RETRY_COUNT, BATCH_SIZE);
         
-        // 실패 유형별로 그룹화
-        Map<FailureType, List<FailedNotification>> groupedByType = unprocessedNotifications.stream()
-                .collect(Collectors.groupingBy(FailedNotification::getFailureType));
+        if (failedNotifications.isEmpty()) {
+            log.info("재처리할 실패 메시지가 없습니다.");
+            return;
+        }
         
-        int successCount = 0;
-        int failCount = 0;
-        int skipCount = 0;
+        log.info("실패 메시지 {}개 재처리 시작", failedNotifications.size());
         
-        // 각 실패 유형별로 처리
-        for (Map.Entry<FailureType, List<FailedNotification>> entry : groupedByType.entrySet()) {
-            FailureType failureType = entry.getKey();
-            List<FailedNotification> notifications = entry.getValue();
-            
-            log.info("실패 유형 {} 처리 중 - 메시지 수: {}", failureType, notifications.size());
-            
-            for (FailedNotification notification : notifications) {
-                // 최대 재시도 횟수 확인
-                int maxRetries = MAX_RETRY_COUNT.getOrDefault(failureType, 3);
+        Map<FailureType, Integer> typeCounts = new HashMap<>();
+        
+        // 각 실패 메시지를 원본 토픽으로 재전송
+        for (FailedNotification failedNotification : failedNotifications) {
+            try {
+                // 실패 유형 카운트 증가
+                typeCounts.merge(failedNotification.getFailureType(), 1, Integer::sum);
                 
-                // 디버그 로깅 추가
-                log.debug("재시도 검사 - ID: {}, 현재 재시도 횟수: {}, 최대 재시도 횟수: {}", 
-                        notification.getId(), notification.getRetryCount(), maxRetries);
-                
-                // 테스트를 위해 일시적으로 재시도 횟수 체크 로직 우회
-                /*
-                // 이미 최대 재시도 횟수를 초과한 경우 스킵
-                if (notification.getRetryCount() >= maxRetries) {
-                    log.warn("최대 재시도 횟수({})를 초과하여 스킵 - ID: {}, 실패 유형: {}, 현재 재시도 횟수: {}", 
-                            maxRetries, notification.getId(), failureType, notification.getRetryCount());
-                    skipCount++;
+                // USER_NOT_FOUND 유형은 재시도하지 않음
+                if (failedNotification.getFailureType() == FailureType.USER_NOT_FOUND) {
+                    log.info("사용자를 찾을 수 없는 실패 메시지는 재시도하지 않음: {}", failedNotification.getId());
+                    
+                    // 재시도 처리된 것으로 표시하여 다음 스케줄에서 다시 시도하지 않도록 함
+                    failedNotification.markAsRetried();
+                    failedNotificationRepository.save(failedNotification);
                     continue;
                 }
-                */
                 
-                // 테스트를 위해 항상 재시도
-                log.info("테스트를 위해 최대 재시도 횟수 체크를 우회하고 재시도합니다 - ID: {}, 현재 재시도 횟수: {}", 
-                        notification.getId(), notification.getRetryCount());
+                // 원본 메시지와 토픽 가져오기
+                NotificationMessage originalMessage = failedNotification.getOriginalMessage();
+                String originalTopic = failedNotification.getOriginalTopic();
                 
-                try {
-                    retryFailedMessage(notification);
-                    successCount++;
-                } catch (Exception e) {
-                    log.error("메시지 재처리 실패 - ID: {}, 실패 유형: {}, 오류: {}", 
-                            notification.getId(), failureType, e.getMessage(), e);
-                    failCount++;
+                // 토픽에 해당하는 바인딩 이름 찾기
+                String bindingName = TOPIC_TO_BINDING.getOrDefault(originalTopic, originalTopic + "-out-0");
+                
+                log.info("메시지 재전송 시도: {} -> 토픽: {}, 바인딩: {}", 
+                        failedNotification.getId(), originalTopic, bindingName);
+                
+                // 원본 토픽으로 메시지 재전송 (바인딩 이름 사용)
+                boolean sent = streamBridge.send(bindingName, 
+                        MessageBuilder.withPayload(originalMessage).build());
+                
+                if (sent) {
+                    log.info("메시지 재전송 성공: {} -> {}", failedNotification.getId(), bindingName);
                     
-                    // 재시도 횟수 증가 (성공하지 않았지만 시도는 했으므로)
-                    notification.incrementRetryCount();
-                    failedNotificationRepository.save(notification);
+                    // 재시도 성공 시 재시도 정보 업데이트
+                    failedNotification.markAsRetried();
+                    failedNotificationRepository.save(failedNotification);
+                } else {
+                    log.error("메시지 재전송 실패: {}", failedNotification.getId());
+                    
+                    // 재시도 횟수만 증가
+                    failedNotification.incrementRetryCount();
+                    failedNotificationRepository.save(failedNotification);
                 }
+            } catch (Exception e) {
+                log.error("메시지 재전송 중 오류 발생: {}", failedNotification.getId(), e);
+                
+                // 재시도 횟수만 증가
+                failedNotification.incrementRetryCount();
+                failedNotificationRepository.save(failedNotification);
             }
         }
         
-        log.info("실패한 알림 메시지 재처리 완료 - 성공: {}, 실패: {}, 스킵: {}", 
-                successCount, failCount, skipCount);
+        // 실패 유형별 통계 로깅
+        log.info("실패 메시지 재처리 결과 - 유형별 카운트: {}", typeCounts);
+        log.info("실패 메시지 재처리 완료");
     }
     
     /**
-     * 메시지 타입에 따라 적절한 토픽을 결정
+     * 오래된 처리 완료된 실패 메시지 정리 (30일 이상된 메시지)
+     * 매일 자정에 실행
      */
-    private String determineTopicFromMessage(String originalTopic, NotificationMessage message) {
-        if (!"unknown".equals(originalTopic)) {
-            return originalTopic;
-        }
+    @Scheduled(cron = "0 0 0 * * ?")
+    public void cleanupOldFailedNotifications() {
+        log.info("오래된 실패 메시지 정리 시작");
         
-        // 메시지 타입에 따라 적절한 토픽 결정
-        if (message.getType() != null) {
-            switch (message.getType()) {
-                case LIKE_ADDED:
-                case LIKE_REMOVED:
-                    return DEFAULT_LIKE_NOTIFICATION_TOPIC;
-                default:
-                    return DEFAULT_NOTIFICATION_TOPIC;
-            }
-        }
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        long deletedCount = failedNotificationRepository.deleteByRetriedTrueAndCreatedAtBefore(thirtyDaysAgo);
         
-        return DEFAULT_NOTIFICATION_TOPIC;
-    }
-    
-    /**
-     * 개별 메시지 재처리 메서드
-     */
-    public void retryFailedMessage(FailedNotification failedNotification) {
-        NotificationMessage message = failedNotification.getOriginalMessage();
-        String originalTopic = failedNotification.getOriginalTopic();
-        FailureType failureType = failedNotification.getFailureType();
-        
-        // 원본 토픽이 unknown인 경우 메시지 타입에 따라 토픽 결정
-        if ("unknown".equals(originalTopic)) {
-            originalTopic = determineTopicFromMessage(originalTopic, message);
-            log.info("원본 토픽이 unknown이어서 메시지 타입에 따라 토픽 결정: {}", originalTopic);
-        }
-        
-        log.info("메시지 재처리 시도 - ID: {}, 토픽: {}, 실패 유형: {}, 재시도 횟수: {}", 
-                failedNotification.getId(), originalTopic, failureType, 
-                failedNotification.getRetryCount() + 1);
-        
-        // StreamBridge를 사용하여 메시지 전송
-        String outputBinding;
-        if ("notification".equals(originalTopic)) {
-            outputBinding = "notification-out-0";
-        } else if ("likeNotification".equals(originalTopic)) {
-            outputBinding = "likeNotification-out-0";
-        } else {
-            outputBinding = "notification-out-0"; // 기본값
-            log.warn("알 수 없는 토픽 {}를 notification-out-0으로 매핑합니다", originalTopic);
-        }
-        
-        boolean sent = streamBridge.send(outputBinding, 
-                MessageBuilder.withPayload(message)
-                        .setHeader("ORIGINAL_TOPIC", originalTopic)
-                        .build());
-        
-        if (sent) {
-            // 재처리 성공 시 상태 업데이트
-            failedNotification.markAsRetried();
-            failedNotificationRepository.save(failedNotification);
-            log.info("메시지 재처리 성공 - ID: {}", failedNotification.getId());
-        } else {
-            log.error("메시지 재처리 실패 - 메시지를 전송하지 못했습니다 - ID: {}", failedNotification.getId());
-            failedNotification.incrementRetryCount();
-            failedNotificationRepository.save(failedNotification);
-        }
+        log.info("오래된 실패 메시지 {}개 삭제 완료", deletedCount);
     }
 } 
