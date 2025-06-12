@@ -33,8 +33,8 @@ public class TestNotificationService {
                 .content(content != null ? content : "이것은 테스트 알림입니다.")
                 .referenceId(0L) // 테스트 알림이므로 참조 ID는 0으로 설정
                 .build();
-        
+
         notificationPublisher.sendNotification(message);
         log.info("테스트 알림 생성 완료 - userId: {}", userId);
     }
-} 
+}

@@ -30,13 +30,8 @@ public class NotificationConsumer {
     @Bean("notification")
     public Consumer<NotificationMessage> notification() {
         return message -> {
-            try {
-                log.info("알림 메시지 수신: {}", message);
-                processNotification(message);
-            } catch (Exception e) {
-                // todo: handle exception
-                log.error("알림 처리 중 오류 발생", e);
-            }
+            log.info("알림 메시지 수신: {}", message);
+            processNotification(message);
         };
     }
 
@@ -44,6 +39,7 @@ public class NotificationConsumer {
      * 알림 저장 및 FCM 발송 처리
      */
     public void processNotification(NotificationMessage message) {
+
         userRepository.findById(message.getSenderId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
 
@@ -58,6 +54,39 @@ public class NotificationConsumer {
                 notification.getReferenceId()
         );
     }
+
+    //  실제 운영에서는 spring cloud stream이 자동으로 감지하는데 테스트는 그렇게 안되서 예외 터트림
+//    public void processNotification(NotificationMessage message) {
+//        // ===== 테스트를 위한 의도적 에러 발생 코드 =====
+//        // 테스트 1: MongoDB 저장 실패 시뮬레이션
+//        if (message.getContent() != null && message.getContent().equals("FORCE_MONGO_ERROR")) {
+//            log.error("테스트: MongoDB 저장 실패 시뮬레이션");
+//            throw new RuntimeException("MongoDB 저장 중 에러 발생 (테스트)");
+//        }
+//
+//        // 테스트 2: FCM 실패 시뮬레이션
+//        if (message.getContent() != null && message.getContent().equals("FORCE_FCM_ERROR")) {
+//            log.error("테스트: FCM 전송 전에 의도적 실패");
+//            // 일단 사용자는 확인하고 MongoDB에는 저장
+//            userRepository.findById(message.getSenderId())
+//                    .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+//
+//            // FCM 전송 부분에서 실패
+//            throw new RuntimeException("FCM 푸시 알림 전송 실패 (테스트)");
+//        }
+//        // ===============================================
+//        Notification notification = saveNotificationToMongo(message);
+//
+//        pushNotificationService.sendPushNotificationToUser(
+//                notification.getRecipientId(),
+//                notification.getTitle(),
+//                notification.getContent(),
+//                notification.getType(),
+//                notification.getReferenceId()
+//        );
+//
+//
+//    }
 
     /**
      * 알림 MongoDB에 저장

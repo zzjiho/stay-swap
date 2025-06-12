@@ -11,7 +11,9 @@ public enum NotificationType {
     CHECK_OUT("체크아웃 알림"),
     LIKE_ADDED("좋아요 추가"),
     LIKE_REMOVED("좋아요 취소"),
-    TEST_NOTIFICATION("테스트 알림");
+    TEST_NOTIFICATION("테스트 알림"),
+    TEST_FAIL("실패 테스트 알림");
+
 
     private final String description;
 
