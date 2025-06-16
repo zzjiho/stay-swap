@@ -22,6 +22,18 @@ dependencies {
     annotationProcessor("com.querydsl:querydsl-apt:5.0.0:jakarta")
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
+
+    // testContainers
+    implementation("org.testcontainers:testcontainers:1.20.1")
+
+    // test
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    // h2
+    testRuntimeOnly("com.h2database:h2")
+
+
+
 }
 
 // ✅ QueryDsl Q클래스 생성 설정

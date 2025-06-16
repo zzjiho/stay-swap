@@ -28,13 +28,8 @@ public class LikeNotificationConsumer {
     @Bean("likeNotification")
     public Consumer<NotificationMessage> likeNotification() {
         return message -> {
-            try {
-                log.info("알림 메시지 수신: {}", message);
-                processLikeNotification(message);
-            } catch (Exception e) {
-                // todo: handle exception
-                log.error("알림 처리 중 오류 발생", e);
-            }
+            log.info("알림 메시지 수신: {}", message);
+            processLikeNotification(message);
         };
     }
 
