@@ -24,6 +24,18 @@ dependencies {
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
+    // test
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+
+    // h2
+    testRuntimeOnly("com.h2database:h2")
+
+    // TestChannelBinder
+    testImplementation("org.springframework.cloud:spring-cloud-stream-test-binder")
+    testImplementation("org.awaitility:awaitility")
+
+
+
 }
 
 // ✅ bootJar 활성화
