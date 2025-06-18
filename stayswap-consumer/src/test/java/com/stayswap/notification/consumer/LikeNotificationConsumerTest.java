@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.stream.binder.test.InputDestination;
 import org.springframework.messaging.Message;
@@ -363,32 +364,34 @@ class LikeNotificationConsumerTest extends ConsumerIntegrationTest {
     @Nested
     @DisplayName("알림 객체 생성 및 검증 테스트")
     class NotificationCreationTests {
-        
+
         @Test
         @DisplayName("알림 객체 생성 시 메시지 필드가 모두 정확하게 복사된다")
-        @Timeout(5)
         void shouldCreateNotificationCorrectly() {
 
             // Given
             given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
-            given(notificationMongoRepository.save(any(Notification.class)))
-                    .willAnswer(invocation -> {
-                        Notification saved = invocation.getArgument(0);
 
-                        assertThat(saved.getSenderId()).isEqualTo(testLikeMessage.getSenderId());
-                        assertThat(saved.getRecipientId()).isEqualTo(testLikeMessage.getRecipientId());
-                        assertThat(saved.getTitle()).isEqualTo(testLikeMessage.getTitle());
-                        assertThat(saved.getContent()).isEqualTo(testLikeMessage.getContent());
-                        assertThat(saved.getType()).isEqualTo(testLikeMessage.getType());
-                        assertThat(saved.getReferenceId()).isEqualTo(testLikeMessage.getReferenceId());
-                        return saved;
-                    });
+            ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
+            given(notificationMongoRepository.save(notificationCaptor.capture()))
+                    .willReturn(testNotification);
 
             // When
             likeNotificationConsumer.processLikeNotification(testLikeMessage);
 
             // Then
             verify(notificationMongoRepository, times(1)).save(any(Notification.class));
+
+            Notification savedNotification = notificationCaptor.getValue();
+            assertThat(savedNotification.getSenderId()).isEqualTo(testLikeMessage.getSenderId());
+            assertThat(savedNotification.getRecipientId()).isEqualTo(testLikeMessage.getRecipientId());
+            assertThat(savedNotification.getTitle()).isEqualTo(testLikeMessage.getTitle());
+            assertThat(savedNotification.getContent()).isEqualTo(testLikeMessage.getContent());
+            assertThat(savedNotification.getType()).isEqualTo(testLikeMessage.getType());
+            assertThat(savedNotification.getReferenceId()).isEqualTo(testLikeMessage.getReferenceId());
+            assertThat(savedNotification.isRead()).isFalse();
+            assertThat(savedNotification.getCreatedAt()).isNotNull();
+            assertThat(savedNotification.getLastUpdatedAt()).isNotNull();
         }
     }
 
