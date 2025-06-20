@@ -470,6 +470,24 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('API 호출 오류:', error);
                 console.error('상태 코드:', xhr.status);
                 console.error('응답 텍스트:', xhr.responseText);
+                
+                try {
+                    // 서버에서 반환된 JSON 에러 메시지 파싱
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse && errorResponse.errorMessage) {
+                        alert(errorResponse.errorMessage);
+                        // 존재하지 않는 숙소인 경우 메인 페이지로 리디렉션
+                        if (errorResponse.errorCode === "NOT_EXISTS_HOUSE") {
+                            setTimeout(function() {
+                                window.location.href = "/";
+                            }, 1000);
+                        }
+                        return;
+                    }
+                } catch (e) {
+                    console.error('에러 응답 파싱 실패:', e);
+                }
+                
                 alert('서버 연결에 문제가 발생했습니다.');
             }
         });
@@ -498,6 +516,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('호스트 API 호출 오류:', error);
                 console.error('상태 코드:', xhr.status);
                 console.error('응답 텍스트:', xhr.responseText);
+                
+                try {
+                    // 서버에서 반환된 JSON 에러 메시지 파싱
+                    const errorResponse = JSON.parse(xhr.responseText);
+                    if (errorResponse && errorResponse.errorMessage) {
+                        console.log('호스트 정보 에러:', errorResponse.errorMessage);
+                        return;
+                    }
+                } catch (e) {
+                    console.error('에러 응답 파싱 실패:', e);
+                }
+                
                 console.log('호스트 정보를 불러오는 데 실패했습니다.');
             }
         });

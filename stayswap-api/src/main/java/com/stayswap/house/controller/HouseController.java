@@ -3,6 +3,7 @@ package com.stayswap.house.controller;
 import com.stayswap.house.model.dto.request.CreateHouseRequest;
 import com.stayswap.house.model.dto.request.HouseSearchRequest;
 import com.stayswap.house.model.dto.request.UpdateHouseRequest;
+import com.stayswap.house.model.dto.request.UpdateHouseStatusRequest;
 import com.stayswap.house.model.dto.response.*;
 import com.stayswap.house.service.HouseRedisService;
 import com.stayswap.house.service.HouseService;
@@ -15,6 +16,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -116,7 +118,7 @@ public class HouseController {
         
         return RestApiResponse.success(houseRedisService.getRecentHouses(validLimit));
     }
-    
+
     @Operation(
             summary = "인기 숙소 조회 API",
             description = "평점 4점 이상, 리뷰 수가 많은 순서로 인기 숙소를 조회합니다. Redis 캐시를 활용하여 빠른 응답을 제공합니다. " +
@@ -148,11 +150,12 @@ public class HouseController {
                     " 숙소의 기본 정보, 평점, 리뷰 수를 포함합니다."
     )
     @GetMapping("/my")
-    public RestApiResponse<Page<MyHouseResponse>> getMyHouses(
+    public RestApiResponse<Slice<MyHouseResponse>> getMyHouses(
             @UserInfo UserInfoDto userInfo,
             @PageableDefault(size = 10) Pageable pageable) {
         
-        return RestApiResponse.success(houseService.getMyHouses(userInfo.getUserId(), pageable));
+        return RestApiResponse.success(
+                houseService.getMyHouses(userInfo.getUserId(), pageable));
     }
     
     @Operation(
@@ -166,5 +169,19 @@ public class HouseController {
 
         houseService.deleteHouse(houseId, userInfo.getUserId());
         return RestApiResponse.success(null);
+    }
+
+    @Operation(
+            summary = "숙소 활성화/비활성화 API",
+            description = "숙소의 활성화 상태를 변경합니다. isActive 값을 true로 설정하면 활성화, false로 설정하면 비활성화됩니다."
+    )
+    @PostMapping("/{houseId}/status")
+    public RestApiResponse<UpdateHouseStatusResponse> updateHouseStatus(
+            @PathVariable("houseId") Long houseId,
+            @RequestBody @Valid UpdateHouseStatusRequest request,
+            @UserInfo UserInfoDto userInfo) {
+        
+        return RestApiResponse.success(
+                houseService.updateHouseStatus(houseId, userInfo.getUserId(), request.getActive()));
     }
 }

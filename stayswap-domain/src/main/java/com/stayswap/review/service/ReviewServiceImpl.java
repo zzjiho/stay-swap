@@ -21,6 +21,7 @@ import com.stayswap.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -92,16 +93,16 @@ public class ReviewServiceImpl implements ReviewService {
     
     @Override
     @Transactional(readOnly = true)
-    public Page<ReceivedReviewResponse> getReceivedReviews(Long userId, Pageable pageable) {
+    public Slice<ReceivedReviewResponse> getReceivedReviews(Long userId, Pageable pageable) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         
-        return reviewRepository.findReceivedReviews(userId, pageable);
+        return reviewRepository.findReceivedReviewsWithQueryDsl(userId, pageable);
     }
     
     @Override
     @Transactional(readOnly = true)
-    public Page<WrittenReviewResponse> getWrittenReviews(Long userId, Pageable pageable) {
+    public Slice<WrittenReviewResponse> getWrittenReviews(Long userId, Pageable pageable) {
         userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         

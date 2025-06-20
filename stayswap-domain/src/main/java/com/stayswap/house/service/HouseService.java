@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -135,7 +136,7 @@ public class HouseService {
     
     // 내 숙소 목록 조회
     @Transactional(readOnly = true)
-    public Page<MyHouseResponse> getMyHouses(Long userId, Pageable pageable) {
+    public Slice<MyHouseResponse> getMyHouses(Long userId, Pageable pageable) {
         if (!userRepository.existsById(userId)) {
             throw new NotFoundException(NOT_EXISTS_USER);
         }
@@ -157,5 +158,25 @@ public class HouseService {
         // 캐시 무효화
         houseRedisService.invalidateRecentHousesCache();
         houseRedisService.invalidatePopularHousesCache();
+    }
+
+    // 숙소 활성화/비활성화
+    public UpdateHouseStatusResponse updateHouseStatus(Long houseId, Long userId, Boolean active) {
+
+        House house = houseRepository.findById(houseId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
+                
+        if (!house.getUser().getId().equals(userId)) {
+            throw new ForbiddenException(NOT_AUTHORIZED);
+        }
+        
+        house.updateActiveStatus(active);
+        
+        if (active != house.getIsActive()) {
+            houseRedisService.invalidateRecentHousesCache();
+            houseRedisService.invalidatePopularHousesCache();
+        }
+        
+        return UpdateHouseStatusResponse.of(house.getId(), house.getIsActive());
     }
 }

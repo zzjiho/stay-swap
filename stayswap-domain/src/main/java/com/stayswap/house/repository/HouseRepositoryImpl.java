@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
+import org.springframework.data.domain.SliceImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.util.CollectionUtils;
 
@@ -195,8 +197,8 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
     }
 
     @Override
-    public Page<MyHouseResponse> getMyHouses(Long userId, Pageable pageable) {
-        QueryResults<MyHouseResponse> results = queryFactory
+    public Slice<MyHouseResponse> getMyHouses(Long userId, Pageable pageable) {
+        List<MyHouseResponse> content = queryFactory
                 .select(Projections.constructor(
                         MyHouseResponse.class,
                         house.id,
@@ -209,7 +211,9 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         queryFactory.select(review.count().coalesce(0L))
                                 .from(review)
                                 .where(review.targetHouse.id.eq(house.id)),
-                        house.regTime
+                        house.regTime,
+                        house.isActive.as("active"),
+                        house.houseType
                 ))
                 .from(house)
                 .leftJoin(houseImage).on(houseImage.house.id.eq(house.id))
@@ -219,14 +223,17 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         isMainImage()
                 )
                 .offset(pageable.getOffset())
-                .limit(pageable.getPageSize())
+                .limit(pageable.getPageSize() + 1)
                 .orderBy(house.updateTime.desc())
-                .fetchResults();
+                .fetch();
 
-        List<MyHouseResponse> content = results.getResults();
-        long total = results.getTotal();
+        boolean hasNext = false;
+        if (content.size() > pageable.getPageSize()) {
+            content.remove(content.size() - 1);
+            hasNext = true;
+        }
 
-        return new PageImpl<>(content, pageable, total);
+        return new SliceImpl<>(content, pageable, hasNext);
     }
 
     /**

@@ -46,6 +46,11 @@ public class PageController {
         return "subscription";
     }
 
+    @GetMapping("/page/edit")
+    public String edit() {
+        return "/host/listings/edit";
+    }
+
     @GetMapping("/page/fcm-debug")
     public String fcmDebug() {
         return "fcm-debug";

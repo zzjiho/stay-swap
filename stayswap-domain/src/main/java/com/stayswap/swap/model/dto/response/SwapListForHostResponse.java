@@ -11,21 +11,24 @@ import java.time.LocalDateTime;
 
 @Getter
 @AllArgsConstructor
-public class SwapListResponse {
+public class SwapListForHostResponse {
     // Swap 정보
     private Long swapId;
     private Long requesterId;
+    private String requesterName;
     private LocalDate startDate;
     private LocalDate endDate;
     private SwapType swapType;
     private SwapStatus swapStatus;
     private String message;
     private LocalDateTime responseAt;
-    
+
+
     // House 정보
     private Long hostHouseId;         // 호스트(내) 집 ID
     private String houseTitle;        // 숙소 제목
     private Long requesterHouseId;    // 요청자 집 ID
+//    private String requesterHouseTitle; // 요청자 숙소 제목
     private HouseType houseType;      // 숙소 유형
     private String imageUrl;          // 대표 이미지 URL
 } 

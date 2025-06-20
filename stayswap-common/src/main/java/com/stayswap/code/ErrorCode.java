@@ -24,7 +24,7 @@ public enum ErrorCode {
 
     CANNOT_SWAP_WITH_OWN_HOUSE(BAD_REQUEST, false, "BR006", "자신의 숙소와는 교환할 수 없습니다."),
     ALREADY_PROCESSED_REQUEST(BAD_REQUEST, false, "BR007", "이미 처리된 요청입니다."),
-    CANNOT_CANCEL_OTHERS_REQUEST(FORBIDDEN, false, "BR008", "본인이 보낸 요청만 취소할 수 있습니다."),
+    CANNOT_CANCEL_OTHERS_REQUEST(FORBIDDEN, false, "BR008", "본인이 보낸 요청, 본인의 숙소만 취소할 수 있습니다."),
     CANNOT_CANCEL_COMPLETED_REQUEST(BAD_REQUEST, false, "BR009", "완료된 요청은 취소할 수 없습니다."),
     ALREADY_REGISTED_REVIEW(BAD_REQUEST, false, "BR010", "이미 작성한 리뷰 입니다."),
     NOT_COMPLETED_SWAP(BAD_REQUEST, false, "BR011", "완료상태만 리뷰작성이 가능합니다."),

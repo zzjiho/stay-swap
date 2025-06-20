@@ -56,10 +56,11 @@ public class SwapController {
     )
     @PostMapping("/swap/{swapId}/accept")
     public RestApiResponse<SwapResponse> acceptSwapRequest(
-            @RequestParam("userId") Long userId,
+            @UserInfo UserInfoDto userInfo,
             @PathVariable("swapId") Long swapId) {
         
-        return RestApiResponse.success(swapService.acceptSwapRequest(userId, swapId));
+        return RestApiResponse.success(
+                swapService.acceptSwapRequest(userInfo.getUserId(), swapId));
     }
 
     @Operation(
@@ -69,10 +70,11 @@ public class SwapController {
     )
     @PostMapping("/swap/{swapId}/reject")
     public RestApiResponse<SwapResponse> rejectSwapRequest(
-            @RequestParam("userId") Long userId,
+            @UserInfo UserInfoDto userInfo,
             @PathVariable("swapId") Long swapId) {
         
-        return RestApiResponse.success(swapService.rejectSwapRequest(userId, swapId));
+        return RestApiResponse.success(
+                swapService.rejectSwapRequest(userInfo.getUserId(), swapId));
     }
 
     @Operation(
@@ -81,10 +83,11 @@ public class SwapController {
     )
     @PostMapping("/swap/{swapId}/cancel")
     public RestApiResponse<SwapResponse> cancelSwapRequest(
-            @RequestParam("userId") Long userId,
+            @UserInfo UserInfoDto userInfo,
             @PathVariable("swapId") Long swapId) {
         
-        return RestApiResponse.success(swapService.cancelSwapRequest(userId, swapId));
+        return RestApiResponse.success(
+                swapService.cancelSwapRequest(userInfo.getUserId(), swapId));
     }
 
 } 

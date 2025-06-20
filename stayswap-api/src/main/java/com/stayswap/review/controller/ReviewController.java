@@ -14,6 +14,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -44,7 +45,7 @@ public class ReviewController {
             description = "내 숙소에 대해 받은 리뷰 목록을 조회합니다. 무한 스크롤 구현을 위한 페이징 기능을 제공합니다."
     )
     @GetMapping("/received")
-    public RestApiResponse<Page<ReceivedReviewResponse>> getReceivedReviews(
+    public RestApiResponse<Slice<ReceivedReviewResponse>> getReceivedReviews(
             @UserInfo UserInfoDto userInfo,
             @PageableDefault(size = 10) Pageable pageable) {
             
@@ -57,7 +58,7 @@ public class ReviewController {
             description = "내가 작성한 리뷰 목록을 조회합니다. 리뷰 대상 숙소 정보(이름, 이미지)를 포함합니다. 무한 스크롤 구현을 위한 페이징 기능을 제공합니다."
     )
     @GetMapping("/written")
-    public RestApiResponse<Page<WrittenReviewResponse>> getWrittenReviews(
+    public RestApiResponse<Slice<WrittenReviewResponse>> getWrittenReviews(
             @UserInfo UserInfoDto userInfo,
             @PageableDefault(size = 10) Pageable pageable) {
             

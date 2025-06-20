@@ -21,6 +21,8 @@ public class ReceivedReviewResponse {
     private Integer rating; // 평점
     private String comment; // 리뷰 내용
     private LocalDateTime createdDate; // 작성일
+    private String houseTitle; // 숙소 제목
+    private String houseId;
     
     public static ReceivedReviewResponse of(Review review) {
         return ReceivedReviewResponse.builder()
@@ -32,6 +34,9 @@ public class ReceivedReviewResponse {
                 .rating(review.getRating())
                 .comment(review.getComment())
                 .createdDate(review.getRegTime())
+                .houseTitle(review.getTargetHouse().getTitle())
+                .houseId(String.valueOf(review.getTargetHouse().getId()))
                 .build();
     }
-} 
+    
+}

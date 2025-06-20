@@ -6,7 +6,8 @@ import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.stayswap.swap.constant.SwapStatus;
 import com.stayswap.swap.constant.SwapType;
-import com.stayswap.swap.model.dto.response.SwapListResponse;
+import com.stayswap.swap.model.dto.response.SwapListForGuestResponse;
+import com.stayswap.swap.model.dto.response.SwapListForHostResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
@@ -24,10 +25,10 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Slice<SwapListResponse> getSwapListByRequester(Long userId, SwapStatus swapStatus, SwapType swapType, Pageable pageable) {
-        List<SwapListResponse> content = queryFactory
+    public Slice<SwapListForGuestResponse> getSwapListByRequester(Long userId, SwapStatus swapStatus, SwapType swapType, Pageable pageable) {
+        List<SwapListForGuestResponse> content = queryFactory
                 .select(Projections.constructor(
-                        SwapListResponse.class,
+                        SwapListForGuestResponse.class,
                         swap.id.as("swapId"),
                         swap.requester.id.as("requesterId"),
                         swap.startDate,
@@ -48,9 +49,10 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
                 .from(swap)
                 .join(swap.house, house)
                 .where(
-                        requesterIdEq(userId),
+//                        requesterIdEq(userId),
                         statusEq(swapStatus),
-                        typeEq(swapType)
+                        typeEq(swapType),
+                        notCanceled()
                 )
                 .orderBy(swap.id.desc())
                 .offset(pageable.getOffset())
@@ -61,12 +63,13 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
     }
 
     @Override
-    public Slice<SwapListResponse> getSwapListByHost(Long userId, SwapStatus swapStatus, SwapType swapType, Pageable pageable) {
-        List<SwapListResponse> content = queryFactory
+    public Slice<SwapListForHostResponse> getSwapListByHost(Long userId, SwapStatus swapStatus, SwapType swapType, Pageable pageable) {
+        List<SwapListForHostResponse> content = queryFactory
                 .select(Projections.constructor(
-                        SwapListResponse.class,
+                        SwapListForHostResponse.class,
                         swap.id.as("swapId"),
                         swap.requester.id.as("requesterId"),
+                        swap.requester.nickname.as("requesterName"),
                         swap.startDate,
                         swap.endDate,
                         swap.swapType,
@@ -76,6 +79,7 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
                         swap.house.id.as("hostHouseId"),
                         swap.house.title.as("houseTitle"),
                         swap.requesterHouseId.id.as("requesterHouseId"),
+//                        swap.requesterHouseId.title.as("requesterHouseTitle"),
                         swap.house.houseType,
                         JPAExpressions
                                 .select(houseImage.imageUrl.min())
@@ -87,7 +91,8 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
                 .leftJoin(house).on(house.eq(swap.requesterHouseId))
                 .where(
                         statusEq(swapStatus),
-                        typeEq(swapType)
+                        typeEq(swapType),
+                        notCanceled()
                 )
                 .orderBy(swap.id.desc())
                 .offset(pageable.getOffset())
@@ -97,7 +102,7 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
         return checkLastPage(pageable, content);
     }
 
-    private Slice<SwapListResponse> checkLastPage(Pageable pageable, List<SwapListResponse> results) {
+    private <T> Slice<T> checkLastPage(Pageable pageable, List<T> results) {
         boolean hasNext = false;
 
         if (results.size() > pageable.getPageSize()) {
@@ -122,5 +127,9 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
 
     private BooleanExpression typeEq(SwapType type) {
         return type != null ? swap.swapType.eq(type) : null;
+    }
+
+    private BooleanExpression notCanceled() {
+        return swap.swapStatus.ne(SwapStatus.CANCELED);
     }
 }

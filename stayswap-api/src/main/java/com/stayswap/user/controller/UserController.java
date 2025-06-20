@@ -27,9 +27,11 @@ public class UserController {
             description = "현재 로그인한 사용자의 정보를 조회합니다."
     )
     @GetMapping("/me")
-    public ResponseEntity<UserInfoResponse> getUserInfo(@UserInfo UserInfoDto userInfo) {
-        UserInfoResponse response = userService.getUserInfo(userInfo.getUserId());
-        return ResponseEntity.ok(response);
+    public RestApiResponse<UserInfoResponse> getUserInfo(
+            @UserInfo UserInfoDto userInfo) {
+
+        return RestApiResponse.success(
+                userService.getUserInfo(userInfo.getUserId()));
     }
 
     @Operation(

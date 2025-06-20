@@ -133,8 +133,8 @@ public class SwapServiceImpl implements SwapService {
 
         Swap swap = swapRepository.findById(swapId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_SWAP_REQUEST));
-        
-        if (!swap.getRequester().getId().equals(userId)) {
+
+        if (!swap.getRequester().getId().equals(userId) && !swap.getHouse().getUser().getId().equals(userId)) {
             throw new BusinessException(CANNOT_CANCEL_OTHERS_REQUEST);
         }
         

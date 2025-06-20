@@ -120,4 +120,8 @@ public class House extends BaseTimeEntity {
     public void delete() {
         this.isDelete = true;
     }
+    
+    public void updateActiveStatus(Boolean isActive) {
+        this.isActive = isActive;
+    }
 }
