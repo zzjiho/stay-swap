@@ -746,3 +746,574 @@ button,
     background-color: var(--background-light);
     color: var(--primary-color);
 }
+
+/* 알림 아이콘 스타일 */
+.notification-container {
+    position: relative;
+    margin-left: 10px;
+}
+
+.notification-icon-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #f5f5f5;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.2s;
+}
+
+.notification-icon-link:hover {
+    background-color: #e0e0e0;
+}
+
+.notification-icon-link i {
+    font-size: 14px;
+}
+
+/* 알림 배지 스타일 (빨간점) */
+.notification-badge {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #ff4757;
+    border: 2px solid white;
+}
+
+/* 알림 드롭다운 스타일 */
+.notification-dropdown {
+    position: absolute;
+    top: 35px;
+    right: -150px;
+    width: 360px;
+    max-height: 480px;
+    background-color: white;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    overflow: hidden;
+    display: none;
+    border: 1px solid var(--border-color);
+}
+
+.notification-dropdown.active {
+    display: block;
+}
+
+/* 알림 헤더 스타일 */
+.notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.notification-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.mark-all-read {
+    font-size: 12px;
+    color: #2196f3;
+    text-decoration: none;
+}
+
+.mark-all-read:hover {
+    text-decoration: underline;
+}
+
+/* 알림 목록 스타일 */
+.notification-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.notification-empty {
+    padding: 16px;
+    text-align: center;
+    color: #999;
+    font-size: 14px;
+}
+
+/* 드롭다운 내 알림 아이템 스타일 */
+.notification-dropdown .notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    position: relative;
+}
+
+.notification-dropdown .notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-dropdown .notification-item:hover {
+    background-color: #f8faff;
+}
+
+.notification-dropdown .notification-item.unread {
+    background-color: #f0f7ff;
+    border-left: 3px solid var(--primary-color);
+}
+
+.notification-dropdown .notification-item.unread:hover {
+    background-color: #e6f2ff;
+}
+
+.notification-dropdown .notification-item.unread::after {
+    content: '';
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 6px;
+    height: 6px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+/* 드롭다운 내 알림 아바타 */
+.notification-dropdown .notification-avatar {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--background-dark);
+    position: relative;
+}
+
+.notification-dropdown .notification-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.notification-dropdown .notification-avatar .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* 드롭다운 내 알림 타입 아이콘 */
+.notification-dropdown .notification-type-icon {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    color: white;
+    border: 2px solid white;
+}
+
+.notification-dropdown .notification-type-icon.like {
+    background: #ff6b6b;
+}
+
+.notification-dropdown .notification-type-icon.booking {
+    background: #4ecdc4;
+}
+
+.notification-dropdown .notification-type-icon.swap {
+    background: #45b7d1;
+}
+
+.notification-dropdown .notification-type-icon.message {
+    background: #96ceb4;
+}
+
+/* 드롭다운 내 알림 내용 */
+.notification-dropdown .notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-dropdown .notification-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+}
+
+.notification-dropdown .notification-username {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 13px;
+}
+
+.notification-dropdown .notification-time {
+    font-size: 11px;
+    color: var(--text-lighter);
+}
+
+.notification-dropdown .notification-message {
+    font-size: 13px;
+    color: var(--text-light);
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* 알림 푸터 스타일 */
+.notification-footer {
+    padding: 10px 16px;
+    text-align: center;
+    border-top: 1px solid #eee;
+}
+
+.view-all {
+    font-size: 14px;
+    color: #2196f3;
+    text-decoration: none;
+}
+
+.view-all:hover {
+    text-decoration: underline;
+}
+
+/* 알림 팝오버 스타일 */
+.notification-popover {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.notification-popover-content {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 480px;
+    max-height: 70vh;
+    overflow: hidden;
+    animation: popoverSlideIn 0.3s ease-out;
+}
+
+@keyframes popoverSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.notification-popover .notification-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 16px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--background-light);
+}
+
+.notification-popover .notification-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.notification-popover .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.notification-popover .btn-text {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: var(--transition);
+}
+
+.notification-popover .btn-text:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.notification-popover .btn-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-lighter);
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: var(--transition);
+}
+
+.notification-popover .btn-close:hover {
+    background: var(--background-dark);
+    color: var(--text-color);
+}
+
+.notification-popover-list {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 8px 0;
+}
+
+.notification-popover-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.notification-popover-list::-webkit-scrollbar-track {
+    background: var(--background-light);
+}
+
+.notification-popover-list::-webkit-scrollbar-thumb {
+    background: var(--border-dark);
+    border-radius: 3px;
+}
+
+.notification-popover-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-lighter);
+}
+
+/* 팝오버 내 알림 아이템 */
+.notification-popover .notification-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 16px 24px;
+    cursor: pointer;
+    transition: var(--transition);
+    position: relative;
+    border-bottom: 1px solid var(--background-light);
+}
+
+.notification-popover .notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-popover .notification-item:hover {
+    background: var(--background-light);
+}
+
+.notification-popover .notification-item.unread {
+    background: #f8faff;
+    border-left: 4px solid var(--primary-color);
+}
+
+.notification-popover .notification-item.unread::after {
+    content: '';
+    position: absolute;
+    top: 16px;
+    right: 24px;
+    width: 8px;
+    height: 8px;
+    background: var(--primary-color);
+    border-radius: 50%;
+}
+
+.notification-popover .notification-avatar {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--background-dark);
+    position: relative;
+}
+
+.notification-popover .notification-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.notification-popover .notification-avatar .avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+.notification-popover .notification-type-icon {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: white;
+    border: 2px solid white;
+}
+
+.notification-popover .notification-type-icon.like {
+    background: #ff6b6b;
+}
+
+.notification-popover .notification-type-icon.booking {
+    background: #4ecdc4;
+}
+
+.notification-popover .notification-type-icon.swap {
+    background: #45b7d1;
+}
+
+.notification-popover .notification-type-icon.message {
+    background: #96ceb4;
+}
+
+.notification-popover .notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-popover .notification-header-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.notification-popover .notification-username {
+    font-weight: 600;
+    color: var(--text-color);
+    font-size: 0.875rem;
+}
+
+.notification-popover .notification-time {
+    font-size: 0.75rem;
+    color: var(--text-lighter);
+}
+
+.notification-popover .notification-message {
+    font-size: 0.875rem;
+    color: var(--text-light);
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.notification-popover .notification-footer {
+    padding: 16px 24px;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+    background: var(--background-light);
+}
+
+.notification-popover .view-all-link {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.875rem;
+    padding: 8px 16px;
+    border-radius: 8px;
+    transition: var(--transition);
+}
+
+.notification-popover .view-all-link:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.notification-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 40px 24px;
+    color: var(--text-light);
+}
+
+.notification-loading i {
+    font-size: 1.5rem;
+}
+
+.notification-empty {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--text-light);
+}
+
+.notification-empty i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    color: var(--text-lighter);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+    .notification-popover-content {
+        width: 95%;
+        max-height: 80vh;
+    }
+    
+    .notification-popover .notification-header {
+        padding: 16px 20px 12px 20px;
+    }
+    
+    .notification-popover .notification-item {
+        padding: 12px 20px;
+        gap: 10px;
+    }
+    
+    .notification-popover .notification-avatar {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .notification-popover .notification-type-icon {
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
+    }
+}

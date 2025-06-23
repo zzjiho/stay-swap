@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{layout/layout :: layout(~{::main})}">
+<head>
+    <title>알림 - StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/notifications.css}" />
+</head>
+
+<main>
+    <div class="container">
+        <div class="notifications-page">
+            <div class="page-header">
+                <h1>알림</h1>
+                <div class="header-actions">
+                    <button id="mark-all-read-btn" class="btn btn-outline">모두 읽음 표시</button>
+                    <button id="clear-all-btn" class="btn btn-outline">모두 삭제</button>
+                </div>
+            </div>
+
+            <div class="notifications-filter">
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-filter="all">전체</button>
+                    <button class="filter-tab" data-filter="unread">읽지 않음</button>
+                    <button class="filter-tab" data-filter="like">좋아요</button>
+                    <button class="filter-tab" data-filter="booking">예약</button>
+                    <button class="filter-tab" data-filter="swap">교환</button>
+                </div>
+            </div>
+
+            <div class="notifications-container">
+                <div id="notifications-loading" class="loading-spinner" style="display: none;">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>알림을 불러오는 중...</span>
+                </div>
+
+                <div id="notifications-list" class="notifications-list">
+                    <!-- 알림 목록이 여기에 동적으로 추가됩니다 -->
+                </div>
+
+                <div id="notifications-empty" class="empty-state" style="display: none;">
+                    <i class="fas fa-bell-slash"></i>
+                    <h3>알림이 없습니다</h3>
+                    <p>새로운 알림이 오면 여기에 표시됩니다.</p>
+                </div>
+
+                <div id="load-more-container" class="load-more-container" style="display: none;">
+                    <button id="load-more-btn" class="btn btn-outline">더 보기</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:src="@{/js/notifications.js}"></script>
+</main>
+</html> 

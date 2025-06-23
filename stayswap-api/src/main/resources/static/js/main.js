@@ -125,6 +125,9 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('authStateChanged 이벤트 발생!', e.detail);
 
         try {
+            // UI 업데이트
+            updateUIBasedOnAuthState();
+            
             if (e.detail.isLoggedIn) {
                 // 로그인 상태가 되면 FCM 토큰 등록 시도
                 // 약간의 지연을 두어 페이지가 완전히 로드된 후 실행
@@ -443,17 +446,30 @@ function highlightCurrentPage() {
 function updateUIBasedOnAuthState() {
     const isUserLoggedIn = typeof isLoggedIn === 'function' ? isLoggedIn() : !!window.auth?.accessToken;
 
+    console.log('🔍 updateUIBasedOnAuthState 호출됨:', isUserLoggedIn);
+
     const userProfile = document.getElementById('user-profile');
     const authButtons = document.getElementById('auth-buttons');
+    const notificationIcon = document.getElementById('notification-icon');
+
+    console.log('🔍 요소 확인:', {
+        userProfile: !!userProfile,
+        authButtons: !!authButtons,
+        notificationIcon: !!notificationIcon
+    });
 
     if (isUserLoggedIn) {
         // 로그인된 상태
         if (userProfile) userProfile.style.display = 'block';
+        if (notificationIcon) notificationIcon.style.display = 'block';
         if (authButtons) authButtons.style.display = 'none';
+        console.log('✅ 로그인 UI 표시 (프로필 + 알림)');
     } else {
         // 로그아웃된 상태
         if (userProfile) userProfile.style.display = 'none';
+        if (notificationIcon) notificationIcon.style.display = 'none';
         if (authButtons) authButtons.style.display = 'flex';
+        console.log('✅ 로그아웃 UI 표시 (로그인 버튼만)');
     }
 }
 

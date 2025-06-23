@@ -61,4 +61,9 @@ public class PageController {
         return "debug/fcm-test";
     }
 
+    @GetMapping("/notifications")
+    public String notifications() {
+        return "notifications";
+    }
+
 }

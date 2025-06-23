@@ -273,7 +273,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const typeMap = {
             'apartment': 'APT',
             'house': 'HOUSE',
-            'villa': 'VILA',
+            'villa': 'VILLA',
             'op': 'OP',
             'other': 'OTHER'
         };
