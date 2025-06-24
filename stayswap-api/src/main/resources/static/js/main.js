@@ -87,6 +87,8 @@ function initDropdowns() {
             if (profileDropdown) {
                 profileDropdown.classList.remove('active');
             }
+            
+            // 드롭다운 열어도 자동 읽음 처리 안함 (기획 변경)
         });
     }
 
@@ -536,4 +538,68 @@ setTimeout(function() {
     } else {
         updateUIBasedOnAuthState();
     }
-}, 1000); 
+}, 1000);
+
+// 알림 관련 유틸리티 함수들 (빨간점만 표시)
+function updateNotificationBadge(hasUnread) {
+    const badge = document.getElementById('notification-badge');
+    if (!badge) return;
+    
+    if (hasUnread) {
+        badge.style.display = 'block';
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+function markNotificationsAsRead() {
+    // 안읽은 알림들을 읽음으로 표시
+    const unreadItems = document.querySelectorAll('.notification-item.unread');
+    unreadItems.forEach(item => {
+        item.classList.remove('unread');
+    });
+    
+    // 배지 숨기기 (안읽은 알림이 없으면)
+    const hasUnread = document.querySelectorAll('.notification-item.unread').length > 0;
+    updateNotificationBadge(hasUnread);
+}
+
+function addNewNotification(notification) {
+    // 새 알림 추가 로직 (실제 구현 시 사용)
+    const notificationList = document.querySelector('.notification-list');
+    if (!notificationList) return;
+    
+    // 새 알림 HTML 생성
+    const newItem = document.createElement('div');
+    newItem.className = 'notification-item unread';
+    newItem.innerHTML = `
+        <div class="notification-avatar">
+            <div class="avatar-placeholder">${notification.senderName.charAt(0)}</div>
+            <div class="notification-type-icon ${notification.type}">
+                <i class="fas ${getTypeIcon(notification.type)}"></i>
+            </div>
+        </div>
+        <div class="notification-content">
+            <div class="notification-header">
+                <span class="notification-username">${notification.senderName}</span>
+                <span class="notification-time">방금 전</span>
+            </div>
+            <div class="notification-message">${notification.message}</div>
+        </div>
+    `;
+    
+    // 맨 위에 추가
+    notificationList.insertBefore(newItem, notificationList.firstChild);
+    
+    // 배지 업데이트 (안읽은 알림이 있으므로 표시)
+    updateNotificationBadge(true);
+}
+
+function getTypeIcon(type) {
+    switch (type) {
+        case 'like': return 'fa-heart';
+        case 'swap': return 'fa-exchange-alt';
+        case 'booking': return 'fa-calendar';
+        default: return 'fa-bell';
+    }
+} 

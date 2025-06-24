@@ -774,16 +774,56 @@ button,
     font-size: 14px;
 }
 
-/* 알림 배지 스타일 (빨간점) */
+/* 알림 배지 개선 - 숫자와 점 모두 지원 */
 .notification-badge {
     position: absolute;
-    top: -2px;
-    right: -2px;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ff4757 0%, #cc0000 100%);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+    box-shadow: 0 2px 6px rgba(255, 71, 87, 0.4);
+    animation: badgePulse 2s ease-in-out infinite;
+    z-index: 10;
+    padding: 0 4px;
+}
+
+/* 배지 펄스 애니메이션 */
+@keyframes badgePulse {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 6px rgba(255, 71, 87, 0.4);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(255, 71, 87, 0.6);
+    }
+}
+
+/* 점만 표시할 때 (숫자 없음) */
+.notification-badge.dot-only {
+    min-width: 8px;
     width: 8px;
     height: 8px;
-    border-radius: 50%;
-    background-color: #ff4757;
-    border: 2px solid white;
+    top: -2px;
+    right: -2px;
+    padding: 0;
+    font-size: 0;
+}
+
+/* 배지가 10 이상일 때 스타일 조정 */
+.notification-badge.large {
+    min-width: 22px;
+    font-size: 9px;
+    padding: 0 5px;
 }
 
 /* 알림 드롭다운 스타일 */
@@ -860,28 +900,104 @@ button,
     border-bottom: none;
 }
 
+/* 읽은 알림 스타일 */
 .notification-dropdown .notification-item:hover {
     background-color: #f8faff;
 }
 
+.notification-dropdown .notification-item:not(.unread) {
+    opacity: 0.7;
+    background-color: #fafafa;
+}
+
+.notification-dropdown .notification-item:not(.unread):hover {
+    opacity: 0.9;
+    background-color: #f0f0f0;
+}
+
+/* 안읽은 알림 스타일 개선 - 더 강한 구분 */
 .notification-dropdown .notification-item.unread {
-    background-color: #f0f7ff;
-    border-left: 3px solid var(--primary-color);
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-left: 5px solid var(--primary-color);
+    border-right: 2px solid rgba(33, 150, 243, 0.2);
+    box-shadow: 0 3px 12px rgba(33, 150, 243, 0.15);
+    position: relative;
+    animation: unreadPulse 2s ease-in-out infinite;
+    transform: translateX(2px);
 }
 
 .notification-dropdown .notification-item.unread:hover {
-    background-color: #e6f2ff;
+    background: linear-gradient(135deg, #d1c4e9 0%, #b39ddb 100%);
+    box-shadow: 0 4px 16px rgba(33, 150, 243, 0.25);
+    transform: translateX(4px);
 }
 
+/* 안읽은 알림 펄스 애니메이션 */
+@keyframes unreadPulse {
+    0%, 100% {
+        box-shadow: 0 3px 12px rgba(33, 150, 243, 0.15);
+        border-left-color: var(--primary-color);
+    }
+    50% {
+        box-shadow: 0 3px 16px rgba(33, 150, 243, 0.25);
+        border-left-color: #1976d2;
+    }
+}
+
+/* 안읽은 알림 인디케이터 점 */
 .notification-dropdown .notification-item.unread::after {
     content: '';
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: 6px;
-    height: 6px;
-    background: var(--primary-color);
+    top: 14px;
+    right: 14px;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #1976d2 100%);
     border-radius: 50%;
+    box-shadow: 0 0 0 2px white, 0 0 6px rgba(33, 150, 243, 0.3);
+    animation: unreadDot 1.5s ease-in-out infinite;
+}
+
+@keyframes unreadDot {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* 안읽은 알림의 아바타 강조 */
+.notification-dropdown .notification-item.unread .notification-avatar {
+    box-shadow: 0 0 0 2px var(--primary-color);
+    animation: unreadAvatar 2s ease-in-out infinite;
+}
+
+@keyframes unreadAvatar {
+    0%, 100% {
+        box-shadow: 0 0 0 2px var(--primary-color);
+    }
+    50% {
+        box-shadow: 0 0 0 2px var(--primary-color), 0 0 8px rgba(33, 150, 243, 0.3);
+    }
+}
+
+/* 안읽은 알림의 텍스트 강조 */
+.notification-dropdown .notification-item.unread .notification-username {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.notification-dropdown .notification-item.unread .notification-message {
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.notification-dropdown .notification-item.unread .notification-time {
+    font-weight: 600;
+    color: var(--primary-color);
 }
 
 /* 드롭다운 내 알림 아바타 */

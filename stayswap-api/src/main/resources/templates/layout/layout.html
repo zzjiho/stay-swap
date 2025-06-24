@@ -76,7 +76,7 @@
                 <div id="notification-icon" class="notification-container" style="display:block;">
                     <a href="#" id="notification-dropdown-toggle" class="notification-icon-link">
                         <i class="fas fa-bell"></i>
-                        <span id="notification-badge" class="notification-badge" style="display:none;"></span>
+                        <span id="notification-badge" class="notification-badge dot-only" style="display:block;"></span>
                     </a>
                     
                     <div id="notification-dropdown" class="notification-dropdown">
@@ -85,9 +85,13 @@
                             <a href="#" class="mark-all-read">모두 읽음</a>
                         </div>
                         <div class="notification-list">
-                            <div class="notification-item">
+                            <!-- 안읽은 알림 예시 -->
+                            <div class="notification-item unread">
                                 <div class="notification-avatar">
                                     <div class="avatar-placeholder">김</div>
+                                    <div class="notification-type-icon like">
+                                        <i class="fas fa-heart"></i>
+                                    </div>
                                 </div>
                                 <div class="notification-content">
                                     <div class="notification-header">
@@ -97,9 +101,13 @@
                                     <div class="notification-message">회원님의 숙소를 좋아합니다.</div>
                                 </div>
                             </div>
-                            <div class="notification-item">
+                            <!-- 안읽은 알림 예시 -->
+                            <div class="notification-item unread">
                                 <div class="notification-avatar">
                                     <div class="avatar-placeholder">이</div>
+                                    <div class="notification-type-icon swap">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </div>
                                 </div>
                                 <div class="notification-content">
                                     <div class="notification-header">
@@ -107,6 +115,22 @@
                                         <span class="notification-time">2시간 전</span>
                                     </div>
                                     <div class="notification-message">숙소 교환을 요청했습니다.</div>
+                                </div>
+                            </div>
+                            <!-- 읽은 알림 예시 -->
+                            <div class="notification-item">
+                                <div class="notification-avatar">
+                                    <div class="avatar-placeholder">박</div>
+                                    <div class="notification-type-icon booking">
+                                        <i class="fas fa-calendar"></i>
+                                    </div>
+                                </div>
+                                <div class="notification-content">
+                                    <div class="notification-header">
+                                        <span class="notification-username">박민수</span>
+                                        <span class="notification-time">1일 전</span>
+                                    </div>
+                                    <div class="notification-message">예약이 확정되었습니다.</div>
                                 </div>
                             </div>
                         </div>
