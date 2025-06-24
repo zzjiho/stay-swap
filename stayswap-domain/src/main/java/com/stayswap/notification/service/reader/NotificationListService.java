@@ -7,6 +7,7 @@ import com.stayswap.notification.dto.response.NotificationResponse;
 import com.stayswap.notification.repository.NotificationMongoRepository;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
+import com.stayswap.notification.service.reader.LastReadAtService;
 import lombok.RequiredArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -33,6 +34,7 @@ public class NotificationListService {
 
     private final NotificationMongoRepository notificationMongoRepository;
     private final UserRepository userRepository;
+    private final LastReadAtService lastReadAtService;
 
     private static final int PAGE_SIZE = 3;
 
@@ -63,15 +65,22 @@ public class NotificationListService {
         Map<Long, User> senderMap = senders.stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
         
+        Instant lastReadAt = lastReadAtService.getLastReadAt(userId);
+        
 //        log.info("배치 조회: 알림 {}개, 사용자 {}명 조회", notifications.size(), senders.size());
         
         List<NotificationResponse> notificationResponses = notifications.stream()
                 .map(notification -> {
                     User sender = senderMap.get(notification.getSenderId());
+                    // Redis 마지막 읽은 시간 기준으로 읽음/안읽음 계산
+                    boolean isRead = lastReadAt != null && 
+                        !notification.getOccurredAt().isAfter(lastReadAt);
+                    
                     return NotificationResponse.from(
                         notification, 
                         sender != null ? sender.getNickname() : null,
-                        sender != null ? sender.getProfile() : null
+                        sender != null ? sender.getProfile() : null,
+                        isRead
                     );
                 })
                 .collect(Collectors.toList());

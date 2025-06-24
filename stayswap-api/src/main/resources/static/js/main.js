@@ -83,12 +83,19 @@ function initDropdowns() {
     if (notificationToggle && notificationDropdown) {
         notificationToggle.addEventListener('click', (e) => {
             e.preventDefault();
+            const isOpening = !notificationDropdown.classList.contains('active');
+            
             notificationDropdown.classList.toggle('active');
             if (profileDropdown) {
                 profileDropdown.classList.remove('active');
             }
             
-            // 드롭다운 열어도 자동 읽음 처리 안함 (기획 변경)
+            // 드롭다운 열릴 때 알림 로드
+            if (isOpening && window.auth?.accessToken) {
+                loadNotificationsOnDropdownOpen();
+                // 무한 스크롤 설정 (드롭다운이 열릴 때)
+                setTimeout(() => setupNotificationInfiniteScroll(), 100);
+            }
         });
     }
 
@@ -600,6 +607,260 @@ function getTypeIcon(type) {
         case 'like': return 'fa-heart';
         case 'swap': return 'fa-exchange-alt';
         case 'booking': return 'fa-calendar';
+        case 'TEST_NOTIFICATION': return 'fa-bell';
         default: return 'fa-bell';
     }
+}
+
+// ========== 알림 조회 API 연동 ==========
+
+// 알림 상태 관리
+window.notificationState = {
+    notifications: [],
+    pivot: null,
+    hasNext: true,
+    loading: false,
+    initialized: false,
+    infiniteScrollSetup: false
+};
+
+// 알림 조회 API 호출
+async function fetchNotifications(pivot = null) {
+    if (!window.auth?.accessToken) {
+        console.log('인증 토큰이 없습니다.');
+        return { success: false, error: 'NO_TOKEN' };
+    }
+
+    try {
+        window.notificationState.loading = true;
+        
+        let url = '/api/notifications';
+        if (pivot) {
+            url += `?pivot=${encodeURIComponent(pivot)}`;
+        }
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${window.auth.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                // 토큰 만료 시 갱신 시도
+                const refreshSuccess = await refreshAccessToken();
+                if (refreshSuccess) {
+                    return await fetchNotifications(pivot);
+                }
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.httpStatus === 'OK' && data.data) {
+            return {
+                success: true,
+                notifications: data.data.notifications || [],
+                hasNext: data.data.hasNext || false,
+                pivot: data.data.pivot || null
+            };
+        } else {
+            throw new Error(data.message || '알림 조회 실패');
+        }
+    } catch (error) {
+        console.error('알림 조회 실패:', error);
+        return { success: false, error: error.message };
+    } finally {
+        window.notificationState.loading = false;
+    }
+}
+
+// 알림 목록 렌더링
+function renderNotifications(notifications, append = false) {
+    const notificationList = document.querySelector('.notification-list');
+    if (!notificationList) return;
+
+    if (!append) {
+        notificationList.innerHTML = '';
+    }
+
+    if (notifications.length === 0 && !append) {
+        notificationList.innerHTML = `
+            <div class="notification-item no-notifications">
+                <div class="notification-content">
+                    <p>새로운 알림이 없습니다.</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+
+    notifications.forEach(notification => {
+        const timeAgo = formatTimeAgo(notification.occurredAt);
+        const notificationItem = document.createElement('div');
+        notificationItem.className = `notification-item ${!notification.read ? 'unread' : ''}`;
+        notificationItem.dataset.notificationId = notification.id;
+        
+        notificationItem.innerHTML = `
+            <div class="notification-avatar">
+                ${notification.senderProfile ? 
+                    `<img src="${notification.senderProfile}" alt="${notification.senderName}">` :
+                    `<div class="avatar-placeholder">${notification.senderName ? notification.senderName.charAt(0) : '?'}</div>`
+                }
+                <div class="notification-type-icon ${notification.type.toLowerCase()}">
+                    <i class="fas ${getTypeIcon(notification.type)}"></i>
+                </div>
+            </div>
+            <div class="notification-content">
+                <div class="notification-header">
+                    <span class="notification-username">${notification.senderName || '알 수 없음'}</span>
+                    <span class="notification-time">${timeAgo}</span>
+                </div>
+                <div class="notification-message">
+                    <strong>${notification.title}</strong>
+                    ${notification.content ? `<br><span class="notification-detail">${notification.content}</span>` : ''}
+                </div>
+            </div>
+        `;
+        
+        notificationList.appendChild(notificationItem);
+    });
+
+    // 읽지 않은 알림 개수로 배지 업데이트
+    const unreadCount = notifications.filter(n => !n.read).length;
+    const totalUnreadInList = document.querySelectorAll('.notification-item.unread').length;
+    updateNotificationBadge(totalUnreadInList > 0);
+}
+
+// 시간 포맷팅 함수
+function formatTimeAgo(timestamp) {
+    const now = new Date();
+    const date = new Date(timestamp);
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return '방금 전';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)}일 전`;
+    
+    return date.toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' });
+}
+
+// 알림 드롭다운 열릴 때 알림 로드
+function loadNotificationsOnDropdownOpen() {
+    if (!window.notificationState.initialized) {
+        loadInitialNotifications();
+    }
+}
+
+// 초기 알림 로드
+async function loadInitialNotifications() {
+    const result = await fetchNotifications();
+    
+    if (result.success) {
+        window.notificationState.notifications = result.notifications;
+        window.notificationState.pivot = result.pivot;
+        window.notificationState.hasNext = result.hasNext;
+        window.notificationState.initialized = true;
+        
+        renderNotifications(result.notifications);
+        
+        // 읽지 않은 알림이 있으면 배지 표시
+        const hasUnread = result.notifications.some(n => !n.read);
+        updateNotificationBadge(hasUnread);
+    } else {
+        console.error('초기 알림 로드 실패:', result.error);
+        const notificationList = document.querySelector('.notification-list');
+        if (notificationList) {
+            notificationList.innerHTML = `
+                <div class="notification-item error">
+                    <div class="notification-content">
+                        <p>알림을 불러올 수 없습니다.</p>
+                        <button onclick="loadInitialNotifications()" class="btn btn-sm btn-primary">다시 시도</button>
+                    </div>
+                </div>
+            `;
+        }
+    }
+}
+
+// 더 많은 알림 로드 (무한 스크롤)
+async function loadMoreNotifications() {
+    console.log('loadMoreNotifications 호출됨', {
+        hasNext: window.notificationState.hasNext,
+        loading: window.notificationState.loading,
+        pivot: window.notificationState.pivot
+    });
+    
+    if (!window.notificationState.hasNext || window.notificationState.loading) {
+        console.log('조건 미충족으로 로드 중단:', {
+            hasNext: window.notificationState.hasNext,
+            loading: window.notificationState.loading
+        });
+        return;
+    }
+    
+    console.log('다음 페이지 알림 로드 시작, pivot:', window.notificationState.pivot);
+    
+    const result = await fetchNotifications(window.notificationState.pivot);
+    
+    console.log('다음 페이지 알림 로드 결과:', result);
+    
+    if (result.success) {
+        window.notificationState.notifications.push(...result.notifications);
+        window.notificationState.pivot = result.pivot;
+        window.notificationState.hasNext = result.hasNext;
+        
+        console.log('상태 업데이트 완료:', {
+            totalNotifications: window.notificationState.notifications.length,
+            newPivot: window.notificationState.pivot,
+            hasNext: window.notificationState.hasNext
+        });
+        
+        renderNotifications(result.notifications, true);
+    } else {
+        console.error('다음 페이지 로드 실패:', result.error);
+    }
+}
+
+// 무한 스크롤 설정
+function setupNotificationInfiniteScroll() {
+    // 이미 설정되었으면 재설정하지 않음
+    if (window.notificationState.infiniteScrollSetup) {
+        console.log('무한 스크롤 이미 설정됨');
+        return;
+    }
+    
+    // notification-list가 실제 스크롤이 일어나는 요소
+    const notificationList = document.querySelector('.notification-list');
+    if (!notificationList) {
+        console.warn('알림 리스트를 찾을 수 없습니다.');
+        return;
+    }
+    
+    console.log('알림 무한 스크롤 설정 완료 (notification-list에 설정)');
+    window.notificationState.infiniteScrollSetup = true;
+    
+    notificationList.addEventListener('scroll', function() {
+        const { scrollTop, scrollHeight, clientHeight } = this;
+        
+        console.log('스크롤 이벤트 (notification-list):', {
+            scrollTop,
+            scrollHeight,
+            clientHeight,
+            hasNext: window.notificationState.hasNext,
+            loading: window.notificationState.loading,
+            trigger: scrollTop + clientHeight >= scrollHeight - 50
+        });
+        
+        // 스크롤이 하단 근처에 도달했을 때
+        if (scrollTop + clientHeight >= scrollHeight - 50) {
+            console.log('무한 스크롤 트리거됨');
+            loadMoreNotifications();
+        }
+    });
 } 

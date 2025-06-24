@@ -22,7 +22,7 @@ public class NotificationController {
     private final NotificationListService notificationListService;
 
     @Operation(summary = "알림 목록 조회", description = "cursor 기반 페이징으로 사용자의 알림 목록을 조회합니다.")
-    @GetMapping("/{userId}")
+    @GetMapping
     public RestApiResponse<NotificationListResponse> getNotifications(
             @UserInfo UserInfoDto userInfo,
             @RequestParam(value = "pivot", required = false) Instant pivot) {
