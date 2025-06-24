@@ -5,6 +5,7 @@ import com.stayswap.notification.document.Notification;
 import com.stayswap.notification.dto.response.NotificationListResponse;
 import com.stayswap.notification.dto.response.NotificationResponse;
 import com.stayswap.notification.repository.NotificationMongoRepository;
+import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.Getter;
@@ -16,6 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
@@ -40,9 +44,36 @@ public class NotificationListService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
 
         GetUserNotificationsByPivotResult result = getNotificationsByPivot(userId, pivot);
+        List<Notification> notifications = result.getNotifications();
         
-        List<NotificationResponse> notificationResponses = result.getNotifications().stream()
-                .map(NotificationResponse::from)
+        if (notifications.isEmpty()) {
+            return NotificationListResponse.builder()
+                    .notifications(List.of())
+                    .hasNext(false)
+                    .pivot(null)
+                    .build();
+        }
+
+        // batch query 시작
+        Set<Long> senderIds = notifications.stream()
+                .map(Notification::getSenderId)
+                .collect(Collectors.toSet());
+        
+        List<User> senders = userRepository.findByIdIn(senderIds);
+        Map<Long, User> senderMap = senders.stream()
+                .collect(Collectors.toMap(User::getId, Function.identity()));
+        
+//        log.info("배치 조회: 알림 {}개, 사용자 {}명 조회", notifications.size(), senders.size());
+        
+        List<NotificationResponse> notificationResponses = notifications.stream()
+                .map(notification -> {
+                    User sender = senderMap.get(notification.getSenderId());
+                    return NotificationResponse.from(
+                        notification, 
+                        sender != null ? sender.getNickname() : null,
+                        sender != null ? sender.getProfile() : null
+                    );
+                })
                 .collect(Collectors.toList());
         
         Instant nextPivot = null;
