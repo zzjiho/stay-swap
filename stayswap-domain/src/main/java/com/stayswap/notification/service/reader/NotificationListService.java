@@ -7,7 +7,7 @@ import com.stayswap.notification.dto.response.NotificationResponse;
 import com.stayswap.notification.repository.NotificationMongoRepository;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
-import com.stayswap.notification.service.reader.LastReadAtService;
+import com.stayswap.notification.service.reader.IndividualNotificationReadService;
 import lombok.RequiredArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -34,9 +34,9 @@ public class NotificationListService {
 
     private final NotificationMongoRepository notificationMongoRepository;
     private final UserRepository userRepository;
-    private final LastReadAtService lastReadAtService;
+    private final IndividualNotificationReadService individualNotificationReadService;
 
-    private static final int PAGE_SIZE = 3;
+    private static final int PAGE_SIZE = 5;
 
     /**
      * 사용자 알림 목록 조회
@@ -64,17 +64,18 @@ public class NotificationListService {
         List<User> senders = userRepository.findByIdIn(senderIds);
         Map<Long, User> senderMap = senders.stream()
                 .collect(Collectors.toMap(User::getId, Function.identity()));
+
+        Set<String> readNotificationIds = individualNotificationReadService.getReadNotificationIds(userId);
         
-        Instant lastReadAt = lastReadAtService.getLastReadAt(userId);
-        
-//        log.info("배치 조회: 알림 {}개, 사용자 {}명 조회", notifications.size(), senders.size());
+        log.info("배치 조회: 알림 {}개, 사용자 {}명, 읽은 알림 {}개 조회", 
+            notifications.size(), senders.size(), readNotificationIds.size());
         
         List<NotificationResponse> notificationResponses = notifications.stream()
                 .map(notification -> {
                     User sender = senderMap.get(notification.getSenderId());
-                    // Redis 마지막 읽은 시간 기준으로 읽음/안읽음 계산
-                    boolean isRead = lastReadAt != null && 
-                        !notification.getOccurredAt().isAfter(lastReadAt);
+                    
+                    // 개별 읽음 상태만 확인
+                    boolean isRead = readNotificationIds.contains(notification.getId());
                     
                     return NotificationResponse.from(
                         notification, 
