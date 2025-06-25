@@ -7,12 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.Optional;
+import java.util.List;
+import java.util.Set;
 
-/**
- * 새 알림 여부 확인 서비스
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
@@ -20,30 +17,29 @@ import java.util.Optional;
 public class CheckNewNotificationService {
 
     private final NotificationMongoRepository notificationMongoRepository;
-    private final LastReadAtService lastReadAtService;
+    private final IndividualNotificationReadService individualNotificationReadService;
 
     /**
-     * 사용자의 새 알림 여부 확인
+     * 새 알림 여부 확인
      */
     public boolean checkNewNotification(Long userId) {
-        Instant latestUpdatedAt = getLatestUpdatedAt(userId);
-        if (latestUpdatedAt == null) {
+
+        List<Notification> notifications = notificationMongoRepository
+            .findTop100ByRecipientIdOrderByOccurredAtDesc(userId);
+        
+        if (notifications.isEmpty()) {
             return false;
         }
-
-        Instant lastReadAt = lastReadAtService.getLastReadAt(userId);
-        if (lastReadAt == null) { // 읽은 시간이 없으면 새 알림이 있는것
-            return true;
-        }
-
-        return latestUpdatedAt.isAfter(lastReadAt);
-    }
-
-    /**
-     * 사용자의 가장 최근 알림 업데이트 시간 조회
-     */
-    private Instant getLatestUpdatedAt(Long userId) {
-        Optional<Notification> notification = notificationMongoRepository.findFirstByRecipientIdOrderByLastUpdatedAtDesc(userId);
-        return notification.map(Notification::getLastUpdatedAt).orElse(null);
+        
+        log.info("확인할 알림 수: userId={}, count={}", userId, notifications.size());
+        
+        // 개별 읽음 상태 확인
+        Set<String> readNotificationIds = individualNotificationReadService.getReadNotificationIds(userId);
+        log.debug("읽은 알림 ID 수: userId={}, readCount={}", userId, readNotificationIds.size());
+        
+        boolean hasUnread = notifications.stream()
+                .anyMatch(notification -> !readNotificationIds.contains(notification.getId()));
+        
+        return hasUnread;
     }
 } 
