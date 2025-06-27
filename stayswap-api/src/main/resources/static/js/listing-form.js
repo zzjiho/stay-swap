@@ -1,4 +1,10 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Google Maps 관련 변수
+    let map = null;
+    let marker = null;
+    let rectangle = null;
+    let selectedLocation = null;
+
     // 단계 이동 관련 변수
     const form = document.getElementById('listing-form');
     const steps = document.querySelectorAll('.form-step');
@@ -13,6 +19,220 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 업로드된 이미지 파일들을 저장할 배열
     let uploadedImages = [];
+
+    // Google Maps 초기화 함수 (전역으로 설정)
+    window.initMap = function() {
+        console.log('🚀 Google Maps 초기화 시작!'); // 디버깅 로그
+        
+        // 현재 언어 감지 (HTML lang 속성 또는 브라우저 언어)
+        const currentLanguage = document.documentElement.lang || navigator.language.substring(0, 2) || 'ko';
+        console.log('🌍 감지된 언어:', currentLanguage);
+        
+        // 강제로 기본 지도 표시 (테스트용)
+        try {
+            const testMap = new google.maps.Map(document.getElementById('map'), {
+                center: { lat: 37.5665, lng: 126.9780 }, // 서울 시청
+                zoom: 12,
+                mapTypeControl: false,
+                streetViewControl: false,
+                // 다국어 지원
+                language: currentLanguage
+            });
+            console.log('✅ 테스트 지도 생성 성공!', testMap);
+        } catch (error) {
+            console.error('❌ 지도 생성 실패:', error);
+        }
+        
+                // 주소 입력 필드에 자동완성 기능 추가 (기존 Places API 사용 - 더 안정적)
+        const addressInput = document.getElementById('listing-address');
+        
+        // 기존 Places API 사용 (경고 무시하고 사용)
+        try {
+            const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+                types: ['address'], // 구체적인 주소만 검색 (비용 절약)
+                componentRestrictions: { country: 'KR' },
+                // 비용 절약을 위한 추가 설정
+                fields: ['formatted_address', 'geometry', 'address_components'], // 필요한 필드만 요청
+                strictBounds: false, // 한국 내에서만 검색
+                // 다국어 지원
+                language: currentLanguage // 현재 언어에 맞춰 결과 반환
+            });
+            
+            console.log('📍 Places Autocomplete (Legacy) 생성 완료!', autocomplete); // 디버깅 로그
+
+            // 자동완성 선택 시 이벤트
+            autocomplete.addListener('place_changed', function() {
+                console.log('🎯 주소 선택 이벤트 발생!'); // 디버깅 로그
+                
+                const place = autocomplete.getPlace();
+                console.log('📍 선택된 장소:', place); // 디버깅 로그
+                
+                if (!place.geometry || !place.geometry.location) {
+                    console.log('❌ 위치 정보 없음'); // 디버깅 로그
+                    alert('선택한 장소의 위치 정보를 찾을 수 없습니다.');
+                    return;
+                }
+
+                // 주소 필드 업데이트
+                addressInput.value = place.formatted_address || place.name;
+                console.log('📝 주소 업데이트:', addressInput.value); // 디버깅 로그
+
+                            // Geocoding API를 사용하여 정확한 정보와 viewport 가져오기
+                console.log('🔍 Geocoding API 호출 시작...'); // 디버깅 로그
+                
+                const geocoder = new google.maps.Geocoder();
+                geocoder.geocode({
+                    location: place.geometry.location
+                }, (results, status) => {
+                console.log('📡 Geocoding API 응답:', status, results); // 디버깅 로그
+                
+                if (status === 'OK' && results[0]) {
+                    // 지도가 없으면 생성
+                    if (!map) {
+                        console.log('🗺️ 지도 생성 시작...'); // 디버깅 로그
+                        
+                        const mapContainer = document.getElementById('map-container');
+                        const mapHint = document.getElementById('map-hint');
+                        mapContainer.style.display = 'block';
+                        mapHint.style.display = 'none';
+
+                                                    map = new google.maps.Map(document.getElementById('map'), {
+                                center: place.geometry.location,
+                                zoom: 14,
+                                mapTypeControl: false,
+                                streetViewControl: false
+                            });
+                        
+                        console.log('✅ 지도 생성 완료!'); // 디버깅 로그
+                    }
+
+                    // 기존 마커 제거
+                    if (marker) {
+                        marker.setMap(null);
+                        marker = null;
+                    }
+
+                    // 지도에 영역 표시
+                    if (results[0].geometry && results[0].geometry.viewport) {
+                        console.log('🎯 Viewport 영역 표시:', results[0].geometry.viewport);
+                        
+                        // 기존 영역 제거
+                        if (rectangle) {
+                            rectangle.setMap(null);
+                        }
+                        
+                        // 영역을 사각형으로 표시 (빨간색 반투명)
+                        rectangle = new google.maps.Rectangle({
+                            bounds: results[0].geometry.viewport,
+                            fillColor: '#FF4444',
+                            fillOpacity: 0.25,
+                            strokeColor: '#FF0000',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            map: map
+                        });
+                        
+                        // 지도 뷰를 viewport에 맞춤
+                        map.fitBounds(results[0].geometry.viewport);
+                        
+                        console.log('🎨 영역 표시 완료!');
+                        
+                        // viewport 정보를 전역 변수에 저장 (숙소 등록 시 사용)
+                        window.currentViewport = results[0].geometry.viewport;
+                        
+                    } else {
+                        console.log('⚠️ Viewport 없음, 마커로 표시');
+                        
+                        // viewport가 없으면 기존처럼 마커 표시
+                        map.setCenter(place.geometry.location);
+                        map.setZoom(16);
+                        
+                        marker = new google.maps.Marker({
+                            position: place.geometry.location,
+                            map: map,
+                            draggable: false,
+                            animation: google.maps.Animation.DROP
+                        });
+                        
+                        // viewport 정보 초기화
+                        window.currentViewport = null;
+                    }
+                } else {
+                    console.error('❌ Geocoding API 실패:', status); // 디버깅 로그
+                    
+                    // Geocoding API 실패 시 기존 방식으로 폴백
+                    if (!map) {
+                        const mapContainer = document.getElementById('map-container');
+                        const mapHint = document.getElementById('map-hint');
+                        mapContainer.style.display = 'block';
+                        mapHint.style.display = 'none';
+
+                        map = new google.maps.Map(document.getElementById('map'), {
+                            center: place.geometry.location,
+                            zoom: 16,
+                            mapTypeControl: false,
+                            streetViewControl: false
+                        });
+                    }
+                    
+                    map.setCenter(place.geometry.location);
+                    map.setZoom(16);
+                    
+                    if (marker) {
+                        marker.setPosition(place.geometry.location);
+                    } else {
+                        marker = new google.maps.Marker({
+                            position: place.geometry.location,
+                            map: map,
+                            draggable: false,
+                            animation: google.maps.Animation.DROP
+                        });
+                    }
+                }
+            });
+
+                            // 선택된 위치 저장
+                selectedLocation = {
+                    lat: place.geometry.location.lat(),
+                    lng: place.geometry.location.lng()
+                };
+                console.log('💾 선택된 위치 저장:', selectedLocation); // 디버깅 로그
+
+                // 주소 컴포넌트에서 도시와 지역구 자동 추출 시도
+                if (place.address_components) {
+                    let city = '';
+                    let district = '';
+
+                    place.address_components.forEach(component => {
+                        const types = component.types;
+                        
+                        // 도시 추출 (administrative_area_level_1 = 시/도)
+                        if (types.includes('administrative_area_level_1')) {
+                            city = component.long_name.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
+                        }
+                        
+                        // 지역구 추출 (sublocality_level_1 = 구/군)
+                        if (types.includes('sublocality_level_1') || types.includes('locality')) {
+                            district = component.long_name;
+                        }
+                    });
+
+                // 자동 추출된 값으로 항상 업데이트 (주소 변경 시 도시/지역구도 함께 변경)
+                if (city) {
+                    document.getElementById('listing-city').value = city;
+                    console.log('🏙️ 도시 자동 업데이트:', city);
+                }
+                if (district) {
+                    document.getElementById('listing-district').value = district;
+                    console.log('🏘️ 지역구 자동 업데이트:', district);
+                }
+            }
+        });
+        
+        } catch (error) {
+            console.error('❌ Places API 초기화 실패:', error);
+        }
+    };
 
     // 단계 이동 함수
     function goToStep(step) {
@@ -404,6 +624,12 @@ document.addEventListener('DOMContentLoaded', function() {
             address: document.getElementById('listing-address').value,
             city: document.getElementById('listing-city').value,
             district: document.getElementById('listing-district').value,
+            latitude: selectedLocation ? selectedLocation.lat : null,
+            longitude: selectedLocation ? selectedLocation.lng : null,
+            viewportNortheastLat: window.currentViewport ? window.currentViewport.getNorthEast().lat() : null,
+            viewportNortheastLng: window.currentViewport ? window.currentViewport.getNorthEast().lng() : null,
+            viewportSouthwestLat: window.currentViewport ? window.currentViewport.getSouthWest().lat() : null,
+            viewportSouthwestLng: window.currentViewport ? window.currentViewport.getSouthWest().lng() : null,
             petsAllowed: document.querySelector('input[name="features"][value="pets"]')?.checked || false,
             options: {
                 hasFreeWifi: document.querySelector('input[name="amenities"][value="wifi"]')?.checked || false,

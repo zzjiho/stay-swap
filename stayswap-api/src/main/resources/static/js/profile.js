@@ -86,29 +86,41 @@ function showInitialLoading() {
  * 인증 상태 확인 및 초기화
  */
 async function checkAuthAndInitialize() {
-    // auth-common.js의 initializeAuth 함수 사용
+    // auth-common.js가 로드되어 있는지 확인
     if (typeof window.auth === 'undefined') {
         console.error("인증 모듈이 로드되지 않았습니다.");
         window.location.href = "/page/auth";
         return;
     }
 
-    try {
-        // 인증 초기화 시도
-        const isAuthenticated = await initializeAuth();
-        
-        if (!isAuthenticated) {
-            // 인증 실패 시 로그인 페이지로 리디렉션
-            window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
-            return;
-        }
-
-        // 인증 성공 시 사용자 정보 로드
-        loadUserInfo();
-    } catch (error) {
-        console.error("인증 초기화 중 오류:", error);
-        window.location.href = "/page/auth";
+    // auth-common.js가 이미 초기화를 완료했는지 확인
+    if (!window.auth.isInitialized) {
+        // 초기화가 아직 완료되지 않았다면 잠시 대기
+        await new Promise(resolve => {
+            const checkInterval = setInterval(() => {
+                if (window.auth.isInitialized) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+            
+            // 최대 5초 대기
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                resolve();
+            }, 5000);
+        });
     }
+
+    // 인증 상태 확인
+    if (!window.auth.accessToken || (typeof window.isTokenExpired === 'function' && window.isTokenExpired())) {
+        // 인증 실패 시 로그인 페이지로 리디렉션
+        window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
+        return;
+    }
+
+    // 인증 성공 시 사용자 정보 로드
+    loadUserInfo();
 }
 
 /**
@@ -131,7 +143,7 @@ function loadUserInfo() {
                 // 프로필 컨테이너 초기화 및 HTML 구성
                 renderProfileHTML(response.data);
                 // 이벤트 리스너 다시 설정
-                setupEventListeners();
+                setupProfileEventListeners();
                 // 사용자 정보로 UI 업데이트
                 updateUserInfo(response.data);
             }
@@ -246,11 +258,13 @@ function renderProfileHTML(userData) {
                     <button class="reviews-tab active" data-reviews="received">받은 후기</button>
                     <button class="reviews-tab" data-reviews="written">작성한 후기</button>
                 </div>
-                <div class="reviews-content active" id="received-reviews">
-                    <!-- 받은 후기 목록은 별도 API 호출로 로드 -->
-                </div>
-                <div class="reviews-content" id="written-reviews">
-                    <!-- 작성한 후기 목록은 별도 API 호출로 로드 -->
+                <div class="reviews-content-container">
+                    <div class="reviews-content active" id="received-reviews">
+                        <!-- 받은 후기 목록 -->
+                    </div>
+                    <div class="reviews-content" id="written-reviews">
+                        <!-- 작성한 후기 목록 -->
+                    </div>
                 </div>
             </div>
 
@@ -275,16 +289,16 @@ function renderProfileHTML(userData) {
                     <h3 class="section-title">알림 설정</h3>
                     <div class="settings-card">
                         <div class="settings-toggle">
-                            <div class="toggle-label">이메일 알림</div>
+                            <div class="toggle-label">푸시 알림</div>
                             <label class="toggle-switch">
                                 <input type="checkbox" checked>
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                         <div class="settings-toggle">
-                            <div class="toggle-label">SMS 알림</div>
+                            <div class="toggle-label">이메일 알림</div>
                             <label class="toggle-switch">
-                                <input type="checkbox" checked>
+                                <input type="checkbox">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
@@ -300,12 +314,31 @@ function renderProfileHTML(userData) {
             </div>
         </div>
     `;
+    
+    // DOM 수정 후 헤더 드롭다운 재초기화
+    console.log('🔍 Profile.js - DOM 수정 완료, 드롭다운 재초기화 시도');
+    if (typeof window.reinitializeDropdowns === 'function') {
+        setTimeout(() => {
+            console.log('🔍 Profile.js - reinitializeDropdowns 호출');
+            window.reinitializeDropdowns();
+            
+            // 재초기화 후 알림 버튼 상태 확인
+            const notificationToggle = document.getElementById('notification-dropdown-toggle');
+            console.log('🔍 Profile.js - 재초기화 후 알림 버튼 상태:', {
+                exists: !!notificationToggle,
+                hasClickListener: notificationToggle?.onclick !== null,
+                dataset: notificationToggle?.dataset
+            });
+        }, 100);
+    } else {
+        console.error('🔍 Profile.js - reinitializeDropdowns 함수가 없음');
+    }
 }
 
 /**
- * 이벤트 리스너 설정
+ * 프로필 페이지 이벤트 리스너 설정
  */
-function setupEventListeners() {
+function setupProfileEventListeners() {
     // 프로필 탭 기능
     const profileTabs = document.querySelectorAll(".profile-tab")
     const profileContents = document.querySelectorAll(".profile-tab-content")
@@ -358,6 +391,9 @@ function setupEventListeners() {
     
     // 무한 스크롤 이벤트 리스너 추가
     window.addEventListener('scroll', handleInfiniteScroll);
+    
+    // 푸시 알림 토글 이벤트 리스너 설정
+    setupPushNotificationToggle();
 }
 
 /**
@@ -458,6 +494,9 @@ function updateUserInfo(userData) {
     // 후기 목록 로드
     loadReceivedReviews();
     loadWrittenReviews();
+    
+    // 푸시 알림 설정 로드
+    loadPushNotificationSettings();
 }
 
 /**
@@ -1146,4 +1185,142 @@ function generateStars(rating) {
     }
     
     return starsHtml;
+}
+
+/**
+ * 푸시 알림 설정 로드
+ */
+function loadPushNotificationSettings() {
+    fetchWithAuth('/api/notifications/settings')
+        .then(response => {
+            if (!response || !response.ok) {
+                throw new Error("API 응답 오류");
+            }
+            return response.json();
+        })
+        .then(response => {
+            if (response && response.data) {
+                // 토글 스위치 상태 업데이트
+                const pushToggle = document.querySelector('.settings-toggle input[type="checkbox"]');
+                if (pushToggle) {
+                    pushToggle.checked = response.data.pushNotificationEnabled;
+                }
+                
+                console.log('푸시 알림 설정 로드 완료:', response.data);
+            }
+        })
+        .catch(error => {
+            console.error('푸시 알림 설정 로드 실패:', error);
+        });
+}
+
+/**
+ * 푸시 알림 토글 처리
+ */
+function togglePushNotification() {
+    // 로딩 표시
+    const toggleContainer = document.querySelector('.settings-toggle');
+    const originalContent = toggleContainer.innerHTML;
+    
+    toggleContainer.innerHTML = `
+        <div class="toggle-label">푸시 알림</div>
+        <div class="toggle-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+        </div>
+    `;
+    
+    fetchWithAuth('/api/notifications/settings/push', {
+        method: 'POST'
+    })
+    .then(response => {
+        if (!response || !response.ok) {
+            throw new Error("API 응답 오류");
+        }
+        return response.json();
+    })
+    .then(response => {
+        if (response && response.data) {
+            // 성공 시 토글 스위치 상태 업데이트
+            const newStatus = response.data.pushNotificationEnabled;
+            
+            // 원래 HTML 복원
+            toggleContainer.innerHTML = originalContent;
+            
+            // 토글 상태 업데이트
+            const pushToggle = document.querySelector('.settings-toggle input[type="checkbox"]');
+            if (pushToggle) {
+                pushToggle.checked = newStatus;
+                
+                // 이벤트 리스너 다시 추가
+                setupPushNotificationToggle();
+            }
+            
+            // 성공 메시지 표시
+            const message = newStatus ? '푸시 알림이 활성화되었습니다!' : '푸시 알림이 비활성화되었습니다!';
+            showNotificationMessage(message, 'success');
+            
+            console.log('푸시 알림 설정 변경 완료:', newStatus);
+        }
+    })
+    .catch(error => {
+        console.error('푸시 알림 설정 변경 실패:', error);
+        
+        // 원래 HTML 복원
+        toggleContainer.innerHTML = originalContent;
+        
+        // 이벤트 리스너 다시 추가
+        setupPushNotificationToggle();
+        
+        // 에러 메시지 표시
+        showNotificationMessage('푸시 알림 설정 변경에 실패했습니다.', 'error');
+    });
+}
+
+/**
+ * 푸시 알림 토글 이벤트 리스너 설정
+ */
+function setupPushNotificationToggle() {
+    const pushToggle = document.querySelector('.settings-toggle input[type="checkbox"]');
+    if (pushToggle) {
+        // 기존 이벤트 리스너 제거
+        pushToggle.removeEventListener('change', togglePushNotification);
+        
+        // 새로운 이벤트 리스너 추가
+        pushToggle.addEventListener('change', function(e) {
+            // 체크박스 상태 되돌리기 (API 결과에 따라 업데이트됨)
+            e.target.checked = !e.target.checked;
+            
+            // API 호출
+            togglePushNotification();
+        });
+    }
+}
+
+/**
+ * 알림 메시지 표시
+ */
+function showNotificationMessage(message, type = 'info') {
+    // 기존 메시지 제거
+    const existingMessage = document.querySelector('.profile-notification-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // 새 메시지 생성
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `profile-notification-message ${type}`;
+    messageDiv.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    // 페이지 상단에 추가
+    document.body.insertBefore(messageDiv, document.body.firstChild);
+    
+    // 3초 후 자동 제거
+    setTimeout(() => {
+        if (messageDiv.parentNode) {
+            messageDiv.remove();
+        }
+    }, 3000);
 }

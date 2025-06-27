@@ -1,3 +1,10 @@
+/* 초기 로딩 상태 최적화 - 인증 관련 요소만 부드럽게 전환 */
+#user-profile,
+#notification-icon,
+#auth-buttons {
+    transition: opacity 0.1s ease-out;
+}
+
 /* 기본 스타일 */
 :root {
     --primary-color: #4f46e5;
@@ -136,10 +143,25 @@ button,
 }
 
 .header-content {
+    display: grid;
+    grid-template-columns: auto 1fr auto; /* 로고 | 네비게이션(중앙) | 사용자액션 */
+    align-items: center;
+    padding: 1rem 0;
+    gap: 1rem;
+}
+
+.main-nav {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 1rem 0;
+    justify-self: center; /* 네비게이션을 중앙에 고정 */
+    gap: 0.5rem; /* 네비게이션 링크 사이 간격 */
+}
+
+.nav-link {
+    color: var(--text-color);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    transition: color 0.2s ease, background-color 0.2s ease;
 }
 
 .logo {
@@ -155,18 +177,9 @@ button,
     margin-right: 0.5rem;
 }
 
-.main-nav {
-    display: flex;
-    align-items: center;
-    margin: 0 1rem;
-}
+/* .main-nav 스타일은 위에서 정의됨 */
 
-.nav-link {
-    color: var(--text-color);
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius);
-    transition: var(--transition);
-}
+
 
 .nav-link:hover,
 .nav-link.active {
@@ -177,6 +190,8 @@ button,
 .user-actions {
     display: flex;
     align-items: center;
+    min-width: 120px; /* 최소 너비 보장으로 네비게이션 흔들림 방지 */
+    justify-content: flex-end; /* 오른쪽 정렬 */
 }
 
 .auth-buttons {
@@ -861,15 +876,7 @@ button,
     font-weight: 600;
 }
 
-.mark-all-read {
-    font-size: 12px;
-    color: #2196f3;
-    text-decoration: none;
-}
 
-.mark-all-read:hover {
-    text-decoration: underline;
-}
 
 /* 알림 목록 스타일 */
 .notification-list {
@@ -941,7 +948,7 @@ button,
     50% {
         box-shadow: 0 3px 16px rgba(33, 150, 243, 0.25);
         border-left-color: #1976d2;
-    }
+}
 }
 
 /* 안읽은 알림 인디케이터 점 */

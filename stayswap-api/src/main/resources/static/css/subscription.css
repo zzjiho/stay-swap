@@ -1,6 +1,8 @@
 /* 구독 플랜 페이지 스타일 */
 .subscription-section {
     padding: 2rem 0;
+    position: relative;
+    z-index: 1; /* 헤더 드롭다운보다 낮게 설정 */
 }
 
 .subscription-header {

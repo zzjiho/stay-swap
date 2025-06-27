@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const emptyState = document.getElementById('notifications-empty');
     const loadMoreContainer = document.getElementById('load-more-container');
     const loadMoreBtn = document.getElementById('load-more-btn');
-    const markAllReadBtn = document.getElementById('mark-all-read-btn');
+
     const clearAllBtn = document.getElementById('clear-all-btn');
     const filterTabs = document.querySelectorAll('.filter-tab');
 
@@ -27,13 +27,13 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // 이벤트 리스너 등록
-        setupEventListeners();
+        setupNotificationEventListeners();
         
         // 알림 목록 로드
         loadNotifications();
     }
 
-    function setupEventListeners() {
+    function setupNotificationEventListeners() {
         // 필터 탭 클릭
         filterTabs.forEach(tab => {
             tab.addEventListener('click', function() {
@@ -47,9 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 더 보기 버튼
         loadMoreBtn.addEventListener('click', loadMoreNotifications);
-
-        // 모두 읽음 표시
-        markAllReadBtn.addEventListener('click', markAllAsRead);
 
         // 모두 삭제
         clearAllBtn.addEventListener('click', clearAllNotifications);
@@ -254,36 +251,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    async function markAllAsRead() {
-        if (!confirm('모든 알림을 읽음으로 표시하시겠습니까?')) {
-            return;
-        }
 
-        try {
-            const response = await fetch('/api/notifications/read-all', {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `Bearer ${window.auth.accessToken}`,
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-
-            if (response.ok) {
-                // UI 업데이트
-                document.querySelectorAll('.notification-item.unread').forEach(item => {
-                    item.classList.remove('unread');
-                });
-                
-                showSuccessMessage('모든 알림을 읽음으로 표시했습니다.');
-            } else {
-                throw new Error('서버 오류');
-            }
-        } catch (error) {
-            console.error('모든 알림 읽음 처리 실패:', error);
-            showErrorMessage('알림 읽음 처리 중 오류가 발생했습니다.');
-        }
-    }
 
     async function clearAllNotifications() {
         if (!confirm('모든 알림을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {

@@ -1,10 +1,16 @@
 package com.stayswap.common.page;
 
+import com.stayswap.common.config.GoogleMapsConfig;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 @Controller
+@RequiredArgsConstructor
 public class PageController {
+
+    private final GoogleMapsConfig googleMapsConfig;
 
     @GetMapping("/page/index")
     public String home() {
@@ -17,12 +23,14 @@ public class PageController {
     }
 
     @GetMapping("/page/new")
-    public String new1() {
+    public String new1(Model model) {
+        model.addAttribute("googleMapsApiKey", googleMapsConfig.getApiKey());
         return "/host/listings/new";
     }
 
     @GetMapping("/page/listing-detail")
-    public String listingDetail() {
+    public String listingDetail(Model model) {
+        model.addAttribute("googleMapsApiKey", googleMapsConfig.getApiKey());
         return "listing-detail";
     }
 
@@ -47,7 +55,8 @@ public class PageController {
     }
 
     @GetMapping("/page/edit")
-    public String edit() {
+    public String edit(Model model) {
+        model.addAttribute("googleMapsApiKey", googleMapsConfig.getApiKey());
         return "/host/listings/edit";
     }
 

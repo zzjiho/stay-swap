@@ -61,7 +61,7 @@
     border: 1px solid #e0e0e0;
 }
 
-.notification-dropdown.show {
+.notification-dropdown.active {
     display: block;
 }
 
@@ -81,20 +81,7 @@
     color: #333;
 }
 
-.btn-text {
-    background: none;
-    border: none;
-    color: #007bff;
-    font-size: 12px;
-    cursor: pointer;
-    padding: 4px 8px;
-    border-radius: 4px;
-    transition: background-color 0.2s;
-}
 
-.btn-text:hover {
-    background-color: #f0f0f0;
-}
 
 /* 알림 목록 */
 .notification-list {

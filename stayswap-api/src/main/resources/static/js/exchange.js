@@ -6,12 +6,13 @@ $(document).ready(function() {
     let isLastPage = false;
     let activeType = "guest"; // 기본값은 게스트 모드
     let activeStatus = "all"; // 기본값은 모든 상태
+    let isInitialized = false; // 초기화 중복 방지 플래그
 
     // 페이지 초기화 시 로딩 표시
     showInitialLoading();
     
-    // 인증 상태 확인 및 초기화
-    checkAuthAndInitialize();
+    // auth-common.js의 인증 상태 이벤트에만 의존
+    waitForAuthAndInitialize();
 
     /**
      * 초기 로딩 화면 표시
@@ -26,39 +27,62 @@ $(document).ready(function() {
     }
 
     /**
-     * 인증 상태 확인 및 초기화
+     * auth-common.js의 인증 상태를 기다리고 초기화
      */
-    async function checkAuthAndInitialize() {
-        // auth-common.js의 initializeAuth 함수 사용
-        if (typeof window.auth === 'undefined') {
-            console.error("인증 모듈이 로드되지 않았습니다.");
-            window.location.href = "/page/auth";
-            return;
-        }
-
-        try {
-            // 인증 초기화 시도
-            const isAuthenticated = await initializeAuth();
+    function waitForAuthAndInitialize() {
+        console.log('🔍 Exchange.js - 인증 상태 대기 중');
+        
+        // authStateChanged 이벤트 리스너 등록
+        document.addEventListener('authStateChanged', function(e) {
+            console.log('🔍 Exchange.js - authStateChanged 이벤트 수신:', e.detail.isLoggedIn);
             
-            if (!isAuthenticated) {
-                // 인증 실패 시 로그인 페이지로 리디렉션
+            if (e.detail.isLoggedIn && !isInitialized) {
+                // 로그인 상태: 데이터 로드 및 이벤트 리스너 설정 (중복 방지)
+                console.log('🔍 Exchange.js - 이벤트로부터 초기화 시작');
+                isInitialized = true;
+                setupEventListeners();
+                loadSwapList(true);
+            } else if (e.detail.isLoggedIn && isInitialized) {
+                console.log('🔍 Exchange.js - 이미 초기화됨, 이벤트 무시');
+            } else if (!e.detail.isLoggedIn) {
+                // 로그아웃 상태: 로그인 페이지로 리디렉션
+                console.log('🔍 Exchange.js - 로그인이 필요하여 리디렉션');
                 window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
-                return;
             }
-
-            // 인증 성공 시 데이터 로드 및 이벤트 리스너 설정
-            setupEventListeners();
-            loadSwapList(true);
-        } catch (error) {
-            console.error("인증 초기화 중 오류:", error);
-            window.location.href = "/page/auth";
-        }
+        });
+        
+        // auth-common.js가 아직 초기화되지 않았을 경우를 대비한 체크
+        setTimeout(() => {
+            if (!isInitialized && typeof window.isLoggedIn === 'function' && window.isLoggedIn()) {
+                console.log('🔍 Exchange.js - setTimeout으로부터 초기화 시작');
+                isInitialized = true;
+                setupEventListeners();
+                loadSwapList(true);
+            } else if (isInitialized) {
+                console.log('🔍 Exchange.js - 이미 초기화됨, setTimeout 무시');
+            } else if (typeof window.auth !== 'undefined' && window.auth.isInitialized === false) {
+                // auth-common.js가 아직 초기화 중인 경우 잠시 더 대기
+                console.log('🔍 Exchange.js - auth-common.js 초기화 대기 중');
+            } else {
+                // 로그인되지 않은 상태
+                console.log('🔍 Exchange.js - 로그인되지 않은 상태');
+                window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
+            }
+        }, 300); // auth-common.js 초기화 완료 대기
     }
 
     /**
      * 이벤트 리스너 설정
      */
     function setupEventListeners() {
+        // 중복 등록 방지
+        if (window.exchangeEventListenersAdded) {
+            console.log('🔍 Exchange.js - 이벤트 리스너 이미 등록됨');
+            return;
+        }
+        window.exchangeEventListenersAdded = true;
+        console.log('🔍 Exchange.js - 이벤트 리스너 등록 시작');
+        
     // 예약 유형 탭 기능
         $(".booking-type-tab").on("click", function() {
             // 탭 활성화 상태 변경
@@ -105,7 +129,12 @@ $(document).ready(function() {
      * 교환/숙박 목록 로드
      */
     function loadSwapList(resetList) {
-        if (isLoading) return;
+        console.log('🔍 Exchange.js - loadSwapList 호출됨, resetList:', resetList, 'currentPage:', currentPage);
+        
+        if (isLoading) {
+            console.log('🔍 Exchange.js - 이미 로딩 중이라 건너뜀');
+            return;
+        }
 
         isLoading = true;
         showLoading(resetList);
@@ -134,10 +163,27 @@ $(document).ready(function() {
         const fullUrl = `${apiUrl}?${queryString}`;
 
         // fetchWithAuth 함수를 사용하여 인증된 API 호출
-        fetchWithAuth(fullUrl)
+        let apiCall;
+        
+        // auth-common.js의 fetchWithAuth 함수 사용 (인증 처리 포함)
+        if (typeof window.fetchWithAuth === 'function') {
+            apiCall = window.fetchWithAuth(fullUrl);
+        } else {
+            // fetchWithAuth가 없는 경우 일반 fetch 사용 (fallback)
+            console.warn('fetchWithAuth 함수가 없어서 일반 fetch 사용');
+            apiCall = fetch(fullUrl, {
+                headers: {
+                    'Authorization': `Bearer ${window.auth?.accessToken || ''}`,
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'include'
+            });
+        }
+        
+        apiCall
             .then(response => {
                 if (!response || !response.ok) {
-                    throw new Error("API 응답 오류");
+                    throw new Error(`API 응답 오류: ${response?.status || 'Unknown'}`);
                 }
                 return response.json();
             })
@@ -351,7 +397,13 @@ $(document).ready(function() {
      * 교환/숙박 요청 취소
      */
     function cancelSwapRequest(swapId) {
-        fetchWithAuth(`/api/house/swap/${swapId}/cancel`, {
+        if (typeof window.fetchWithAuth !== 'function') {
+            console.error('fetchWithAuth 함수가 없습니다.');
+            alert('인증 처리 중 오류가 발생했습니다.');
+            return;
+        }
+        
+        window.fetchWithAuth(`/api/house/swap/${swapId}/cancel`, {
             method: "POST"
         })
         .then(response => {
@@ -377,7 +429,13 @@ $(document).ready(function() {
      * 교환/숙박 요청 수락
      */
     function acceptSwapRequest(swapId) {
-        fetchWithAuth(`/api/house/swap/${swapId}/accept`, {
+        if (typeof window.fetchWithAuth !== 'function') {
+            console.error('fetchWithAuth 함수가 없습니다.');
+            alert('인증 처리 중 오류가 발생했습니다.');
+            return;
+        }
+        
+        window.fetchWithAuth(`/api/house/swap/${swapId}/accept`, {
             method: "POST"
         })
         .then(response => {
@@ -403,7 +461,13 @@ $(document).ready(function() {
      * 교환/숙박 요청 거절
      */
     function rejectSwapRequest(swapId) {
-        fetchWithAuth(`/api/house/swap/${swapId}/reject`, {
+        if (typeof window.fetchWithAuth !== 'function') {
+            console.error('fetchWithAuth 함수가 없습니다.');
+            alert('인증 처리 중 오류가 발생했습니다.');
+            return;
+        }
+        
+        window.fetchWithAuth(`/api/house/swap/${swapId}/reject`, {
             method: "POST"
         })
         .then(response => {

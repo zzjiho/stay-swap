@@ -1,140 +1,227 @@
+// 전역 플래그 및 초기화 상태 관리
+window.apiFlags = window.apiFlags || {
+    checkingNotifications: false,
+    refreshingToken: false,
+    initializingDropdowns: false
+};
+
+window.mainInitialized = window.mainInitialized || false;
+
+// 알림 중복 체크 플래그 (페이지당 1회 실행 보장)
+// 페이지 로드 시마다 리셋하여 새로고침 시에도 정상 동작
+window.notificationCheckedOnce = false;
+
 document.addEventListener('DOMContentLoaded', function() {
-    // auth 객체 초기화
+    // 중복 초기화 방지
+    if (window.mainInitialized) return;
+    window.mainInitialized = true;
+
+    // auth 객체 초기화 (auth-common.js가 없는 경우 대비)
     if (!window.auth) {
         window.auth = {
             accessToken: null,
             tokenExpireTime: null,
             isInitialized: false,
-            refreshInProgress: false
         };
     }
 
-    // 인증 관련 함수들
-    if (typeof window.isLoggedIn !== 'function') {
-        window.isLoggedIn = function() {
-            return !!window.auth.accessToken && !isTokenExpired();
-        };
+    // 초기화 순서 정리
+    initializeMainComponents();
+});
 
-        window.isTokenExpired = function() {
-            return !window.auth.tokenExpireTime || new Date().getTime() > window.auth.tokenExpireTime;
-        };
+async function initializeMainComponents() {
+    try {
+        // 1. UI 초기화
+        highlightCurrentPage();
+        initDropdowns();
+        initLogoutButton();
 
-        window.isTokenExpiringInOneMinute = function() {
-            if (!window.auth.tokenExpireTime) return false;
-            const oneMinuteInMs = 60 * 1000;
-            const timeLeft = window.auth.tokenExpireTime - new Date().getTime();
-            return timeLeft > 0 && timeLeft < oneMinuteInMs;
-        };
+        // 2. Firebase 및 토큰 설정
+        await setupFirebaseMessaging();
+        
+        // 3. 인증 상태 변경 이벤트 리스너 (auth-common.js 이벤트에만 의존)
+        setupAuthEventListeners();
+
+    } catch (error) {
+        console.error('Main 컴포넌트 초기화 실패:', error);
     }
+}
 
-    // 초기화
-    checkAuthFromUrlParams();
-    highlightCurrentPage();
-    initDropdowns();
-    initLogoutButton();
-
-    // 인증 상태 확인 및 UI 업데이트
-    if (!window.auth.accessToken) {
-        manualInitAuth();
-    }
-    updateUIBasedOnAuthState();
-    setupTokenRefreshTimer();
-
-    // Firebase 메시징 설정
-    setupFirebaseMessaging();
-
-    // 인증 상태 변경 이벤트 리스너
-    document.addEventListener('authStateChanged', function(e) {
-        updateUIBasedOnAuthState();
-        if (e.detail.isLoggedIn) {
-            setTimeout(() => registerFCMToken(), 2000);
-        }
-    });
-
-    // 기존 로그인 상태에서 FCM 토큰 등록
-    if (window.auth && window.auth.accessToken) {
-        checkFCMTokenStatus().then(needsRegistration => {
-            if (needsRegistration) {
-                setTimeout(() => registerFCMToken(), 3000);
+function setupAuthEventListeners() {
+    // 인증 상태 변경 이벤트 리스너 (auth-common.js 이벤트에만 의존)
+    if (!window.authEventListenerAdded) {
+        window.authEventListenerAdded = true;
+        
+        document.addEventListener('authStateChanged', function(e) {
+            console.log('🔍 Main.js가 authStateChanged 이벤트 수신:', e.detail.isLoggedIn);
+            
+            // 로그아웃 시 알림 체크 플래그 리셋
+            if (!e.detail.isLoggedIn) {
+                window.notificationCheckedOnce = false;
+            }
+            
+            updateUIBasedOnAuthState();
+            if (e.detail.isLoggedIn) {
+                setTimeout(() => registerFCMToken(), 2000);
             }
         });
     }
-});
+}
 
-// 드롭다운 초기화
+// 드롭다운 초기화 (중복 방지)
 function initDropdowns() {
+    if (window.apiFlags.initializingDropdowns) return;
+    window.apiFlags.initializingDropdowns = true;
+
     const profileToggle = document.getElementById('profile-dropdown-toggle');
     const profileDropdown = document.getElementById('profile-dropdown');
     const notificationToggle = document.getElementById('notification-dropdown-toggle');
     const notificationDropdown = document.getElementById('notification-dropdown');
 
-    // 프로필 드롭다운
-    if (profileToggle && profileDropdown) {
-        profileToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            profileDropdown.classList.toggle('active');
-            if (notificationDropdown) {
-                notificationDropdown.classList.remove('active');
-            }
-        });
+    // 기존 이벤트 리스너 제거
+    if (profileToggle && !profileToggle.dataset.initialized) {
+        profileToggle.dataset.initialized = 'true';
+        profileToggle.addEventListener('click', handleProfileDropdownClick);
     }
 
-    // 알림 드롭다운
-    if (notificationToggle && notificationDropdown) {
-        notificationToggle.addEventListener('click', (e) => {
-            e.preventDefault();
-            const isOpening = !notificationDropdown.classList.contains('active');
-            
-            notificationDropdown.classList.toggle('active');
-            if (profileDropdown) {
-                profileDropdown.classList.remove('active');
-            }
-            
-            // 드롭다운 열릴 때 알림 로드
-            if (isOpening && window.auth?.accessToken) {
-                loadNotificationsOnDropdownOpen();
-                // 무한 스크롤 설정 (드롭다운이 열릴 때)
-                setTimeout(() => setupNotificationInfiniteScroll(), 100);
-            }
-        });
+    if (notificationToggle && !notificationToggle.dataset.initialized) {
+        notificationToggle.dataset.initialized = 'true';
+        notificationToggle.addEventListener('click', handleNotificationDropdownClick);
     }
 
-    // 외부 클릭 시 드롭다운 닫기
-    document.addEventListener('click', (e) => {
-        if (profileToggle && profileDropdown && 
-            !profileToggle.contains(e.target) && !profileDropdown.contains(e.target)) {
-            profileDropdown.classList.remove('active');
-        }
-        if (notificationToggle && notificationDropdown && 
-            !notificationToggle.contains(e.target) && !notificationDropdown.contains(e.target)) {
-            notificationDropdown.classList.remove('active');
-        }
+    // 외부 클릭 시 드롭다운 닫기 (중복 등록 방지)
+    if (!document.body.dataset.dropdownListenerAdded) {
+        document.body.dataset.dropdownListenerAdded = 'true';
+        document.addEventListener('click', handleOutsideClick);
+    }
+
+    window.apiFlags.initializingDropdowns = false;
+}
+
+// 드롭다운 재초기화 함수 (페이지에서 DOM을 수정한 후 호출)
+function reinitializeDropdowns() {
+    console.log('🔍 드롭다운 재초기화 시작');
+    
+    // 기존 초기화 플래그 리셋
+    window.apiFlags.initializingDropdowns = false;
+    
+    // 헤더 요소들의 이벤트 리스너 상태 리셋
+    const profileToggle = document.getElementById('profile-dropdown-toggle');
+    const notificationToggle = document.getElementById('notification-dropdown-toggle');
+    
+    console.log('🔍 헤더 요소 확인:', {
+        profileToggle: !!profileToggle,
+        notificationToggle: !!notificationToggle,
+        profileInitialized: profileToggle?.dataset.initialized,
+        notificationInitialized: notificationToggle?.dataset.initialized
     });
+    
+    if (profileToggle) {
+        profileToggle.dataset.initialized = '';
+        // 기존 이벤트 리스너 제거
+        profileToggle.removeEventListener('click', handleProfileDropdownClick);
+    }
+    if (notificationToggle) {
+        notificationToggle.dataset.initialized = '';
+        // 기존 이벤트 리스너 제거
+        notificationToggle.removeEventListener('click', handleNotificationDropdownClick);
+    }
+    
+    // 전역 이벤트 리스너도 리셋
+    if (document.body.dataset.dropdownListenerAdded) {
+        document.body.dataset.dropdownListenerAdded = '';
+        document.removeEventListener('click', handleOutsideClick);
+    }
+    
+    // 드롭다운 다시 초기화
+    initDropdowns();
+    
+    console.log('🔍 드롭다운 재초기화 완료');
+}
+
+// 전역에서 접근 가능하도록 노출
+window.reinitializeDropdowns = reinitializeDropdowns;
+
+function handleProfileDropdownClick(e) {
+    e.preventDefault();
+    const profileDropdown = document.getElementById('profile-dropdown');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+    
+    if (profileDropdown) {
+        profileDropdown.classList.toggle('active');
+    }
+    if (notificationDropdown) {
+        notificationDropdown.classList.remove('active');
+    }
+}
+
+function handleNotificationDropdownClick(e) {
+    console.log('🔍 알림 드롭다운 클릭 이벤트 발생');
+    e.preventDefault();
+    
+    const profileDropdown = document.getElementById('profile-dropdown');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+    
+    console.log('🔍 드롭다운 요소 확인:', {
+        profileDropdown: !!profileDropdown,
+        notificationDropdown: !!notificationDropdown,
+        currentActive: notificationDropdown?.classList.contains('active')
+    });
+    
+    if (!notificationDropdown) {
+        console.error('🔍 알림 드롭다운 요소를 찾을 수 없음');
+        return;
+    }
+    
+    const isOpening = !notificationDropdown.classList.contains('active');
+    console.log('🔍 드롭다운 상태 변경:', isOpening ? '열기' : '닫기');
+    
+    notificationDropdown.classList.toggle('active');
+    if (profileDropdown) {
+        profileDropdown.classList.remove('active');
+    }
+
+    // 드롭다운 열릴 때 알림 로드
+    if (isOpening && window.auth?.accessToken) {
+        console.log('🔍 알림 드롭다운 열림 - 알림 로드 시작');
+        loadNotificationsOnDropdownOpen();
+        // 무한 스크롤 설정 (드롭다운이 열릴 때)
+        setTimeout(() => setupNotificationInfiniteScroll(), 100);
+    } else if (isOpening && !window.auth?.accessToken) {
+        console.log('🔍 액세스 토큰이 없어서 알림 로드하지 않음');
+    }
+}
+
+function handleOutsideClick(e) {
+    const profileToggle = document.getElementById('profile-dropdown-toggle');
+    const profileDropdown = document.getElementById('profile-dropdown');
+    const notificationToggle = document.getElementById('notification-dropdown-toggle');
+    const notificationDropdown = document.getElementById('notification-dropdown');
+
+    if (profileToggle && profileDropdown &&
+        !profileToggle.contains(e.target) && !profileDropdown.contains(e.target)) {
+        profileDropdown.classList.remove('active');
+    }
+    if (notificationToggle && notificationDropdown &&
+        !notificationToggle.contains(e.target) && !notificationDropdown.contains(e.target)) {
+        notificationDropdown.classList.remove('active');
+    }
 }
 
 // 로그아웃 버튼 초기화
 function initLogoutButton() {
     const logoutBtn = document.getElementById('logout-btn');
-    if (logoutBtn) {
+    if (logoutBtn && !logoutBtn.dataset.initialized) {
+        logoutBtn.dataset.initialized = 'true';
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            
-            // 로그아웃 함수 호출 시도
-            if (typeof window.authLogout === 'function') {
-                window.authLogout();
-            } else if (typeof window.logout === 'function') {
+
+            // auth-common.js의 로그아웃 함수 사용
+            if (typeof window.logout === 'function') {
                 window.logout();
             } else {
-                // 직접 로그아웃 처리
-                window.auth.accessToken = null;
-                window.auth.tokenExpireTime = null;
-
-                Promise.all([
-                    fetch('/api/user/logout', { method: 'POST', credentials: 'include' }).catch(() => {}),
-                    fetch('/api/logout', { method: 'POST', credentials: 'include' }).catch(() => {})
-                ]).finally(() => {
-                    window.location.href = '/page/auth';
-                });
+                console.error('auth-common.js의 logout 함수가 없습니다.');
+                window.location.href = '/page/auth';
             }
         });
     }
@@ -161,18 +248,18 @@ async function setupFirebaseMessaging() {
                 const notification = new Notification(
                     payload.notification.title || '새로운 알림',
                     {
-                        body: payload.notification.body || '',
-                        icon: '/img/logo.png',
-                        data: payload.data || {}
+                    body: payload.notification.body || '',
+                    icon: '/img/logo.png',
+                    data: payload.data || {}
                     }
                 );
 
                 notification.onclick = function() {
-                    window.focus();
-                    const url = payload.data?.url || '/';
-                    window.location.href = url;
-                    notification.close();
-                };
+                            window.focus();
+                            const url = payload.data?.url || '/';
+                            window.location.href = url;
+                            notification.close();
+                        };
             }
         });
 
@@ -181,111 +268,6 @@ async function setupFirebaseMessaging() {
         console.error('Firebase 메시징 설정 실패:', error);
         return false;
     }
-}
-
-// URL 파라미터에서 인증 정보 확인
-function checkAuthFromUrlParams() {
-    const urlParams = new URLSearchParams(window.location.search);
-
-    if (urlParams.get('auth_success') === 'true') {
-        const token = urlParams.get('token');
-        const expireTime = urlParams.get('expire');
-
-        if (token && expireTime) {
-            window.auth.accessToken = token;
-            window.auth.tokenExpireTime = parseInt(expireTime);
-            window.auth.isInitialized = true;
-
-            document.dispatchEvent(new CustomEvent('authStateChanged', {
-                detail: { isLoggedIn: true }
-            }));
-
-            // URL 정리
-            const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
-            window.history.replaceState({}, document.title, cleanUrl);
-        }
-    }
-}
-
-// 인증 초기화
-async function manualInitAuth() {
-    if (window.auth.refreshInProgress) return false;
-    window.auth.refreshInProgress = true;
-
-    try {
-        const response = await fetch('/api/token/refresh', {
-            method: 'GET',
-            credentials: 'include',
-            cache: 'no-store'
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            window.auth.accessToken = data.accessToken;
-            window.auth.tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-            window.auth.isInitialized = true;
-
-            updateUIBasedOnAuthState();
-            document.dispatchEvent(new CustomEvent('authStateChanged', {
-                detail: { isLoggedIn: true }
-            }));
-
-            window.auth.refreshInProgress = false;
-            return true;
-        }
-    } catch (error) {
-        console.error('토큰 갱신 오류:', error);
-    }
-
-    window.auth.refreshInProgress = false;
-    return false;
-}
-
-// 토큰 자동 갱신 타이머
-function setupTokenRefreshTimer() {
-    const tokenCheckInterval = setInterval(async function() {
-        if (!window.auth?.accessToken) return;
-
-        if (isTokenExpiringInOneMinute() || isTokenExpired()) {
-            const success = await refreshAccessToken();
-            if (!success && isTokenExpired()) {
-                window.auth.accessToken = null;
-                window.auth.tokenExpireTime = null;
-                updateUIBasedOnAuthState();
-            }
-        }
-    }, 10000);
-
-    window.addEventListener('beforeunload', function() {
-        clearInterval(tokenCheckInterval);
-    });
-}
-
-// 토큰 갱신
-async function refreshAccessToken() {
-    if (window.auth.refreshInProgress) return false;
-    window.auth.refreshInProgress = true;
-
-    try {
-        const response = await fetch('/api/token/refresh', {
-            method: 'GET',
-            credentials: 'include',
-            cache: 'no-store'
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            window.auth.accessToken = data.accessToken;
-            window.auth.tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-            window.auth.refreshInProgress = false;
-            return true;
-        }
-    } catch (error) {
-        console.error('토큰 갱신 오류:', error);
-    }
-
-    window.auth.refreshInProgress = false;
-    return false;
 }
 
 // 현재 페이지 활성화
@@ -305,19 +287,53 @@ function highlightCurrentPage() {
 
 // UI 상태 업데이트
 function updateUIBasedOnAuthState() {
-    const isUserLoggedIn = typeof isLoggedIn === 'function' ? isLoggedIn() : !!window.auth?.accessToken;
+    // auth-common.js의 isLoggedIn 함수에만 의존
+    const isUserLoggedIn = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
     const userProfile = document.getElementById('user-profile');
     const authButtons = document.getElementById('auth-buttons');
     const notificationIcon = document.getElementById('notification-icon');
+
+    console.log('🔍 updateUIBasedOnAuthState 호출됨. 로그인 상태:', isUserLoggedIn);
+
+    // 현재 UI 상태 확인 (깜빡임 방지)
+    const currentUIState = userProfile?.style.display === 'block' ? 'logged-in' : 'logged-out';
+    const targetUIState = isUserLoggedIn ? 'logged-in' : 'logged-out';
+    
+    if (currentUIState === targetUIState) {
+        console.log('🔍 UI 상태 변경 없음. 현재:', currentUIState);
+        
+        // 상태가 같더라도 로그인 상태일 때는 알림 확인
+        if (isUserLoggedIn && !window.notificationCheckedOnce) {
+            window.notificationCheckedOnce = true;
+            console.log('🔍 새 알림 확인 예약됨 (UI 변경 없이)');
+            setTimeout(() => checkNewNotifications(), 200);
+        }
+        return;
+    }
+
+    console.log('🔍 UI 상태 변경:', currentUIState, '→', targetUIState);
 
     if (isUserLoggedIn) {
         if (userProfile) userProfile.style.display = 'block';
         if (notificationIcon) notificationIcon.style.display = 'block';
         if (authButtons) authButtons.style.display = 'none';
+        
+        // 로그인 상태일 때 새 알림 확인 (페이지당 1회만)
+        if (!window.notificationCheckedOnce) {
+            window.notificationCheckedOnce = true;
+            console.log('🔍 새 알림 확인 예약됨');
+            setTimeout(() => checkNewNotifications(), 200);
+        }
     } else {
         if (userProfile) userProfile.style.display = 'none';
         if (notificationIcon) notificationIcon.style.display = 'none';
         if (authButtons) authButtons.style.display = 'flex';
+        
+        // 로그아웃 상태일 때 배지 숨기기
+        updateNotificationBadge(false);
+
+        // 로그아웃 시 플래그 초기화 (다음 로그인에서 다시 한 번만 호출되도록)
+        window.notificationCheckedOnce = false;
     }
 }
 
@@ -329,7 +345,7 @@ async function initFirebase() {
                 loadScript('https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js'),
                 loadScript('https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js')
             ]);
-        }
+            }
 
         try {
             firebase.app();
@@ -389,7 +405,7 @@ async function getFCMToken() {
         if (typeof firebase === 'undefined' || !firebase.messaging) {
             const initialized = await initFirebase();
             if (!initialized) throw new Error('Firebase 초기화 실패');
-        }
+            }
 
         if (!window.vapidKey) throw new Error('VAPID 키 없음');
 
@@ -405,7 +421,7 @@ async function getFCMToken() {
         throw new Error('토큰 획득 실패');
     } catch (error) {
         console.error('FCM 토큰 요청 실패:', error);
-        
+
         // 개발 환경용 가짜 토큰
         if (window.location.hostname === 'localhost') {
             return 'fake-fcm-token-' + Math.random().toString(36).substring(2, 15);
@@ -420,20 +436,16 @@ async function registerFCMToken() {
         const needsRegistration = await checkFCMTokenStatus();
         if (!needsRegistration) return true;
 
-        // 토큰 갱신
-        const tokenResponse = await fetch('/api/token/refresh', {
-            method: 'GET',
-            credentials: 'include'
-        });
+        // 이미 유효한 액세스 토큰이 있는지 확인
+        if (!window.auth?.accessToken || isTokenExpired()) {
+            // 토큰이 없거나 만료된 경우에만 갱신
+            const refreshSuccess = await refreshAccessToken();
+            if (!refreshSuccess) {
+                throw new Error('토큰 갱신 실패');
+            }
+        }
 
-        if (!tokenResponse.ok) throw new Error('토큰 갱신 실패');
-
-        const tokenData = await tokenResponse.json();
-        const accessToken = tokenData.accessToken;
-
-        window.auth.accessToken = accessToken;
-        window.auth.tokenExpireTime = new Date(tokenData.accessTokenExpireTime).getTime();
-        window.auth.isInitialized = true;
+        const accessToken = window.auth.accessToken;
 
         // FCM 토큰 획득
         const token = await getFCMToken();
@@ -528,25 +540,6 @@ $(document).ready(function() {
     loadPopularHouses();
 });
 
-// 인증 상태 변경 이벤트 리스너 (백업)
-document.addEventListener('authStateChanged', function(event) {
-    updateUIBasedOnAuthState();
-    if (event.detail.isLoggedIn && typeof fetchUserInfo === 'function') {
-        fetchUserInfo();
-    }
-});
-
-// 1초 후 인증 상태 확인 (백업)
-setTimeout(function() {
-    if (!window.auth?.accessToken) {
-        manualInitAuth().then(success => {
-            updateUIBasedOnAuthState();
-        });
-    } else {
-        updateUIBasedOnAuthState();
-    }
-}, 1000);
-
 // 알림 관련 유틸리티 함수들 (빨간점만 표시)
 function updateNotificationBadge(hasUnread) {
     const badge = document.getElementById('notification-badge');
@@ -556,6 +549,58 @@ function updateNotificationBadge(hasUnread) {
         badge.style.display = 'block';
     } else {
         badge.style.display = 'none';
+    }
+}
+
+// 새 알림 여부 확인 API 호출 (중복 호출 방지)
+async function checkNewNotifications() {
+    // 중복 호출 방지
+    if (window.apiFlags.checkingNotifications) {
+        console.log('새 알림 확인이 이미 진행 중입니다.');
+        return false;
+    }
+
+    // auth-common.js의 인증 상태 확인 함수 사용
+    if (typeof window.isLoggedIn !== 'function' || !window.isLoggedIn()) {
+        console.log('인증 토큰이 없어서 새 알림 확인을 건너뜁니다.');
+        return false;
+    }
+
+    window.apiFlags.checkingNotifications = true;
+
+    try {
+        const response = await fetch('/api/notifications/new', {
+            method: 'GET',
+            headers: {
+                'Authorization': `Bearer ${window.auth?.accessToken || ''}`,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.log('알림 확인 중 401 오류 - auth-common.js에서 토큰 갱신 처리됨');
+                return false;
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        
+        if (data.httpStatus === 'OK' && data.data) {
+            const hasNew = data.data.hasNew;
+            console.log('새 알림 여부 확인:', hasNew);
+            updateNotificationBadge(hasNew);
+            return hasNew;
+        } else {
+            throw new Error(data.message || '새 알림 확인 실패');
+        }
+    } catch (error) {
+        console.error('새 알림 확인 실패:', error);
+        return false;
+    } finally {
+        window.apiFlags.checkingNotifications = false;
     }
 }
 
@@ -651,9 +696,13 @@ async function fetchNotifications(pivot = null) {
         if (!response.ok) {
             if (response.status === 401) {
                 // 토큰 만료 시 갱신 시도
-                const refreshSuccess = await refreshAccessToken();
-                if (refreshSuccess) {
-                    return await fetchNotifications(pivot);
+                if (typeof refreshAccessToken === 'function') {
+                    const refreshSuccess = await refreshAccessToken();
+                    if (refreshSuccess) {
+                        return await fetchNotifications(pivot);
+                    }
+                } else {
+                    console.warn('refreshAccessToken 함수를 찾을 수 없습니다.');
                 }
             }
             throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -704,6 +753,10 @@ function renderNotifications(notifications, append = false) {
         const notificationItem = document.createElement('div');
         notificationItem.className = `notification-item ${!notification.read ? 'unread' : ''}`;
         notificationItem.dataset.notificationId = notification.id;
+        notificationItem.style.cursor = 'pointer';
+        
+        // 알림 클릭 이벤트 추가
+        notificationItem.addEventListener('click', () => handleNotificationClick(notification));
         
         notificationItem.innerHTML = `
             <div class="notification-avatar">
@@ -752,6 +805,19 @@ function formatTimeAgo(timestamp) {
 
 // 알림 드롭다운 열릴 때 알림 로드
 function loadNotificationsOnDropdownOpen() {
+    // window.notificationState가 아직 초기화되지 않은 경우 초기화
+    if (!window.notificationState) {
+        console.log('notificationState 초기화됨');
+        window.notificationState = {
+            notifications: [],
+            pivot: null,
+            hasNext: true,
+            loading: false,
+            initialized: false,
+            infiniteScrollSetup: false
+        };
+    }
+    
     if (!window.notificationState.initialized) {
         loadInitialNotifications();
     }
@@ -790,6 +856,19 @@ async function loadInitialNotifications() {
 
 // 더 많은 알림 로드 (무한 스크롤)
 async function loadMoreNotifications() {
+    // window.notificationState가 아직 초기화되지 않은 경우 초기화
+    if (!window.notificationState) {
+        console.log('loadMoreNotifications: notificationState 초기화됨');
+        window.notificationState = {
+            notifications: [],
+            pivot: null,
+            hasNext: true,
+            loading: false,
+            initialized: false,
+            infiniteScrollSetup: false
+        };
+    }
+    
     console.log('loadMoreNotifications 호출됨', {
         hasNext: window.notificationState.hasNext,
         loading: window.notificationState.loading,
@@ -829,6 +908,19 @@ async function loadMoreNotifications() {
 
 // 무한 스크롤 설정
 function setupNotificationInfiniteScroll() {
+    // window.notificationState가 아직 초기화되지 않은 경우 초기화
+    if (!window.notificationState) {
+        console.log('setupNotificationInfiniteScroll: notificationState 초기화됨');
+        window.notificationState = {
+            notifications: [],
+            pivot: null,
+            hasNext: true,
+            loading: false,
+            initialized: false,
+            infiniteScrollSetup: false
+        };
+    }
+    
     // 이미 설정되었으면 재설정하지 않음
     if (window.notificationState.infiniteScrollSetup) {
         console.log('무한 스크롤 이미 설정됨');
@@ -863,4 +955,106 @@ function setupNotificationInfiniteScroll() {
             loadMoreNotifications();
         }
     });
+}
+
+// ========== 개별 알림 읽음 처리 ==========
+
+// 알림 클릭 핸들러
+async function handleNotificationClick(notification) {
+    console.log('알림 클릭됨:', notification);
+    
+    // 안읽은 알림이면 읽음 처리
+    if (!notification.read) {
+        const success = await markNotificationAsRead(notification.id);
+        if (success) {
+            // UI에서 읽음 상태로 변경
+            const notificationElement = document.querySelector(`[data-notification-id="${notification.id}"]`);
+            if (notificationElement) {
+                notificationElement.classList.remove('unread');
+            }
+            
+            // 배지 업데이트
+            const totalUnreadInList = document.querySelectorAll('.notification-item.unread').length;
+            updateNotificationBadge(totalUnreadInList > 0);
+            
+            // 메모리에서도 읽음 상태로 업데이트
+            if (window.notificationState && window.notificationState.notifications) {
+                const notificationInState = window.notificationState.notifications.find(n => n.id === notification.id);
+                if (notificationInState) {
+                    notificationInState.read = true;
+                }
+            }
+        }
+    }
+    
+    // 알림 타입에 따라 페이지 이동
+    const targetUrl = getNotificationTargetUrl(notification);
+    if (targetUrl) {
+        window.location.href = targetUrl;
+    }
+}
+
+// 알림 타입에 따른 이동 URL 결정
+function getNotificationTargetUrl(notification) {
+    const type = notification.type.toUpperCase();
+    
+    switch (type) {
+        case 'LIKE':
+            // 좋아요 알림: 숙소 상세 페이지로 이동
+            if (notification.houseId) {
+                return `/page/listing-detail?id=${notification.houseId}`;
+            }
+            break;
+        case 'SWAP':
+        case 'BOOKING':
+        case 'CHECK_IN':
+        case 'CHECK_OUT':
+        case 'TEST_NOTIFICATION':
+            // 교환 관련 알림: 교환 관리 페이지로 이동
+            return '/page/exchanges';
+        default:
+            console.warn('알 수 없는 알림 타입:', type);
+            return '/page/exchanges'; // 기본값으로 교환 관리 페이지
+    }
+    
+    return null;
+}
+
+// 개별 알림 읽음 처리 API
+async function markNotificationAsRead(notificationId) {
+    if (!window.auth?.accessToken) {
+        console.error('인증 토큰이 없습니다.');
+        return false;
+    }
+    
+    try {
+        const response = await fetch(`/api/notifications/${notificationId}/read`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${window.auth.accessToken}`,
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        });
+        
+        if (!response.ok) {
+            if (response.status === 401) {
+                console.log('알림 읽음 처리 중 401 오류 - auth-common.js에서 토큰 갱신 처리됨');
+                return false;
+            }
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        
+        if (data.httpStatus === 'OK') {
+            console.log('개별 알림 읽음 처리 성공:', notificationId);
+            return true;
+        } else {
+            throw new Error(data.message || '알림 읽음 처리 실패');
+        }
+    } catch (error) {
+        console.error('개별 알림 읽음 처리 실패:', error);
+        return false;
+    }
 } 

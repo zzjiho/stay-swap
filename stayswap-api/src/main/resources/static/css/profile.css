@@ -35,8 +35,10 @@
 /* 메인 컨테이너 */
 .profile-container {
     max-width: 1200px;
-    margin: 2rem auto;
-    padding: 0 1rem;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    position: relative;
+    z-index: 1; /* 헤더 드롭다운보다 낮게 설정 */
 }
 
 /* 프로필 헤더 */
@@ -1055,6 +1057,69 @@ input:checked + .toggle-slider:before {
 }
 
 .review-house-info .house-label {
-    font-size: 13px;
-    color: #717171;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* 프로필 페이지 알림 메시지 스타일 */
+.profile-notification-message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 12px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    z-index: 1100;
+    animation: slideDown 0.3s ease, slideUp 0.3s ease 2.7s;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.profile-notification-message.success {
+    background-color: #10b981;
+    color: white;
+}
+
+.profile-notification-message.error {
+    background-color: #ef4444;
+    color: white;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+}
+
+/* 토글 로딩 스타일 */
+.toggle-loading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #666;
+    font-size: 0.9rem;
+}
+
+.toggle-loading i {
+    color: #4361ee;
 }

@@ -1,8 +1,79 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('listing-detail.js 로드됨');
     
+    // Google Maps API 로딩 상태 확인
+    function checkGoogleMapsAPI() {
+        console.log('🔍 Google Maps API 상태 확인 중...');
+        
+        if (typeof google === 'undefined') {
+            console.error('❌ Google Maps API가 로드되지 않았습니다.');
+            return false;
+        }
+        
+        if (!google.maps) {
+            console.error('❌ google.maps 객체가 없습니다.');
+            return false;
+        }
+        
+        if (!google.maps.Map) {
+            console.error('❌ google.maps.Map이 없습니다.');
+            return false;
+        }
+        
+        console.log('✅ Google Maps API 로딩 완료!');
+        return true;
+    }
+    
+    // Google Maps API 로딩 대기 함수
+    function waitForGoogleMapsAPI(callback, maxAttempts = 50) {
+        let attempts = 0;
+        
+        const checkInterval = setInterval(() => {
+            attempts++;
+            console.log(`🔄 Google Maps API 로딩 확인 시도 ${attempts}/${maxAttempts}`);
+            
+            if (checkGoogleMapsAPI()) {
+                clearInterval(checkInterval);
+                console.log('🎉 Google Maps API 로딩 완료! 콜백 실행');
+                callback();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                console.error('❌ Google Maps API 로딩 시간 초과');
+                // API 로딩에 실패해도 주소 정보는 표시
+                if (window.pendingMapData) {
+                    const { latitude, longitude, address } = window.pendingMapData;
+                    const mapElement = document.getElementById('listing-map');
+                    if (mapElement) {
+                        mapElement.innerHTML = `
+                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666; text-align: center; font-size: 14px;">
+                                <div>
+                                    <i class="fas fa-map-marker-alt" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                                    Google Maps API 로딩에 실패했습니다.<br>
+                                    페이지를 새로고침해보세요.
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    const addressElement = document.getElementById('location-address');
+                    if (addressElement) {
+                        addressElement.textContent = address || '위치 정보를 불러올 수 없습니다.';
+                    }
+                }
+            }
+        }, 100); // 100ms마다 확인
+    }
+    
     // 로딩 스피너 표시
     $('#loading-overlay').show();
+    
+    // 지도 관련 전역 변수
+    let map = null;
+    let marker = null;
+    let rectangle = null;
+    
+    // 대기 중인 지도 데이터 저장용
+    window.pendingMapData = null;
     
     // 페이지 로드 시 URL에서 id 파라미터 가져오기
     const urlParams = new URLSearchParams(window.location.search);
@@ -625,6 +696,61 @@ document.addEventListener('DOMContentLoaded', function() {
                 $('#listing-rules').text(houseData.rule);
             }
 
+            // 지도 초기화 (Google Maps API 로딩 대기)
+            if (houseData.latitude && houseData.longitude) {
+                console.log('위도/경도 정보 있음. Google Maps API 로딩 대기 후 지도 초기화:', houseData.latitude, houseData.longitude);
+                
+                // 지도 데이터 저장
+                window.pendingMapData = {
+                    latitude: houseData.latitude,
+                    longitude: houseData.longitude,
+                    address: houseData.address
+                };
+                
+                                  // Google Maps API 로딩을 기다린 후 지도 초기화
+                  const viewportData = {
+                      northeastLat: houseData.viewportNortheastLat,
+                      northeastLng: houseData.viewportNortheastLng,
+                      southwestLat: houseData.viewportSouthwestLat,
+                      southwestLng: houseData.viewportSouthwestLng
+                  };
+                  
+                  waitForGoogleMapsAPI(() => {
+                      initializeMap(houseData.latitude, houseData.longitude, houseData.address, viewportData);
+                  });
+                
+            } else {
+                console.warn('위도/경도 정보가 없어 지도를 표시할 수 없습니다.');
+                console.log('🔍 houseData.latitude:', houseData.latitude);
+                console.log('🔍 houseData.longitude:', houseData.longitude);
+                console.log('🔍 전체 houseData:', houseData);
+                
+                // 위도/경도가 없어도 주소가 있으면 Geocoding API로 좌표를 찾아서 지도 표시
+                if (houseData.address && houseData.address.trim() !== '') {
+                    console.log('📍 주소 기반으로 지도 표시 시도:', houseData.address);
+                    
+                    // 지도 데이터 저장
+                    window.pendingMapData = {
+                        latitude: null,
+                        longitude: null,
+                        address: houseData.address
+                    };
+                    
+                    // Google Maps API 로딩을 기다린 후 주소 기반 지도 표시
+                    waitForGoogleMapsAPI(() => {
+                        geocodeAndShowMap(houseData.address);
+                    });
+                    
+                } else {
+                    // 주소도 없으면 지도 섹션 숨기기
+                    document.getElementById('location-address').textContent = houseData.address || '위치 정보를 불러올 수 없습니다.';
+                    const mapContainer = document.querySelector('.location-section');
+                    if (mapContainer) {
+                        mapContainer.style.display = 'none';
+                    }
+                }
+            }
+
             console.log('UI 업데이트 완료');
         } catch (e) {
             console.error('UI 업데이트 중 오류 발생:', e);
@@ -839,5 +965,446 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log('기본 이미지를 사용합니다.');
             }
         });
+    }
+
+    // 주소를 이용해서 지도 표시하는 함수
+    function geocodeAndShowMap(address) {
+        console.log('🔍 주소로 지도 찾기 시작:', address);
+        
+        // Google Maps API 상태 확인
+        if (!checkGoogleMapsAPI()) {
+            console.error('❌ Google Maps API를 사용할 수 없어 주소 기반 지도 표시를 중단합니다.');
+            
+            // 주소 정보만 표시
+            document.getElementById('location-address').textContent = address;
+            
+            // 지도 영역에 메시지 표시
+            const mapElement = document.getElementById('listing-map');
+            if (mapElement) {
+                mapElement.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666; text-align: center; font-size: 14px;">
+                        <div>
+                            <i class="fas fa-map-marker-alt" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                            Google Maps API를 사용할 수 없습니다.
+                        </div>
+                    </div>
+                `;
+            }
+            return;
+        }
+        
+        // DOM 요소 확인
+        const mapElement = document.getElementById('listing-map');
+        if (!mapElement) {
+            console.error('❌ 지도 DOM 요소를 찾을 수 없습니다.');
+            return;
+        }
+        
+        try {
+            // Geocoding API를 사용해서 주소를 좌표로 변환
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({
+                address: address,
+                componentRestrictions: { country: 'KR' } // 한국 내에서만 검색
+            }, (results, status) => {
+                console.log('📡 주소 기반 Geocoding API 응답:', status, results);
+                
+                if (status === 'OK' && results[0] && results[0].geometry) {
+                    const location = results[0].geometry.location;
+                    const lat = location.lat();
+                    const lng = location.lng();
+                    
+                    console.log('✅ 주소에서 좌표 추출 성공:', { lat, lng });
+                    
+                    // 추출된 좌표로 지도 표시
+                    initializeMap(lat, lng, address, results[0].geometry.viewport);
+                    
+                } else {
+                    console.error('❌ 주소에서 좌표 추출 실패:', status);
+                    
+                    // Geocoding 실패 시 기본 지도 표시
+                    console.log('📍 기본 지도 표시 (서울 시청)');
+                    const defaultLocation = { lat: 37.5665, lng: 126.9780 };
+                    
+                    map = new google.maps.Map(mapElement, {
+                        center: defaultLocation,
+                        zoom: 10,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: true
+                    });
+                    
+                    // 주소 정보 표시
+                    document.getElementById('location-address').textContent = address;
+                    
+                    // 정보창으로 메시지 표시
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="padding: 10px; text-align: center;">
+                                <strong>${address}</strong><br>
+                                <small>정확한 위치를 찾을 수 없어 기본 지도를 표시합니다.</small>
+                            </div>
+                        `,
+                        position: defaultLocation
+                    });
+                    infoWindow.open(map);
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ 주소 기반 지도 표시 실패:', error);
+            
+            // 오류 시 메시지 표시
+            const mapElement = document.getElementById('listing-map');
+            if (mapElement) {
+                mapElement.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #ffe6e6; color: #d00; text-align: center; font-size: 14px; border: 1px solid #ffb3b3;">
+                        <div>
+                            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                            주소 기반 지도 표시 중 오류가 발생했습니다.<br>
+                            오류: ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('location-address').textContent = address || '지도를 불러올 수 없습니다.';
+        }
+    }
+
+    // 악의적 새로고침 방지를 위한 보호 장치
+    function checkRefreshLimit() {
+        const now = Date.now();
+        const timeWindow = 60 * 1000; // 1분
+        const maxRefreshes = 10; // 1분에 최대 10회
+        
+        try {
+            // 새로고침 기록 가져오기
+            const refreshKey = 'mapRefreshLog';
+            const refreshLog = JSON.parse(sessionStorage.getItem(refreshKey) || '[]');
+            
+            // 1분 이내의 기록만 유지
+            const recentRefreshes = refreshLog.filter(timestamp => now - timestamp < timeWindow);
+            
+            // 현재 새로고침 추가
+            recentRefreshes.push(now);
+            
+            // 기록 저장
+            sessionStorage.setItem(refreshKey, JSON.stringify(recentRefreshes));
+            
+            // 제한 확인
+            if (recentRefreshes.length > maxRefreshes) {
+                console.warn('⚠️ 과도한 새로고침 감지:', recentRefreshes.length, '회/분');
+                return {
+                    blocked: true,
+                    count: recentRefreshes.length,
+                    remaining: Math.ceil((recentRefreshes[0] + timeWindow - now) / 1000)
+                };
+            }
+            
+            return {
+                blocked: false,
+                count: recentRefreshes.length
+            };
+            
+        } catch (e) {
+            console.warn('새로고침 체크 실패:', e);
+            return { blocked: false, count: 1 };
+        }
+    }
+    
+    // 세션 스토리지 캐싱을 위한 헬퍼 함수들
+    function getSessionCache(key) {
+        try {
+            const cached = sessionStorage.getItem(`mapCache_${key}`);
+            if (cached) {
+                const data = JSON.parse(cached);
+                // 30분 이내의 캐시만 유효
+                if (Date.now() - data.timestamp < 30 * 60 * 1000) {
+                    return data;
+                }
+                // 만료된 캐시 삭제
+                sessionStorage.removeItem(`mapCache_${key}`);
+            }
+        } catch (e) {
+            console.warn('세션 캐시 읽기 실패:', e);
+        }
+        return null;
+    }
+    
+    function setSessionCache(key, data) {
+        try {
+            const cacheData = {
+                ...data,
+                timestamp: Date.now()
+            };
+            sessionStorage.setItem(`mapCache_${key}`, JSON.stringify(cacheData));
+            console.log('💾 세션 스토리지에 지도 설정 저장:', key);
+        } catch (e) {
+            console.warn('세션 캐시 저장 실패:', e);
+        }
+    }
+    
+    // 지도 초기화 함수
+    function initializeMap(latitude, longitude, address, viewportData) {
+        console.log('🗺️ 지도 초기화 시작:', { latitude, longitude, address, viewportData });
+        
+        // 악의적 새로고침 체크
+        const refreshCheck = checkRefreshLimit();
+        if (refreshCheck.blocked) {
+            console.error('🚫 과도한 새로고침으로 인한 지도 로딩 차단');
+            console.log(`⏰ ${refreshCheck.remaining}초 후 다시 시도 가능`);
+            
+            // 차단 메시지 표시
+            const mapElement = document.getElementById('listing-map');
+            if (mapElement) {
+                mapElement.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #fff3cd; color: #856404; text-align: center; font-size: 14px; border: 1px solid #ffeaa7;">
+                        <div>
+                            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                            <strong>과도한 새로고침이 감지되었습니다.</strong><br>
+                            잠시 후 다시 시도해주세요.<br>
+                            <small>(${refreshCheck.remaining}초 후 재시도 가능)</small>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // 주소 정보는 표시
+            if (address) {
+                document.getElementById('location-address').textContent = address;
+            }
+            
+            // 자동 재시도 (제한 시간 후)
+            setTimeout(() => {
+                console.log('🔄 자동 재시도...');
+                initializeMap(latitude, longitude, address, viewportData);
+            }, refreshCheck.remaining * 1000);
+            
+            return;
+        }
+        
+        // 새로고침 횟수 로깅
+        if (refreshCheck.count > 3) {
+            console.warn(`⚠️ 빈번한 새로고침: ${refreshCheck.count}회/분`);
+        }
+        
+        // 캐시 키 생성 (숙소 ID 기반)
+        const urlParams = new URLSearchParams(window.location.search);
+        const houseId = urlParams.get('houseId') || window.location.pathname.split('/').pop();
+        const cacheKey = `house_${houseId}_${latitude}_${longitude}`;
+        
+        // 세션 캐시 확인 (설정값만 캐시)
+        const cachedData = getSessionCache(cacheKey);
+        if (cachedData) {
+            console.log('♻️ 세션 스토리지에서 지도 설정 재사용:', cacheKey);
+            console.log('⏰ 캐시 생성 시간:', new Date(cachedData.timestamp).toLocaleString());
+        }
+        
+        // 일단 주소 정보부터 표시
+        if (address) {
+            document.getElementById('location-address').textContent = address;
+        }
+        
+        // Google Maps API 상태 확인
+        if (!checkGoogleMapsAPI()) {
+            console.error('❌ Google Maps API를 사용할 수 없어 지도 초기화를 중단합니다.');
+            
+            // Google Maps API가 없는 경우 대체 메시지 표시
+            const mapElement = document.getElementById('listing-map');
+            if (mapElement) {
+                mapElement.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #f0f0f0; color: #666; text-align: center; font-size: 14px;">
+                        <div>
+                            <i class="fas fa-map-marker-alt" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                            지도를 불러올 수 없습니다.<br>
+                            Google Maps API 로딩을 확인해주세요.
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('location-address').textContent = address || '지도를 불러올 수 없습니다.';
+            return;
+        }
+        
+        // DOM 요소 확인
+        const mapElement = document.getElementById('listing-map');
+        if (!mapElement) {
+            console.error('❌ 지도 DOM 요소를 찾을 수 없습니다. (id: listing-map)');
+            return;
+        }
+        
+        console.log('✅ 지도 DOM 요소 확인:', mapElement);
+        console.log('🎯 지도 요소 크기:', mapElement.offsetWidth, 'x', mapElement.offsetHeight);
+        
+        // 지도 요소가 화면에 보이는지 확인
+        if (mapElement.offsetWidth === 0 || mapElement.offsetHeight === 0) {
+            console.warn('⚠️ 지도 요소가 화면에 보이지 않습니다. 잠시 후 다시 시도합니다.');
+            
+            // 100ms 후 다시 시도
+            setTimeout(() => {
+                console.log('🔄 지도 초기화 재시도...');
+                initializeMap(latitude, longitude, address, viewportData);
+            }, 100);
+            return;
+        }
+        
+        try {
+            // 위도/경도 유효성 확인
+            if (!latitude || !longitude || latitude === 0 || longitude === 0) {
+                console.error('❌ 유효하지 않은 위도/경도:', { latitude, longitude });
+                
+                // 기본 지도라도 표시
+                console.log('📍 기본 위치로 지도 표시 (서울 시청)');
+                const defaultLocation = { lat: 37.5665, lng: 126.9780 };
+                
+                map = new google.maps.Map(mapElement, {
+                    center: defaultLocation,
+                    zoom: 10,
+                    mapTypeControl: false,
+                    streetViewControl: false,
+                    fullscreenControl: true
+                });
+                
+                // 기본 메시지 표시
+                const infoWindow = new google.maps.InfoWindow({
+                    content: '정확한 위치 정보를 불러올 수 없습니다.'
+                });
+                infoWindow.open(map);
+                
+                document.getElementById('location-address').textContent = address || '위치 정보가 유효하지 않습니다.';
+                return;
+            }
+            
+            // 지도가 이미 있으면 제거
+            if (map) {
+                console.log('🔄 기존 지도 제거 중...');
+                map = null;
+                marker = null;
+                rectangle = null;
+            }
+            
+            const location = { lat: parseFloat(latitude), lng: parseFloat(longitude) };
+            console.log('📍 최종 위치 좌표:', location);
+            
+            // 캐시된 설정이 있으면 최적화된 설정으로 지도 생성
+            const useCache = cachedData && cachedData.viewportData;
+            console.log(useCache ? 
+                '🗺️ 🚀 캐시된 설정으로 최적화된 지도 생성...' : 
+                '🗺️ ⚡ 새 지도 생성 중... (첫 방문)');
+            
+            map = new google.maps.Map(mapElement, {
+                center: location,
+                zoom: useCache ? (cachedData.zoom || 14) : 14,
+                mapTypeControl: false,
+                streetViewControl: false,
+                fullscreenControl: true,
+                styles: [
+                    {
+                        featureType: 'poi.business',
+                        stylers: [{ visibility: 'on' }]
+                    }
+                ]
+            });
+            
+            console.log('✅ 지도 생성 완료!', map);
+            
+            // 지도 로딩 완료 대기
+            google.maps.event.addListenerOnce(map, 'idle', function() {
+                console.log('🎉 지도 렌더링 완료!');
+                
+                // viewport 정보가 있으면 빨간색 영역 표시
+                const useViewportData = viewportData || (cachedData && cachedData.viewportData);
+                
+                if (useViewportData && useViewportData.northeastLat && useViewportData.northeastLng && 
+                    useViewportData.southwestLat && useViewportData.southwestLng) {
+                    
+                    console.log('🎯 Viewport 영역 표시:', useViewportData);
+                    console.log(cachedData ? '📦 (캐시된 설정 사용)' : '🆕 (새 설정)');
+                    
+                    // 기존 영역 제거
+                    if (rectangle) {
+                        rectangle.setMap(null);
+                    }
+                    
+                    // LatLngBounds 객체 생성
+                    const bounds = new google.maps.LatLngBounds(
+                        new google.maps.LatLng(useViewportData.southwestLat, useViewportData.southwestLng), // 남서쪽
+                        new google.maps.LatLng(useViewportData.northeastLat, useViewportData.northeastLng)  // 북동쪽
+                    );
+                    
+                    // 영역을 사각형으로 표시 (빨간색 반투명)
+                    rectangle = new google.maps.Rectangle({
+                        bounds: bounds,
+                        fillColor: '#FF4444',
+                        fillOpacity: 0.25,
+                        strokeColor: '#FF0000',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        map: map
+                    });
+                    
+                    // 지도 뷰를 viewport에 맞춤
+                    map.fitBounds(bounds);
+                    
+                    console.log('🎨 영역 표시 완료! (Geocoding API 호출 없음)');
+                    
+                } else {
+                    console.log('⚠️ Viewport 정보 없음, 마커로 표시');
+                    
+                    // viewport가 없으면 기존처럼 마커 표시
+                    if (marker) {
+                        marker.setMap(null);
+                    }
+                    
+                    marker = new google.maps.Marker({
+                        position: location,
+                        map: map,
+                        title: '숙소 위치',
+                        animation: google.maps.Animation.DROP
+                    });
+                    
+                    map.setCenter(location);
+                    map.setZoom(16);
+                    
+                    console.log('📍 마커 표시 완료!');
+                }
+                
+                // 세션 스토리지에 설정 저장 (첫 방문이거나 캐시가 없는 경우만)
+                if (!cachedData) {
+                    setSessionCache(cacheKey, {
+                        houseId: houseId,
+                        location: location,
+                        viewportData: viewportData,
+                        zoom: map.getZoom(),
+                        center: map.getCenter().toJSON()
+                    });
+                    
+                    console.log('💾 지도 설정 세션 스토리지 저장 완료:', cacheKey);
+                } else {
+                    console.log('♻️ 기존 캐시 재사용 - 저장 생략');
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ 지도 초기화 실패:', error);
+            
+            // 지도 생성 실패 시 에러 메시지 표시
+            const mapElement = document.getElementById('listing-map');
+            if (mapElement) {
+                mapElement.innerHTML = `
+                    <div style="display: flex; align-items: center; justify-content: center; height: 100%; background: #ffe6e6; color: #d00; text-align: center; font-size: 14px; border: 1px solid #ffb3b3;">
+                        <div>
+                            <i class="fas fa-exclamation-triangle" style="font-size: 24px; margin-bottom: 10px; display: block;"></i>
+                            지도 로딩 중 오류가 발생했습니다.<br>
+                            오류: ${error.message}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('location-address').textContent = address || '지도를 불러올 수 없습니다.';
+        }
     }
 });

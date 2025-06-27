@@ -527,3 +527,50 @@
         height: 100px;
     }
 }
+
+/* Google Maps 스타일 */
+#map-container {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+#map-container:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* PlaceAutocompleteElement 스타일 */
+gmp-place-autocomplete {
+    width: 100%;
+    margin-top: 0.5rem;
+}
+
+/* 자동완성 드롭다운 스타일 */
+.pac-container {
+    border-radius: 8px;
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: inherit;
+}
+
+.pac-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.pac-item:hover {
+    background-color: #f5f5f5;
+}
+
+.pac-item-selected {
+    background-color: rgba(67, 97, 238, 0.1);
+}
+
+.pac-icon {
+    margin-right: 0.5rem;
+}
+
+.pac-item-query {
+    font-size: 0.9375rem;
+    color: #333;
+}

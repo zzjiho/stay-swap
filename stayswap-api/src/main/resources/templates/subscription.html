@@ -289,11 +289,31 @@
 </main>
 
 <div th:replace="~{layout/footer :: footer}"></div>
+<script th:src="@{/js/auth-common.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // 현재 사용자의 구독 정보 가져오기
         fetchSubscriptionInfo();
+
+        // DOM 로드 후 헤더 드롭다운 재초기화 (알림 버튼 작동을 위해)
+        console.log('🔍 Subscription.html - 드롭다운 재초기화 시도');
+        if (typeof window.reinitializeDropdowns === 'function') {
+            setTimeout(() => {
+                console.log('🔍 Subscription.html - reinitializeDropdowns 호출');
+                window.reinitializeDropdowns();
+                
+                // 재초기화 후 알림 버튼 상태 확인
+                const notificationToggle = document.getElementById('notification-dropdown-toggle');
+                console.log('🔍 Subscription.html - 재초기화 후 알림 버튼 상태:', {
+                    exists: !!notificationToggle,
+                    hasClickListener: notificationToggle?.onclick !== null,
+                    dataset: notificationToggle?.dataset
+                });
+            }, 200);
+        } else {
+            console.error('🔍 Subscription.html - reinitializeDropdowns 함수가 없음');
+        }
 
         // FAQ 아코디언
         const faqItems = document.querySelectorAll('.faq-item');

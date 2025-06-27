@@ -10,14 +10,14 @@
     <link rel="stylesheet" th:href="@{/css/notification.css}" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     
-
-
     <!-- Firebase / Auth 공통 -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- Auth 초기화 미리 생성 -->
+    <!-- 🔍 기본 테스트 로그 -->
     <script>
-        // auth 객체 미리 초기화
+        console.log('🔍 TEST 1: HTML HEAD에서 스크립트 실행됨');
+        
+        // auth 객체 미리 초기화 (auth-common.js가 없는 경우 대비)
         window.auth = window.auth || {
             accessToken: null,
             tokenExpireTime: null,
@@ -32,11 +32,37 @@
             errors: []
         };
         
-        console.log('🔍 Layout script loaded: auth and fcmDebug objects initialized');
+        // 이전 로그인 상태를 로컬스토리지에서 확인하여 초기 UI 설정
+        const lastLoginState = localStorage.getItem('stayswap_last_login_state');
+        
+        // 페이지 로드 즉시 초기 상태 설정 (깜빡임 최소화)
+        function setInitialUIState() {
+            const userProfile = document.getElementById('user-profile');
+            const notificationIcon = document.getElementById('notification-icon');
+            const authButtons = document.getElementById('auth-buttons');
+            
+            if (lastLoginState === 'true') {
+                // 이전에 로그인 상태였다면 미리 로그인 UI 표시
+                if (userProfile) userProfile.style.display = 'block';
+                if (notificationIcon) notificationIcon.style.display = 'block';
+                if (authButtons) authButtons.style.display = 'none';
+                console.log('🔍 이전 로그인 상태 기반으로 UI 미리 설정됨');
+            } else {
+                // 이전에 로그아웃 상태였다면 로그인 버튼 표시
+                if (authButtons) authButtons.style.display = 'flex';
+                console.log('🔍 이전 로그아웃 상태 기반으로 UI 미리 설정됨');
+            }
+        }
+        
+        // DOM이 준비되면 즉시 설정
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setInitialUIState);
+        } else {
+            setInitialUIState();
+        }
+        
+        console.log('🔍 TEST 2: Layout script loaded: auth and fcmDebug objects initialized');
     </script>
-    
-    <!-- Auth 공통 스크립트 -->
-    <script th:src="@{/js/auth-common.js}"></script>
 </head>
 
 <body>
@@ -73,72 +99,24 @@
                 </div>
                 
                 <!-- 알림 아이콘 -->
-                <div id="notification-icon" class="notification-container" style="display:block;">
+                <div id="notification-icon" class="notification-container" style="display:none;">
                     <a href="#" id="notification-dropdown-toggle" class="notification-icon-link">
                         <i class="fas fa-bell"></i>
-                        <span id="notification-badge" class="notification-badge dot-only" style="display:block;"></span>
+                        <span id="notification-badge" class="notification-badge dot-only" style="display:none;"></span>
                     </a>
-                    
+
                     <div id="notification-dropdown" class="notification-dropdown">
                         <div class="notification-header">
-                            <h3>알림</h3>
-                            <a href="#" class="mark-all-read">모두 읽음</a>
+                            <span>알림</span>
                         </div>
                         <div class="notification-list">
-                            <!-- 안읽은 알림 예시 -->
-                            <div class="notification-item unread">
-                                <div class="notification-avatar">
-                                    <div class="avatar-placeholder">김</div>
-                                    <div class="notification-type-icon like">
-                                        <i class="fas fa-heart"></i>
-                                    </div>
-                                </div>
-                                <div class="notification-content">
-                                    <div class="notification-header">
-                                        <span class="notification-username">김철수</span>
-                                        <span class="notification-time">30분 전</span>
-                                    </div>
-                                    <div class="notification-message">회원님의 숙소를 좋아합니다.</div>
-                                </div>
-                            </div>
-                            <!-- 안읽은 알림 예시 -->
-                            <div class="notification-item unread">
-                                <div class="notification-avatar">
-                                    <div class="avatar-placeholder">이</div>
-                                    <div class="notification-type-icon swap">
-                                        <i class="fas fa-exchange-alt"></i>
-                                    </div>
-                                </div>
-                                <div class="notification-content">
-                                    <div class="notification-header">
-                                        <span class="notification-username">이영희</span>
-                                        <span class="notification-time">2시간 전</span>
-                                    </div>
-                                    <div class="notification-message">숙소 교환을 요청했습니다.</div>
-                                </div>
-                            </div>
-                            <!-- 읽은 알림 예시 -->
-                            <div class="notification-item">
-                                <div class="notification-avatar">
-                                    <div class="avatar-placeholder">박</div>
-                                    <div class="notification-type-icon booking">
-                                        <i class="fas fa-calendar"></i>
-                                    </div>
-                                </div>
-                                <div class="notification-content">
-                                    <div class="notification-header">
-                                        <span class="notification-username">박민수</span>
-                                        <span class="notification-time">1일 전</span>
-                                    </div>
-                                    <div class="notification-message">예약이 확정되었습니다.</div>
-                                </div>
-                            </div>
+                            <!-- 알림 목록이 JavaScript로 동적 로드됩니다 -->
                         </div>
                     </div>
                 </div>
 
                 <!-- 로그인 버튼 -->
-                <div id="auth-buttons">
+                <div id="auth-buttons" style="display:flex;">
                     <a href="/page/auth" class="btn btn-outline">로그인</a>
                 </div>
             </div>
@@ -148,6 +126,11 @@
 
 <main><!-- 페이지별 내용 --></main>
 
+<!-- 🔍 기본 테스트 로그 2 -->
+<script>
+    console.log('🔍 TEST 3: BODY 시작 부분 스크립트 실행됨');
+</script>
+
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -155,9 +138,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
 
+<!-- 🔍 jQuery 로드 테스트 -->
+<script>
+    console.log('🔍 TEST 4: jQuery 로드 후, jQuery 버전:', $ ? $.fn.jquery : 'jQuery 없음');
+</script>
+
 <!-- Firebase 설정 -->
 <script th:inline="javascript">
-    console.log('🔍 Firebase 설정 스크립트 실행 시작');
+    console.log('🔍 TEST 5: Firebase 설정 스크립트 실행 시작');
     try {
         const firebaseConfig = {
             apiKey:          /*[[${firebaseConfig.apiKey}]]*/ '',
@@ -168,6 +156,8 @@
             appId:           /*[[${firebaseConfig.appId}]]*/ '',
             measurementId:   /*[[${firebaseConfig.measurementId}]]*/ ''
         };
+        
+        console.log('🔍 TEST 6: Firebase 설정 객체 생성됨:', firebaseConfig);
         
         // 설정 값 검증
         const missingValues = Object.entries(firebaseConfig)
@@ -197,154 +187,172 @@
     }
 </script>
 
-<!-- 기타 스크립트들 -->
+<!-- 🔍 외부 JS 파일 로드 테스트 -->
+<script>
+    console.log('🔍 TEST 7: 외부 JS 파일 로드 전');
+</script>
+
+<!-- Auth 공통 스크립트 (모든 페이지에서 필요) -->
+<script th:src="@{/js/auth-common.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 
-
-
-<!-- *** 헤더 UI 제어 전용 스크립트 *** -->
+<!-- 🔍 외부 JS 파일 로드 후 테스트 -->
 <script>
-    /* ① 로그인/로그아웃에 따라 버튼만 토글 */
-    function toggleHeaderUI(isLoggedIn) {
-        const userProfile = document.getElementById('user-profile');
-        const authButtons = document.getElementById('auth-buttons');
-        const notificationIcon = document.getElementById('notification-icon');
-        
-        if (isLoggedIn) {
-            userProfile.style.display = 'block';
-            notificationIcon.style.display = 'block';
-            authButtons.style.display = 'none';
-        } else {
-            userProfile.style.display = 'none';
-            notificationIcon.style.display = 'none';
-            authButtons.style.display = 'flex';
-        }
-    }
-
-    /* ② 아바타 이미지·이니셜 세팅 */
-    function fillProfile(user) {
-        if (!user) return;
-        const img  = document.getElementById('profile-image');
-        const init = document.getElementById('profile-initial');
-
-        if (user.profile) {
-            img.src = user.profile;
-            img.style.display  = 'block';
-            init.style.display = 'none';
-        } else {
-            img.style.display  = 'none';
-            init.style.display = 'block';
-            init.textContent   = user.name ? user.name.charAt(0) : '?';
-        }
-    }
-
-    /* ③ 사용자 정보 조회 */
-    async function fetchUserInfo() {
-        // isLoggedIn 함수가 없으면 직접 확인
-        const isUserLoggedIn = (typeof isLoggedIn === 'function') 
-            ? isLoggedIn() 
-            : (!!window.auth?.accessToken);
-        
-        if (isUserLoggedIn) {
-            toggleHeaderUI(true);          // accessToken만 있어도 바로 로그인 UI
-            try {
-                // fetchWithAuth 함수가 없으면 직접 구현
-                const r = (typeof fetchWithAuth === 'function')
-                    ? await fetchWithAuth('/api/user/me')
-                    : await fetch('/api/user/me', {
-                          headers: { Authorization: `Bearer ${window.auth.accessToken}` },
-                          credentials: 'include'
-                      });
-                
-                if (r && r.ok) fillProfile(await r.json());
-            } catch (error) { 
-                /* 실패해도 상관없음 */ 
-            }
-            return;
-        }
-        toggleHeaderUI(false);             // 토큰 없으면 로그인 버튼
-    }
-
-    /* ④ auth 상태 이벤트 → 헤더 동기화 */
-    document.addEventListener('authStateChanged', e => {
-        e.detail.isLoggedIn ? fetchUserInfo() : toggleHeaderUI(false);
-    });
-
-    /* ⑤ 페이지 로드 → 헤더 동기화 */
-    document.addEventListener('DOMContentLoaded', fetchUserInfo);
-
-    /* ⑥ 프로필 드롭다운은 main.js에서 처리 (중복 제거) */
-
+    console.log('🔍 TEST 8: 외부 JS 파일 로드 후');
+    console.log('🔍 window.auth 상태:', window.auth);
+    console.log('🔍 window.isLoggedIn 함수 존재:', typeof window.isLoggedIn);
 </script>
 
-
-
-
-</script>
-
+<!-- 헤더 UI 제어 전용 스크립트 -->
 <script>
-    // 페이지 로드 완료 후 추가 확인 (백업)
-    document.addEventListener('DOMContentLoaded', () => {
-        /* accessToken 있으면 → 로그인 상태로 간주 */
-        if (window.auth?.accessToken) {
-            toggleHeaderUI(true);
-        } else {
-            // 리프레시 토큰 쿠키 확인 함수
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-                return null;
-            }
+    console.log('🔍 TEST 9: Layout 헤더 UI 스크립트 시작');
+    
+    // 헤더 UI 업데이트 함수들 (중복 초기화 방지)
+    if (!window.headerUIInitialized) {
+        window.headerUIInitialized = true;
+        console.log('🔍 TEST 10: 헤더 UI 초기화 시작');
+
+        /* ① 로그인/로그아웃에 따라 버튼만 토글 */
+        window.toggleHeaderUI = function(isLoggedIn) {
+            console.log('🔍 toggleHeaderUI 호출:', isLoggedIn);
+            const userProfile = document.getElementById('user-profile');
+            const authButtons = document.getElementById('auth-buttons');
+            const notificationIcon = document.getElementById('notification-icon');
             
-            // 리프레시 토큰이 있을 때 수동으로 갱신 시도
-            const refreshToken = getCookie('refreshToken');
-            if (refreshToken) {
-                if (typeof initializeAuth === 'function') {
-                    setTimeout(async () => {
-                        try {
-                            const success = await initializeAuth();
-                            if (success) {
-                                toggleHeaderUI(true);
-                            }
-                        } catch (error) {
-                            // 오류 처리
-                        }
-                    }, 500);
-                } else {
-                    setTimeout(async () => {
-                        try {
-                            const r = await fetch('/api/token/refresh', {
-                                method: 'GET',
-                                credentials: 'include'
-                            });
-                            
-                            if (r.ok) {
-                                const data = await r.json();
-                                
-                                window.auth.accessToken = data.accessToken;
-                                window.auth.tokenExpireTime = new Date(data.accessTokenExpireTime).getTime();
-                                window.auth.isInitialized = true;
-                                
-                                toggleHeaderUI(true);
-                                
-                                // 인증 상태 변경 이벤트 발생
-                                document.dispatchEvent(new CustomEvent('authStateChanged', {
-                                    detail: { isLoggedIn: true }
-                                }));
-                            }
-                        } catch (error) {
-                            // 오류 처리
-                        }
-                    }, 500);
+            if (isLoggedIn) {
+                console.log('🔍 로그인 UI 표시');
+                if (userProfile) {
+                    userProfile.style.display = 'block';
+                    console.log('🔍 user-profile 표시됨');
+                }
+                if (notificationIcon) {
+                    notificationIcon.style.display = 'block';
+                    console.log('🔍 notification-icon 표시됨');
+                }
+                if (authButtons) {
+                    authButtons.style.display = 'none';
+                    console.log('🔍 auth-buttons 숨김');
+                }
+            } else {
+                console.log('🔍 로그아웃 UI 표시');
+                if (userProfile) {
+                    userProfile.style.display = 'none';
+                    console.log('🔍 user-profile 숨김');
+                }
+                if (notificationIcon) {
+                    notificationIcon.style.display = 'none';
+                    console.log('🔍 notification-icon 숨김');
+                }
+                if (authButtons) {
+                    authButtons.style.display = 'flex';
+                    console.log('🔍 auth-buttons 표시됨');
                 }
             }
-        }
-    });
+        };
+
+        /* ② 아바타 이미지·이니셜 세팅 */
+        window.fillProfile = function(user) {
+            console.log('🔍 fillProfile 호출:', user);
+            if (!user) return;
+            const img  = document.getElementById('profile-image');
+            const init = document.getElementById('profile-initial');
+
+            if (user.profile) {
+                if (img) {
+                    img.src = user.profile;
+                    img.style.display  = 'block';
+                    console.log('🔍 프로필 이미지 설정됨');
+                }
+                if (init) init.style.display = 'none';
+            } else {
+                if (img) img.style.display  = 'none';
+                if (init) {
+                    init.style.display = 'block';
+                    init.textContent   = user.name ? user.name.charAt(0) : '?';
+                    console.log('🔍 프로필 이니셜 설정됨');
+                }
+            }
+        };
+
+        /* ③ 사용자 정보 조회 */
+        window.fetchUserInfo = async function() {
+            console.log('🔍 fetchUserInfo 호출');
+            
+            // 인증 상태는 auth-common.js에서 관리
+            const isUserLoggedIn = (typeof window.isLoggedIn === 'function') 
+                ? window.isLoggedIn() 
+                : (!!window.auth?.accessToken);
+            
+            console.log('🔍 로그인 상태 확인:', isUserLoggedIn);
+            
+            if (isUserLoggedIn) {
+                window.toggleHeaderUI(true);
+                try {
+                    console.log('🔍 사용자 정보 API 호출 시도');
+                    // fetchWithAuth 함수 사용 (auth-common.js에서 제공)
+                    const r = (typeof window.fetchWithAuth === 'function')
+                        ? await window.fetchWithAuth('/api/user/me')
+                        : await fetch('/api/user/me', {
+                              headers: { Authorization: `Bearer ${window.auth.accessToken}` },
+                              credentials: 'include'
+                          });
+                    
+                    if (r && r.ok) {
+                        const userData = await r.json();
+                        console.log('🔍 사용자 정보 조회 성공:', userData);
+                        window.fillProfile(userData.data || userData);
+                    } else {
+                        console.warn('🔍 사용자 정보 조회 실패 - API 응답 오류');
+                    }
+                } catch (error) { 
+                    console.warn('🔍 사용자 정보 조회 실패:', error);
+                }
+                return;
+            }
+            window.toggleHeaderUI(false);
+        };
+
+        /* ④ auth 상태 이벤트 → 헤더 동기화 */
+        document.addEventListener('authStateChanged', function(e) {
+            console.log('🔍 Layout에서 authStateChanged 이벤트 수신:', e.detail.isLoggedIn);
+            if (e.detail.isLoggedIn) {
+                window.fetchUserInfo();
+            } else {
+                window.toggleHeaderUI(false);
+            }
+        });
+
+        /* ⑤ 페이지 로드 시 헤더 동기화 */
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🔍 TEST 11: Layout DOMContentLoaded - 헤더 동기화 시작');
+            // auth-common.js 로드 대기 후 실행
+            setTimeout(() => {
+                console.log('🔍 TEST 12: 지연 후 fetchUserInfo 호출');
+                window.fetchUserInfo();
+            }, 200); // 200ms로 증가
+        });
+
+        // 추가: 페이지 로드 완료 후에도 한번 더 체크 (백업)
+        window.addEventListener('load', function() {
+            console.log('🔍 TEST 13: Window load 완료 - 추가 체크');
+            setTimeout(() => {
+                // auth 상태가 설정되었지만 UI가 업데이트되지 않았을 경우를 대비
+                if (window.auth?.accessToken && 
+                    document.getElementById('user-profile')?.style.display === 'none') {
+                    console.log('🔍 토큰은 있지만 UI가 업데이트되지 않음 - 강제 업데이트');
+                    window.fetchUserInfo();
+                }
+            }, 300);
+        });
+    } else {
+        console.log('🔍 TEST 10-1: 헤더 UI 이미 초기화됨');
+    }
 </script>
 
-
-
+<!-- 🔍 최종 테스트 -->
+<script>
+    console.log('🔍 TEST 14: Layout 스크립트 로드 완료');
+</script>
 
 </body>
 </html>

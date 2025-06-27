@@ -1,14 +1,25 @@
 /**
- * StaySwap 인증 관련 JavaScript
- * accessToken은 메모리에 저장하고, refreshToken은 HttpOnly 쿠키로 관리합니다.
+ * 소셜 로그인 버튼 처리만 담당
  */
+
+console.log('🔍 AUTH.JS 파일 로드 시작');
 
 // 전역 변수 (메모리에만 저장)
 let accessToken = null;
 let tokenExpireTime = null;
 
+// 중복 호출 방지 플래그
+let isRefreshing = false;
+let authInitialized = false;
+
 // 페이지 로드 시 실행
 document.addEventListener("DOMContentLoaded", () => {
+    console.log('🔍 Auth.js DOMContentLoaded 시작');
+    
+    // 중복 초기화 방지
+    if (authInitialized) return;
+    authInitialized = true;
+    
     // 현재 페이지 URL 확인
     const currentPath = window.location.pathname;
     
@@ -39,15 +50,39 @@ document.addEventListener("DOMContentLoaded", () => {
     if (code) {
         handleKakaoCallback(code);
     } else {
-        // 이미 로그인 상태인지 확인 (페이지 새로고침 시)
+        // 이미 로그인 상태인지 확인 (페이지 새로고침 시) - 중복 호출 방지
         checkLoginStatus();
     }
+
+    // auth-common.js의 인증 상태 변경 이벤트 구독
+    document.addEventListener('authStateChanged', function(e) {
+        console.log('🔍 Auth.js가 authStateChanged 이벤트 수신:', e.detail.isLoggedIn);
+        
+        if (e.detail.isLoggedIn) {
+            // 로그인 성공 시 리디렉션 처리
+            const redirectUrl = new URLSearchParams(window.location.search).get("redirect");
+            if (redirectUrl) {
+                console.log('🔍 리디렉션 URL로 이동:', redirectUrl);
+                window.location.href = redirectUrl;
+            } else if (window.location.pathname === '/page/auth') {
+                // 로그인 페이지에 있으면 홈으로 리다이렉트
+                console.log('🔍 홈으로 리디렉션');
+                window.location.href = '/';
+            }
+        }
+    });
+    
+    console.log('🔍 Auth.js 초기화 완료');
 });
 
 /**
  * 로그인 상태 확인 및 토큰 갱신
  */
 async function checkLoginStatus() {
+    // 중복 호출 방지
+    if (isRefreshing) return;
+    isRefreshing = true;
+
     try {
         // 서버에 토큰 갱신 요청 (refreshToken은 쿠키로 자동 전송됨)
         const response = await fetch('/api/token/refresh', {
@@ -79,6 +114,8 @@ async function checkLoginStatus() {
         setupTokenRenewal();
     } catch (error) {
         console.error('로그인 상태 확인 중 오류:', error);
+    } finally {
+        isRefreshing = false;
     }
 }
 
@@ -86,6 +123,7 @@ async function checkLoginStatus() {
  * 카카오 로그인 처리 함수
  */
 function handleKakaoLogin() {
+    console.log('🔍 카카오 로그인 버튼 클릭');
     // 백엔드에서 제공하는 /kakao 엔드포인트 호출
     window.location.href = "/kakao";
 }
@@ -166,6 +204,10 @@ function isTokenExpired() {
  * 액세스 토큰 갱신 함수
  */
 async function refreshAccessToken() {
+    // 중복 호출 방지
+    if (isRefreshing) return false;
+    isRefreshing = true;
+
     try {
         const response = await fetch('/api/token/refresh', {
             method: 'GET',
@@ -188,6 +230,8 @@ async function refreshAccessToken() {
         console.error('토큰 갱신 중 오류:', error);
         logout();
         return false;
+    } finally {
+        isRefreshing = false;
     }
 }
 
@@ -195,7 +239,6 @@ async function refreshAccessToken() {
  * 로그아웃 함수
  */
 async function logout() {
-    console.log('여기타냐');
     // 메모리의 토큰 삭제
     accessToken = null;
     tokenExpireTime = null;
@@ -247,8 +290,8 @@ async function fetchWithAuth(url, options = {}) {
             credentials: 'include' // 쿠키 포함
         });
         
-        // 401 응답이면 토큰 갱신 후 재시도
-        if (response.status === 401) {
+        // 401 응답이면 토큰 갱신 후 재시도 (단, 이미 갱신 중이 아닐 때만)
+        if (response.status === 401 && !isRefreshing) {
             const refreshed = await refreshAccessToken();
             if (!refreshed) {
                 return null;

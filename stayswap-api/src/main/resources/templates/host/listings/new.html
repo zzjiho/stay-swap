@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,9 @@
     <link rel="stylesheet" th:href="@{/css/listing-form.css}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Google Maps API -->
+    <script async th:src="@{'https://maps.googleapis.com/maps/api/js?key=' + ${googleMapsApiKey} + '&loading=async&libraries=places&callback=initMap'}">
+    </script>
 </head>
 <body>
 <!-- 헤더 포함 -->
@@ -168,8 +171,19 @@
 
             <div class="form-group">
                 <label for="listing-address" class="form-label">주소</label>
-                <input type="text" id="listing-address" name="address" class="form-control" placeholder="예: 서울특별시 강남구 테헤란로 123" required>
-                <div class="form-hint"><i class="fas fa-lock"></i> 안심하세요! 상세 주소는 교환 또는 숙박이 확정된 게스트에게만 공개됩니다.</div>
+                <input type="text" id="listing-address" name="address" class="form-control" placeholder="예: 화양동 17, 강남역 2번출구 (동 단위로 구체적으로 검색해주세요)" required>
+                <!-- PlaceAutocompleteElement 동적으로 추가 -->
+                <div class="form-hint"><i class="fas fa-info-circle"></i> 💡 <strong>주소 검색 팁:</strong> '동' 단위나 구체적인 주소로 검색하면 더 정확하고 빠릅니다!</div>
+            </div>
+
+            <!-- 지도 컨테이너 추가 -->
+            <div class="form-group">
+                <div id="map-container" style="height: 400px; width: 100%; margin-top: 20px; border-radius: 8px; overflow: hidden; display: block; border: 2px solid #ddd;">
+                    <div id="map" style="height: 100%; width: 100%;"></div>
+                </div>
+                <div class="form-hint" id="map-hint" style="display: block; margin-top: 10px;">
+                    <i class="fas fa-info-circle"></i> 주소를 선택하면 지도가 표시됩니다.
+                </div>
             </div>
 
             <div class="form-row">
@@ -450,6 +464,7 @@
 <div th:replace="~{layout/footer :: footer}"></div>
 
 <!-- JavaScript -->
+<script th:src="@{/js/auth-common.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 <script th:src="@{/js/listing-form.js}"></script>
 </body>
