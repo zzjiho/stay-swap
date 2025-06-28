@@ -127,7 +127,13 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                                 houseOption.hasElevator,
                                 houseOption.otherAmenities,
                                 houseOption.otherFeatures
-                        )
+                        ),
+                        house.latitude,
+                        house.longitude,
+                        house.viewportNortheastLat,
+                        house.viewportNortheastLng,
+                        house.viewportSouthwestLat,
+                        house.viewportSouthwestLng
                 ))
                 .from(house)
                 .join(house.user, user)

@@ -50,6 +50,24 @@ public class UpdateHouseRequest {
     @Schema(description = "지역구", example = "강남구")
     private String district;
 
+    @Schema(description = "위도", example = "37.5665")
+    private Double latitude;
+
+    @Schema(description = "경도", example = "126.9780")
+    private Double longitude;
+
+    @Schema(description = "지도 영역 북동쪽 위도", example = "37.5670")
+    private Double viewportNortheastLat;
+
+    @Schema(description = "지도 영역 북동쪽 경도", example = "126.9785")
+    private Double viewportNortheastLng;
+
+    @Schema(description = "지도 영역 남서쪽 위도", example = "37.5660")
+    private Double viewportSouthwestLat;
+
+    @Schema(description = "지도 영역 남서쪽 경도", example = "126.9775")
+    private Double viewportSouthwestLng;
+
     @Schema(description = "반려동물 허용 여부", example = "true")
     private Boolean petsAllowed;
     
@@ -149,6 +167,12 @@ public class UpdateHouseRequest {
             address,
             city,
             district,
+            latitude,
+            longitude,
+            viewportNortheastLat,
+            viewportNortheastLng,
+            viewportSouthwestLat,
+            viewportSouthwestLng,
             petsAllowed,
             options != null ? options.toEntity() : null
         );
