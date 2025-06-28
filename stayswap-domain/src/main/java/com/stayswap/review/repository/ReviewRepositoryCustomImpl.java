@@ -65,14 +65,13 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                         ReceivedReviewResponse.class,
                         review.id,
                         review.user.id,
-                        review.user.nickname.as("userName"),
-                        review.user.profile.as("userProfile"),
-                        review.targetHouse.id,
-                        review.targetHouse.title.as("houseTitle"),
-                        houseImage.imageUrl.as("houseImage"),
+                        review.user.nickname.as("reviewerNickname"),
+                        review.user.profile.as("reviewerProfile"),
                         review.rating,
                         review.comment,
-                        review.regTime
+                        review.regTime.as("createdDate"),
+                        review.targetHouse.title.as("houseTitle"),
+                        review.targetHouse.id.stringValue().as("houseId")
                 ))
                 .from(review)
                 .innerJoin(review.targetHouse, house)

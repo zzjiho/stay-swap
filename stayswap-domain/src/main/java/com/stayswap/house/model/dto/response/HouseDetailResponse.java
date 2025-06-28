@@ -63,6 +63,24 @@ public class HouseDetailResponse {
     @Schema(description = "편의시설 정보")
     private AmenityInfo amenityInfo;
 
+    @Schema(description = "위도", example = "37.5466")
+    private Double latitude;
+
+    @Schema(description = "경도", example = "127.21395")
+    private Double longitude;
+
+    @Schema(description = "지도 영역 북동쪽 위도", example = "37.5470")
+    private Double viewportNortheastLat;
+
+    @Schema(description = "지도 영역 북동쪽 경도", example = "127.2145")
+    private Double viewportNortheastLng;
+
+    @Schema(description = "지도 영역 남서쪽 위도", example = "37.5462")
+    private Double viewportSouthwestLat;
+
+    @Schema(description = "지도 영역 남서쪽 경도", example = "127.2134")
+    private Double viewportSouthwestLng;
+
     @Getter
     @Schema(description = "편의시설 정보")
     @NoArgsConstructor

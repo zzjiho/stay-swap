@@ -52,6 +52,25 @@ public class House extends BaseTimeEntity {
 
     private String district;
 
+    @Column(columnDefinition = "DECIMAL(10,7)")
+    private Double latitude;
+
+    @Column(columnDefinition = "DECIMAL(10,7)")
+    private Double longitude;
+
+    // viewport 영역 정보 (빨간색 영역 표시용)
+    @Column(name = "viewport_northeast_lat", columnDefinition = "DECIMAL(10,7)")
+    private Double viewportNortheastLat;
+
+    @Column(name = "viewport_northeast_lng", columnDefinition = "DECIMAL(10,7)")
+    private Double viewportNortheastLng;
+
+    @Column(name = "viewport_southwest_lat", columnDefinition = "DECIMAL(10,7)")
+    private Double viewportSouthwestLat;
+
+    @Column(name = "viewport_southwest_lng", columnDefinition = "DECIMAL(10,7)")
+    private Double viewportSouthwestLng;
+
     @Column(name = "pets_allowed")
     private Boolean petsAllowed;
 
@@ -73,7 +92,7 @@ public class House extends BaseTimeEntity {
     @Builder.Default
     private List<HouseLike> houseLikes = new ArrayList<>();
 
-    public static House newHouse(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, String district, Boolean petsAllowed, User user, HouseOption houseOption) {
+    public static House newHouse(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, String district, Double latitude, Double longitude, Double viewportNortheastLat, Double viewportNortheastLng, Double viewportSouthwestLat, Double viewportSouthwestLng, Boolean petsAllowed, User user, HouseOption houseOption) {
         return House.builder()
                 .title(title)
                 .description(description)
@@ -87,6 +106,12 @@ public class House extends BaseTimeEntity {
                 .address(address)
                 .city(city)
                 .district(district)
+                .latitude(latitude)
+                .longitude(longitude)
+                .viewportNortheastLat(viewportNortheastLat)
+                .viewportNortheastLng(viewportNortheastLng)
+                .viewportSouthwestLat(viewportSouthwestLat)
+                .viewportSouthwestLng(viewportSouthwestLng)
                 .petsAllowed(petsAllowed)
                 .isActive(true)
                 .isDelete(false)
@@ -97,7 +122,7 @@ public class House extends BaseTimeEntity {
     
     public void update(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, 
                       Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, 
-                      String district, Boolean petsAllowed, HouseOption houseOption) {
+                      String district, Double latitude, Double longitude, Double viewportNortheastLat, Double viewportNortheastLng, Double viewportSouthwestLat, Double viewportSouthwestLng, Boolean petsAllowed, HouseOption houseOption) {
         this.title = title;
         this.description = description;
         this.rule = rule;
@@ -110,6 +135,12 @@ public class House extends BaseTimeEntity {
         this.address = address;
         this.city = city;
         this.district = district;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.viewportNortheastLat = viewportNortheastLat;
+        this.viewportNortheastLng = viewportNortheastLng;
+        this.viewportSouthwestLat = viewportSouthwestLat;
+        this.viewportSouthwestLng = viewportSouthwestLng;
         this.petsAllowed = petsAllowed;
         
         if (houseOption != null) {
