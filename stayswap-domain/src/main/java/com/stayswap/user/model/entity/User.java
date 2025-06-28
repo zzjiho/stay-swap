@@ -51,6 +51,10 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, length = 10)
     private Role role;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private Boolean pushNotificationYN = true;
+
     @Column(length = 250)
     private String refreshToken;
 
@@ -69,17 +73,23 @@ public class User extends BaseTimeEntity {
         this.tokenExpirationTime = tokenExpirationTime;
     }
 
-    /**
-     * 닉네임 수정
-     */
+    // 닉네임 수정
     public void updateNickname(String nickname) {
         this.nickname = nickname;
     }
-    
-    /**
-     * 소개 수정
-     */
+
+    // 소개수정
     public void updateIntroduction(String introduction) {
         this.introduction = introduction;
+    }
+
+    // 프로필 이미지 수정
+    public void updateProfile(String profile) {
+        this.profile = profile;
+    }
+
+    // 푸시 알림 허용 여부 변경
+    public void updatePushNotificationYN(Boolean pushNotificationYN) {
+        this.pushNotificationYN = pushNotificationYN;
     }
 }

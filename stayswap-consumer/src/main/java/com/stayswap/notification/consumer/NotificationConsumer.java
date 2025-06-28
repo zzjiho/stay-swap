@@ -43,16 +43,24 @@ public class NotificationConsumer {
         userRepository.findById(message.getSenderId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
 
+        var recipient = userRepository.findById(message.getRecipientId())
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+
+        // 알림은 항상 저장
         Notification notification = saveNotificationToMongo(message);
 
-        // 푸시 알림 전송 (사용자의 모든 기기에)
-        pushNotificationService.sendPushNotificationToUser(
-                notification.getRecipientId(),
-                notification.getTitle(),
-                notification.getContent(),
-                notification.getType(),
-                notification.getReferenceId()
-        );
+        // 푸시 알림 허용한 사용자에게만 FCM 전송
+        if (recipient.getPushNotificationYN()) {
+            pushNotificationService.sendPushNotificationToUser(
+                    notification.getRecipientId(),
+                    notification.getTitle(),
+                    notification.getContent(),
+                    notification.getType(),
+                    notification.getReferenceId()
+            );
+        } else {
+            log.info("푸시 알림 거부된 사용자: recipientId={}", notification.getRecipientId());
+        }
     }
 
     //  실제 운영에서는 spring cloud stream이 자동으로 감지하는데 테스트는 그렇게 안되서 예외 터트림
