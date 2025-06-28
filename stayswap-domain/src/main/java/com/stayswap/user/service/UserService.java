@@ -11,11 +11,14 @@ import com.stayswap.user.model.dto.response.*;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import com.stayswap.user.repository.nickname.GenerateRandomNicknameRepository;
+import com.stayswap.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -30,6 +33,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final GenerateRandomNicknameRepository nicknameRepository;
     private final ReviewRepository reviewRepository;
+    private final FileUploadUtil fileUploadUtil;
 
     /**
      * 회원가입
@@ -165,4 +169,33 @@ public class UserService {
         return UpdateIntroductionResponse.from(user.getIntroduction());
     }
 
+    /**
+     * 사용자 프로필 이미지 수정
+     */
+    public UpdateProfileImageResponse updateProfileImage(MultipartFile profileImage, Long userId) throws IOException {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+
+        if (!user.getId().equals(userId)) {
+            throw new ForbiddenException(NOT_MY_PROFILE);
+        }
+
+        // 기존 프로필 이미지가 S3에 저장된 것이라면 삭제
+        String oldProfile = user.getProfile();
+        if (oldProfile != null && oldProfile.contains("amazonaws.com")) {
+            try {
+                // S3 URL에서 파일 경로 추출
+                String filePath = oldProfile.substring(oldProfile.indexOf(".com/") + 5);
+                fileUploadUtil.deleteFile(filePath);
+            } catch (Exception e) {
+                log.warn("기존 프로필 이미지 삭제 실패: {}", e.getMessage());
+            }
+        }
+
+        var uploadResponse = fileUploadUtil.uploadFile("profile", profileImage);
+        
+        user.updateProfile(uploadResponse.getFileUrl());
+
+        return UpdateProfileImageResponse.of(uploadResponse.getFileUrl());
+    }
 }

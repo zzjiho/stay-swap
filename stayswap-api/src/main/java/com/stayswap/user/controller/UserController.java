@@ -11,8 +11,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequiredArgsConstructor
@@ -70,6 +74,19 @@ public class UserController {
 
         return RestApiResponse.success(
                 userService.updateIntroduction(request, userInfo.getUserId()));
+    }
+
+    @Operation(
+            summary = "사용자 프로필 이미지 수정 API",
+            description = "사용자 프로필 이미지를 수정합니다. 기존 이미지가 S3에 저장된 경우 자동으로 삭제됩니다."
+    )
+    @PostMapping(value = "/profile-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public RestApiResponse<UpdateProfileImageResponse> updateProfileImage(
+            @RequestParam("profileImage") MultipartFile profileImage,
+            @UserInfo UserInfoDto userInfo) throws IOException {
+
+        return RestApiResponse.success(
+                userService.updateProfileImage(profileImage, userInfo.getUserId()));
     }
 
     @Operation(

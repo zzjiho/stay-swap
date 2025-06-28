@@ -51,7 +51,8 @@ public enum ErrorCode {
     NOT_FOUND_REFRESH_TOKEN(FORBIDDEN, false, "F003", "리프레시 토큰을 찾을 수 없습니다."),
     REFRESH_TOKEN_EXPIRED(FORBIDDEN, false, "F004", "리프레시 토큰이 만료되었습니다."),
     NOT_MY_NICKNAME(FORBIDDEN, false, "F005", "자신의 닉네임만 수정할 수 있습니다."),
-    NOT_MY_INTRODUCTION(FORBIDDEN, false, "F006", "자신의 소개만 수정할 수 있습니다.");
+    NOT_MY_INTRODUCTION(FORBIDDEN, false, "F006", "자신의 소개만 수정할 수 있습니다."),
+    NOT_MY_PROFILE(FORBIDDEN, false, "F007", "자신의 프로필만 수정할 수 있습니다.");
 
 
     private final HttpStatusCode statusCode;
