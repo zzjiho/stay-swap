@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication
 @ComponentScan({
 		"com.stayswap.notification.service.integration",
-		"com.stayswap.user.service",
+		"com.stayswap.user.service.device",
 		"com.stayswap.user.repository",
 		"com.stayswap.config",
 		"com.stayswap.common.config.firebase",

@@ -2,7 +2,7 @@ package com.stayswap.notification.service.integration;
 
 import com.google.firebase.messaging.*;
 import com.stayswap.notification.constant.NotificationType;
-import com.stayswap.user.service.UserDeviceService;
+import com.stayswap.user.service.device.UserDeviceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

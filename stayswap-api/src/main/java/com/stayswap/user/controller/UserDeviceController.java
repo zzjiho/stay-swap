@@ -1,7 +1,7 @@
 package com.stayswap.user.controller;
 
 import com.stayswap.user.model.dto.request.DeviceRegistrationRequest;
-import com.stayswap.user.service.UserDeviceService;
+import com.stayswap.user.service.device.UserDeviceService;
 import com.stayswap.common.resolver.userinfo.UserInfo;
 import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
