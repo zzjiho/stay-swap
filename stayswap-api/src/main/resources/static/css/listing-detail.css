@@ -921,3 +921,58 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* 호스트 메시지 버튼 스타일 */
+.message-host-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e9ecef;
+}
+
+.message-host-btn {
+    position: relative;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+    background-color: #f8f9fa !important;
+    border: 2px dashed #dee2e6 !important;
+    color: #6c757d !important;
+    width: 100% !important;
+}
+
+.message-host-btn:hover {
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.message-host-btn:hover .coming-soon-tooltip {
+    opacity: 1 !important;
+}
+
+.coming-soon-tooltip {
+    position: absolute;
+    top: -45px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 10;
+    font-weight: 500;
+}
+
+.coming-soon-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #333;
+}

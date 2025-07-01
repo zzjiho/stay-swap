@@ -59,6 +59,368 @@
             line-height: 1.5;
             font-size: 14px;
         }
+        
+        /* 리뷰 섹션 스타일 */
+        .reviews-section {
+            margin-bottom: 40px;
+            padding: 30px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .reviews-header .section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #333;
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        
+        .reviews-header .fas.fa-star {
+            color: #ffd700;
+            font-size: 20px;
+        }
+        
+        .reviews-summary {
+            margin-bottom: 32px;
+            padding: 24px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .rating-breakdown {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        
+        .rating-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .rating-label {
+            min-width: 80px;
+            font-size: 14px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .rating-bar {
+            flex: 1;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .rating-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ffd700, #ff6b35);
+            transition: width 0.3s ease;
+        }
+        
+        .rating-score {
+            min-width: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #333;
+            text-align: right;
+        }
+        
+        .reviews-container {
+            margin-bottom: 24px;
+        }
+        
+        .review-item {
+            padding: 20px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            gap: 16px;
+        }
+        
+        .review-item:last-child {
+            border-bottom: none;
+        }
+        
+        .review-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .review-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .review-avatar-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .review-content {
+            flex: 1;
+        }
+        
+        .review-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        
+        .review-author {
+            font-weight: 600;
+            color: #333;
+            font-size: 16px;
+        }
+        
+        .review-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            color: #ffd700;
+            font-size: 14px;
+        }
+        
+        .review-date {
+            color: #999;
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+        
+        .review-text {
+            color: #555;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+        
+        .reviews-loading {
+            text-align: center;
+            padding: 40px 0;
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .reviews-actions {
+            text-align: center;
+            margin-top: 24px;
+        }
+        
+        .show-all-reviews-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: 500;
+            border: 2px solid #007bff;
+            color: #007bff;
+            background: white;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .show-all-reviews-btn:hover {
+            background: #007bff;
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+        }
+        
+        /* 리뷰 모달 스타일 */
+        .reviews-modal {
+            z-index: 1100;
+        }
+        
+        .reviews-modal-container {
+            width: 90%;
+            max-width: 800px;
+            max-height: 85vh;
+            background: white;
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .reviews-modal-title h3 {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0;
+            color: #333;
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .reviews-modal-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 24px 24px;
+        }
+        
+        .reviews-modal-summary {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .rating-breakdown-modal {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 12px;
+        }
+        
+        .reviews-modal-filters {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e9ecef;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            color: #666;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .filter-btn:hover {
+            border-color: #007bff;
+            color: #007bff;
+        }
+        
+        .filter-btn.active {
+            background: #007bff;
+            color: white;
+            border-color: #007bff;
+        }
+        
+        .sort-options select {
+            padding: 8px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            background: white;
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .modal-reviews-container {
+            min-height: 300px;
+        }
+        
+        .modal-reviews-loading {
+            text-align: center;
+            padding: 60px 0;
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .load-more-container {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e9ecef;
+        }
+        
+        .load-more-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            border: 2px solid #6c757d;
+            color: #6c757d;
+            background: white;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .load-more-btn:hover {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .load-more-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* 반응형 디자인 */
+        @media (max-width: 768px) {
+            .reviews-modal-container {
+                width: 95%;
+                max-height: 90vh;
+            }
+            
+            .rating-breakdown {
+                grid-template-columns: 1fr;
+            }
+            
+            .rating-breakdown-modal {
+                grid-template-columns: 1fr;
+            }
+            
+            .reviews-modal-filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-buttons {
+                justify-content: center;
+            }
+            
+            .sort-options {
+                align-self: stretch;
+            }
+            
+            .sort-options select {
+                width: 100%;
+            }
+            
+            .review-item {
+                flex-direction: column;
+                gap: 12px;
+            }
+            
+            .review-avatar {
+                align-self: flex-start;
+            }
+        }
+        
+
     </style>
 </head>
 <body>
@@ -221,9 +583,81 @@
             <div class="location-section">
                 <h2 class="section-title">숙소 위치</h2>
                 <div class="location-map" id="listing-map"></div>
-                <div class="location-info">
-                    <h4>정확한 위치</h4>
-                    <p id="location-address">주소 정보를 불러오는 중...</p>
+<!--                <div class="location-info">-->
+<!--                    <h4>정확한 위치</h4>-->
+<!--                    <p id="location-address">체크인하시는 날 상세 위치를 알림으로 보내드릴게요 😊</p>-->
+<!--                </div>-->
+            </div>
+
+            <!-- 리뷰 섹션 -->
+            <div class="reviews-section">
+                <div class="reviews-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-star"></i>
+                        <span id="reviews-rating">4.9</span>
+                        · 후기 <span id="reviews-count">28</span>개
+                    </h2>
+                </div>
+                
+                <div class="reviews-summary">
+                    <div class="rating-breakdown">
+                        <div class="rating-item">
+                            <span class="rating-label">청결도</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill" style="width: 96%"></div>
+                            </div>
+                            <span class="rating-score">4.8</span>
+                        </div>
+                        <div class="rating-item">
+                            <span class="rating-label">정확성</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill" style="width: 98%"></div>
+                            </div>
+                            <span class="rating-score">4.9</span>
+                        </div>
+                        <div class="rating-item">
+                            <span class="rating-label">의사소통</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill" style="width: 100%"></div>
+                            </div>
+                            <span class="rating-score">5.0</span>
+                        </div>
+                        <div class="rating-item">
+                            <span class="rating-label">위치</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill" style="width: 94%"></div>
+                            </div>
+                            <span class="rating-score">4.7</span>
+                        </div>
+                        <div class="rating-item">
+                            <span class="rating-label">체크인</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill" style="width: 96%"></div>
+                            </div>
+                            <span class="rating-score">4.8</span>
+                        </div>
+                        <div class="rating-item">
+                            <span class="rating-label">가성비</span>
+                            <div class="rating-bar">
+                                <div class="rating-fill" style="width: 98%"></div>
+                            </div>
+                            <span class="rating-score">4.9</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="reviews-container" class="reviews-container">
+                    <!-- 리뷰들이 동적으로 로드됩니다 -->
+                    <div class="reviews-loading">
+                        <i class="fas fa-spinner fa-spin"></i> 리뷰를 불러오는 중...
+                    </div>
+                </div>
+
+                <div class="reviews-actions">
+                    <button id="show-all-reviews-btn" class="btn btn-outline show-all-reviews-btn">
+                        <i class="fas fa-comment-dots"></i> 
+                        모든 후기 보기 (<span id="total-reviews-count">28</span>개)
+                    </button>
                 </div>
             </div>
 
@@ -310,6 +744,16 @@
                 <button id="exchange-request-btn" class="btn btn-primary btn-block">교환 요청</button>
                 <button id="stay-request-btn" class="btn btn-primary btn-block">숙박 요청</button>
             </div>
+            
+            <!-- 호스트 메시지 섹션 -->
+            <div class="message-host-section">
+                <button id="message-host-btn" class="btn btn-outline btn-block message-host-btn" disabled>
+                    💬 호스트에게 메시지 보내기
+                    <div class="coming-soon-tooltip">
+                        곧 만나볼 수 있어요! 🚀
+                    </div>
+                </button>
+            </div>
         </div>
     </div>
 </main>
@@ -369,6 +813,59 @@
         <div class="popup-footer">
             <button class="btn btn-secondary popup-cancel">취소</button>
             <button class="btn btn-primary popup-confirm" id="stay-confirm">숙박 요청 보내기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 리뷰 전체보기 모달 -->
+<div id="reviews-modal" class="popup-overlay reviews-modal">
+    <div class="popup-container reviews-modal-container">
+        <div class="popup-header">
+            <div class="reviews-modal-title">
+                <h3>
+                    <i class="fas fa-star"></i>
+                    <span id="modal-reviews-rating">4.9</span>
+                    · 후기 <span id="modal-reviews-count">28</span>개
+                </h3>
+            </div>
+            <button class="popup-close"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="reviews-modal-content">
+            <div class="reviews-modal-summary">
+                <div class="rating-breakdown-modal">
+                    <!-- 동적으로 생성됨 -->
+                </div>
+            </div>
+            
+            <div class="reviews-modal-filters">
+                <div class="filter-buttons">
+                    <button class="filter-btn active" data-filter="all">전체</button>
+                    <button class="filter-btn" data-filter="5">⭐ 5점</button>
+                    <button class="filter-btn" data-filter="4">⭐ 4점</button>
+                    <button class="filter-btn" data-filter="3">⭐ 3점 이하</button>
+                </div>
+                <div class="sort-options">
+                    <select id="reviews-sort">
+                        <option value="recent">최신순</option>
+                        <option value="rating-high">평점 높은순</option>
+                        <option value="rating-low">평점 낮은순</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div id="modal-reviews-container" class="modal-reviews-container">
+                <!-- 리뷰들이 동적으로 로드됩니다 -->
+                <div class="modal-reviews-loading">
+                    <i class="fas fa-spinner fa-spin"></i> 리뷰를 불러오는 중...
+                </div>
+            </div>
+            
+            <div id="modal-load-more" class="load-more-container">
+                <button id="load-more-reviews-btn" class="btn btn-outline load-more-btn">
+                    <i class="fas fa-plus"></i> 더 많은 후기 보기
+                </button>
+            </div>
         </div>
     </div>
 </div>

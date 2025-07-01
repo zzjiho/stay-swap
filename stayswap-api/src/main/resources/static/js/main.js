@@ -520,7 +520,7 @@ function loadPopularHouses() {
                             </div>
                             <div class="property-content">
                                 <h3 class="property-title">${house.title}</h3>
-                                <p class="property-location">${house.city} ${house.district}</p>
+                                <p class="property-location">${house.cityKo} ${house.districtKo}</p>
                                 <a href="/page/listing-detail?id=${house.houseId}" class="btn btn-primary btn-block">자세히 보기</a>
                             </div>
                         </div>

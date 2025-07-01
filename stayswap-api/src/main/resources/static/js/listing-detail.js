@@ -87,7 +87,8 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('유효한 houseId가 있어 API 호출 시작');
         Promise.all([
             fetchHouseDetail(houseId),
-            fetchHouseImages(houseId)
+            fetchHouseImages(houseId),
+            fetchHouseReviews(houseId, 6) // 처음 6개 리뷰만 로드
         ]).then(() => {
             // 모든 API 호출이 완료되면 로딩 스피너 숨기기
             $('#loading-overlay').hide();
@@ -412,6 +413,31 @@ document.addEventListener('DOMContentLoaded', function() {
         closePopup(popupId);
     });
 
+    // 리뷰 전체보기 버튼 클릭 이벤트
+    $('#show-all-reviews-btn').on('click', function() {
+        openReviewsModal();
+    });
+
+    // 리뷰 필터 버튼 클릭 이벤트
+    $(document).on('click', '.filter-btn', function() {
+        $('.filter-btn').removeClass('active');
+        $(this).addClass('active');
+        
+        const filter = $(this).data('filter');
+        filterReviews(filter);
+    });
+
+    // 리뷰 정렬 변경 이벤트
+    $(document).on('change', '#reviews-sort', function() {
+        const sort = $(this).val();
+        sortReviews(sort);
+    });
+
+    // 더 많은 리뷰 보기 버튼 클릭 이벤트
+    $(document).on('click', '#load-more-reviews-btn', function() {
+        loadMoreReviews();
+    });
+
     // 교환 요청 API 호출 함수
     function requestSwapExchange(listingId, checkinDate, checkoutDate, guestCount, message) {
         if (!checkAuthToken()) return Promise.reject('No token');
@@ -485,6 +511,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }).fail(function(xhr, status, error) {
             console.error('교환 요청 API 호출 실패:', error);
+            console.error('상태 코드:', xhr.status);
+            console.error('응답 텍스트:', xhr.responseText);
+            
+            try {
+                // 서버에서 반환된 JSON 에러 메시지 파싱
+                const errorResponse = JSON.parse(xhr.responseText);
+                if (errorResponse && errorResponse.errorMessage) {
+                    alert(errorResponse.errorMessage);
+                    return;
+                }
+            } catch (e) {
+                console.error('에러 응답 파싱 실패:', e);
+            }
+            
             alert('서버 연결에 문제가 발생했습니다.');
         });
     });
@@ -511,6 +551,20 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }).fail(function(xhr, status, error) {
             console.error('숙박 요청 API 호출 실패:', error);
+            console.error('상태 코드:', xhr.status);
+            console.error('응답 텍스트:', xhr.responseText);
+            
+            try {
+                // 서버에서 반환된 JSON 에러 메시지 파싱
+                const errorResponse = JSON.parse(xhr.responseText);
+                if (errorResponse && errorResponse.errorMessage) {
+                    alert(errorResponse.errorMessage);
+                    return;
+                }
+            } catch (e) {
+                console.error('에러 응답 파싱 실패:', e);
+            }
+            
             alert('서버 연결에 문제가 발생했습니다.');
         });
     });
@@ -658,8 +712,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 $('#listing-description').text(houseData.description);
             }
             
-            if (houseData.city && houseData.district) {
-                $('#listing-location').text(`${houseData.city} ${houseData.district}`);
+            if (houseData.cityKo && houseData.districtKo) {
+                $('#listing-location').text(`${houseData.cityKo} ${houseData.districtKo}`);
             }
 
             // 평점 및 리뷰 업데이트
@@ -674,10 +728,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 $('#sidebar-review-count').text(houseData.reviewCount);
             }
 
+            // 리뷰 섹션 정보 업데이트
+            updateReviewInfo(houseData.avgRating, houseData.reviewCount);
+
             // 편의시설 업데이트
-            if (houseData.amenityInfo) {
+            if (houseData.amenities) {
                 console.log('편의시설 업데이트');
-                updateAmenities(houseData.amenityInfo);
+                updateAmenities(houseData.amenities);
             } else {
                 console.warn('편의시설 정보가 없습니다');
             }
@@ -867,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // 무료 주차 여부에 따라 배지 추가
-            if (houseData.amenityInfo && houseData.amenityInfo.hasFreeParking) {
+            if (houseData.amenities && houseData.amenities.hasFreeParking) {
                 console.log('무료 주차 배지 추가');
                 featuresContainer.append('<span class="badge badge-outline">무료 주차</span>');
             }
@@ -1405,6 +1462,238 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             document.getElementById('location-address').textContent = address || '지도를 불러올 수 없습니다.';
+        }
+    }
+
+    // 리뷰 관련 변수
+    let allReviews = [];
+    let currentPage = 0;
+    let hasNextPage = true;
+    let currentFilter = 'all';
+    let currentSort = 'recent';
+
+    // 숙소 리뷰 API 호출 함수
+    function fetchHouseReviews(houseId, size = 10, page = 0) {
+        console.log(`리뷰 API 호출: houseId=${houseId}, size=${size}, page=${page}`);
+        
+        return $.ajax({
+            url: `/api/review/house/${houseId}?page=${page}&size=${size}`,
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                console.log('리뷰 API 응답 성공:', response);
+                
+                if (response.httpStatus === 'OK' && response.data) {
+                    const reviewsData = response.data;
+                    
+                    if (page === 0) {
+                        // 첫 페이지 로드 시
+                        allReviews = reviewsData.content || [];
+                        renderReviews(allReviews, true); // 메인 페이지에 6개만 표시
+                    } else {
+                        // 추가 페이지 로드 시
+                        allReviews = allReviews.concat(reviewsData.content || []);
+                        renderModalReviews(allReviews);
+                    }
+                    
+                    hasNextPage = !reviewsData.last;
+                    currentPage = page;
+                    
+                    // 로딩 상태 제거
+                    $('.reviews-loading, .modal-reviews-loading').hide();
+                    
+                } else {
+                    console.error('리뷰 API 요청 실패:', response.message);
+                    $('.reviews-loading, .modal-reviews-loading').text('리뷰를 불러오는데 실패했습니다.');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('리뷰 API 호출 오류:', error);
+                $('.reviews-loading, .modal-reviews-loading').text('리뷰를 불러오는데 실패했습니다.');
+            }
+        });
+    }
+
+    // 리뷰 렌더링 (메인 페이지용 - 최대 6개)
+    function renderReviews(reviews, isMainPage = false) {
+        const container = $('#reviews-container');
+        container.empty();
+
+        if (!reviews || reviews.length === 0) {
+            container.html('<div class="no-reviews"><p>아직 등록된 리뷰가 없습니다.</p></div>');
+            return;
+        }
+
+        const displayReviews = isMainPage ? reviews.slice(0, 6) : reviews;
+        
+        displayReviews.forEach(review => {
+            const reviewElement = createReviewElement(review);
+            container.append(reviewElement);
+        });
+
+        // 메인 페이지에서 6개보다 많은 리뷰가 있으면 "더보기" 버튼 표시
+        if (isMainPage && reviews.length > 6) {
+            $('#show-all-reviews-btn').show();
+            $('#total-reviews-count').text(reviews.length);
+        } else if (isMainPage) {
+            $('#show-all-reviews-btn').hide();
+        }
+    }
+
+    // 리뷰 요소 생성
+    function createReviewElement(review) {
+        const reviewDate = new Date(review.createdDate).toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long'
+        });
+
+        const avatarContent = review.reviewerProfile ? 
+            `<img src="${review.reviewerProfile}" alt="${review.reviewerNickname}">` :
+            `<div class="review-avatar-placeholder">${review.reviewerNickname.charAt(0)}</div>`;
+
+        const stars = '★'.repeat(review.rating) + '☆'.repeat(5 - review.rating);
+
+        return $(`
+            <div class="review-item" data-rating="${review.rating}">
+                <div class="review-avatar">
+                    ${avatarContent}
+                </div>
+                <div class="review-content">
+                    <div class="review-header">
+                        <span class="review-author">${review.reviewerNickname}</span>
+                        <div class="review-rating">
+                            <span>${stars}</span>
+                        </div>
+                    </div>
+                    <div class="review-date">${reviewDate}</div>
+                    <div class="review-text">${review.comment || '리뷰 내용이 없습니다.'}</div>
+                </div>
+            </div>
+        `);
+    }
+
+    // 리뷰 모달 열기
+    function openReviewsModal() {
+        // 모달 내용 업데이트
+        $('#modal-reviews-rating').text($('#reviews-rating').text());
+        $('#modal-reviews-count').text($('#reviews-count').text());
+        
+        // 평점 분석 복사
+        $('.rating-breakdown-modal').html($('.rating-breakdown').html());
+        
+        // 리뷰 렌더링
+        renderModalReviews(allReviews);
+        
+        // 모달 열기
+        openPopup('reviews-modal');
+        
+        // 모달이 열린 후 추가 리뷰 로드 (필요시)
+        if (allReviews.length <= 6 && hasNextPage) {
+            loadMoreReviews();
+        }
+    }
+
+    // 모달용 리뷰 렌더링
+    function renderModalReviews(reviews) {
+        const container = $('#modal-reviews-container');
+        container.empty();
+
+        if (!reviews || reviews.length === 0) {
+            container.html('<div class="no-reviews"><p>표시할 리뷰가 없습니다.</p></div>');
+            updateLoadMoreButton();
+            return;
+        }
+
+        // 필터와 정렬 적용
+        let filteredReviews = filterReviewsByRating(reviews, currentFilter);
+        filteredReviews = sortReviewsBy(filteredReviews, currentSort);
+
+        filteredReviews.forEach(review => {
+            const reviewElement = createReviewElement(review);
+            container.append(reviewElement);
+        });
+
+        updateLoadMoreButton();
+    }
+
+    // 리뷰 필터링
+    function filterReviewsByRating(reviews, filter) {
+        if (filter === 'all') return reviews;
+        
+        const rating = parseInt(filter);
+        if (filter === '3') {
+            // 3점 이하
+            return reviews.filter(review => review.rating <= 3);
+        } else {
+            // 특정 점수
+            return reviews.filter(review => review.rating === rating);
+        }
+    }
+
+    // 리뷰 정렬
+    function sortReviewsBy(reviews, sort) {
+        const sortedReviews = [...reviews];
+        
+        switch (sort) {
+            case 'recent':
+                return sortedReviews.sort((a, b) => new Date(b.createdDate) - new Date(a.createdDate));
+            case 'rating-high':
+                return sortedReviews.sort((a, b) => b.rating - a.rating);
+            case 'rating-low':
+                return sortedReviews.sort((a, b) => a.rating - b.rating);
+            default:
+                return sortedReviews;
+        }
+    }
+
+    // 필터 적용
+    function filterReviews(filter) {
+        currentFilter = filter;
+        renderModalReviews(allReviews);
+    }
+
+    // 정렬 적용
+    function sortReviews(sort) {
+        currentSort = sort;
+        renderModalReviews(allReviews);
+    }
+
+    // 더 많은 리뷰 로드
+    function loadMoreReviews() {
+        if (!hasNextPage) {
+            console.log('더 이상 로드할 리뷰가 없습니다.');
+            return;
+        }
+
+        $('#load-more-reviews-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 로딩 중...');
+
+        fetchHouseReviews(houseId, 10, currentPage + 1).then(() => {
+            updateLoadMoreButton();
+        }).catch(error => {
+            console.error('추가 리뷰 로드 실패:', error);
+            $('#load-more-reviews-btn').prop('disabled', false).html('<i class="fas fa-plus"></i> 더 많은 후기 보기');
+        });
+    }
+
+    // 더보기 버튼 상태 업데이트
+    function updateLoadMoreButton() {
+        const loadMoreBtn = $('#load-more-reviews-btn');
+        
+        if (hasNextPage) {
+            loadMoreBtn.show().prop('disabled', false).html('<i class="fas fa-plus"></i> 더 많은 후기 보기');
+        } else {
+            loadMoreBtn.hide();
+        }
+    }
+
+    // 리뷰 정보 업데이트 (숙소 상세 정보에서 호출)
+    function updateReviewInfo(avgRating, reviewCount) {
+        if (avgRating !== undefined) {
+            $('#reviews-rating, #modal-reviews-rating').text(avgRating.toFixed(1));
+        }
+        
+        if (reviewCount !== undefined) {
+            $('#reviews-count, #modal-reviews-count, #total-reviews-count').text(reviewCount);
         }
     }
 });

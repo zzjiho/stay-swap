@@ -6,10 +6,34 @@ $(document).ready(function() {
     let isLastPage = false;
 
     // 초기 데이터 로드
+    loadCountries(); // 국가 목록 먼저 로드
     loadHouseList(true);
 
     // 이벤트 리스너 설정
     setupEventListeners();
+
+    /**
+     * 국가 목록 로드
+     */
+    function loadCountries() {
+        $.ajax({
+            url: '/api/house/countries',
+            type: 'GET',
+            success: function(response) {
+                if (response.httpStatus === "OK" && response.data) {
+                    const countrySelect = $('#country-filter');
+                    
+                    response.data.forEach(function(country) {
+                        countrySelect.append(`<option value="${country.countryKo}">${country.countryKo} (${country.countryEn})</option>`);
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('국가 목록 로드 실패:', error);
+                // 에러가 발생해도 기본 기능은 동작하도록 함
+            }
+        });
+    }
 
     /**
      * 이벤트 리스너 설정
@@ -28,7 +52,7 @@ $(document).ready(function() {
         });
 
         // 필터 변경 이벤트
-        $('#location-filter, #bedroom-filter, #date-filter').on('change', function() {
+        $('#country-filter, #city-filter, #bedroom-filter, #date-filter').on('change', function() {
             resetSearch();
         });
 
@@ -82,7 +106,8 @@ $(document).ready(function() {
         // API 요청 파라미터 구성
         const params = {
             keyword: $('#search-query').val() || null,
-            city: $('#location-filter').val() || null,
+            country: $('#country-filter').val() || null,
+            city: $('#city-filter').val() || null,
             houseType: getHouseTypeFromSelect(),
             date: $('#date-filter').val() || null,
             amenities: getSelectedAmenities(),
@@ -194,7 +219,7 @@ $(document).ready(function() {
                         <h3 class="listing-title">${listing.title}</h3>
                         <div class="listing-location">
                             <i class="fas fa-map-marker-alt"></i>
-                            <span>${listing.city} ${listing.district || ''}</span>
+                            <span>${listing.cityKo} ${listing.districtKo || ''}</span>
                         </div>
                         <div class="listing-details">
                             <div class="listing-detail-item">

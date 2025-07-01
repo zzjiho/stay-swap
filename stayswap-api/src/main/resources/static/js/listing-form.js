@@ -24,9 +24,12 @@ document.addEventListener('DOMContentLoaded', function() {
     window.initMap = function() {
         console.log('🚀 Google Maps 초기화 시작!'); // 디버깅 로그
         
-        // 현재 언어 감지 (HTML lang 속성 또는 브라우저 언어)
-        const currentLanguage = document.documentElement.lang || navigator.language.substring(0, 2) || 'ko';
-        console.log('🌍 감지된 언어:', currentLanguage);
+        // 강제 한국어 설정 (다국어 지원은 향후 구현)
+        const currentLanguage = 'ko'; // 한국어 강제 설정
+        console.log('🌍 설정된 언어:', currentLanguage);
+        
+        // Google Maps API 언어 설정 확인
+        console.log('🔍 Google Maps API 언어 확인:', google.maps.language || 'undefined');
         
         // 강제로 기본 지도 표시 (테스트용)
         try {
@@ -35,8 +38,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 zoom: 12,
                 mapTypeControl: false,
                 streetViewControl: false,
-                // 다국어 지원
-                language: currentLanguage
+                // 한국어 지도 표시
+                language: 'ko'
             });
             console.log('✅ 테스트 지도 생성 성공!', testMap);
         } catch (error) {
@@ -48,15 +51,16 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 기존 Places API 사용 (경고 무시하고 사용)
         try {
-            const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+            const autocompleteOptions = {
                 types: ['address'], // 구체적인 주소만 검색 (비용 절약)
-                componentRestrictions: { country: 'KR' },
-                // 비용 절약을 위한 추가 설정
+                // 전세계 검색을 위해 country 제한 제거
                 fields: ['formatted_address', 'geometry', 'address_components'], // 필요한 필드만 요청
-                strictBounds: false, // 한국 내에서만 검색
-                // 다국어 지원
-                language: currentLanguage // 현재 언어에 맞춰 결과 반환
-            });
+                strictBounds: false, // 전세계 검색 허용
+                language: 'ko' // 한국어 결과 우선
+            };
+            
+            console.log('🔧 Autocomplete 옵션:', autocompleteOptions);
+            const autocomplete = new google.maps.places.Autocomplete(addressInput, autocompleteOptions);
             
             console.log('📍 Places Autocomplete (Legacy) 생성 완료!', autocomplete); // 디버깅 로그
 
@@ -66,6 +70,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const place = autocomplete.getPlace();
                 console.log('📍 선택된 장소:', place); // 디버깅 로그
+                console.log('📍 원본 formatted_address:', place.formatted_address);
+                console.log('📍 address_components:', place.address_components);
                 
                 if (!place.geometry || !place.geometry.location) {
                     console.log('❌ 위치 정보 없음'); // 디버깅 로그
@@ -73,20 +79,72 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                // 주소 필드 업데이트
-                addressInput.value = place.formatted_address || place.name;
-                console.log('📝 주소 업데이트:', addressInput.value); // 디버깅 로그
-
-                            // Geocoding API를 사용하여 정확한 정보와 viewport 가져오기
-                console.log('🔍 Geocoding API 호출 시작...'); // 디버깅 로그
+                // Geocoding API를 먼저 호출하여 한국어 주소를 가져오기
+                console.log('🔍 한국어 Geocoding API 호출 시작...'); // 디버깅 로그
                 
                 const geocoder = new google.maps.Geocoder();
                 geocoder.geocode({
-                    location: place.geometry.location
+                    location: place.geometry.location,
+                    language: 'ko' // 한국어 결과 요청 (전세계 주소에 대해서도 한국어 변환 시도)
+                    // region 제거: 전세계 주소에 대해서도 한국어 변환 가능하도록
                 }, (results, status) => {
-                console.log('📡 Geocoding API 응답:', status, results); // 디버깅 로그
+                console.log('📡 한국어 Geocoding API 응답:', status, results); // 디버깅 로그
                 
                 if (status === 'OK' && results[0]) {
+                    // 한국어 주소로 업데이트 (Geocoding API 결과 사용)
+                    addressInput.value = results[0].formatted_address;
+                    console.log('📝 한국어 주소 업데이트:', addressInput.value); // 디버깅 로그
+
+                    // 한국어 Geocoding API 결과에서 도시, 지역구, 국가 추출
+                    let city = '';
+                    let district = '';
+                    let country = '';
+
+                    if (results[0].address_components) {
+                        results[0].address_components.forEach(component => {
+                            const types = component.types;
+                            console.log('📍 한국어 주소 컴포넌트:', component.long_name, types);
+                            
+                            // 도시 추출 (administrative_area_level_1 = 시/도)
+                            if (types.includes('administrative_area_level_1')) {
+                                let rawCity = component.long_name;
+                                // 한국어 결과에서 시/도 표기 정리
+                                city = rawCity.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
+                                console.log('🏙️ 한국어 도시 원본:', rawCity, '-> 정리:', city);
+                            }
+                            
+                            // 지역구 추출 (sublocality_level_1 = 구/군)
+                            if (types.includes('sublocality_level_1')) {
+                                district = component.long_name;
+                                console.log('🏘️ 한국어 지역구 (sublocality_level_1):', district);
+                            } else if (types.includes('locality') && !district) {
+                                district = component.long_name;
+                                console.log('🏘️ 한국어 지역구 (locality):', district);
+                            }
+                            
+                            // 국가 추출 (country)
+                            if (types.includes('country')) {
+                                country = component.long_name;
+                                console.log('🌍 한국어 국가:', country);
+                            }
+                        });
+
+                        // 한국어로 추출된 값으로 업데이트
+                        if (city) {
+                            document.getElementById('listing-city').value = city;
+                            console.log('🏙️ 한국어 도시 자동 업데이트:', city);
+                        }
+                        if (district) {
+                            document.getElementById('listing-district').value = district;
+                            console.log('🏘️ 한국어 지역구 자동 업데이트:', district);
+                        }
+                        if (country) {
+                            document.getElementById('listing-country').value = country;
+                            console.log('🌍 한국어 국가 자동 업데이트:', country);
+                        }
+                        
+                        console.log('🎯 한국어 최종 추출 결과 - 도시:', city, '지역구:', district, '국가:', country);
+                    }
                     // 지도가 없으면 생성
                     if (!map) {
                         console.log('🗺️ 지도 생성 시작...'); // 디버깅 로그
@@ -100,7 +158,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 center: place.geometry.location,
                                 zoom: 14,
                                 mapTypeControl: false,
-                                streetViewControl: false
+                                streetViewControl: false,
+                                language: 'ko' // 한국어 지도 표시
                             });
                         
                         console.log('✅ 지도 생성 완료!'); // 디버깅 로그
@@ -158,9 +217,70 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.currentViewport = null;
                     }
                 } else {
-                    console.error('❌ Geocoding API 실패:', status); // 디버깅 로그
+                    console.error('❌ 한국어 Geocoding API 실패:', status); // 디버깅 로그
                     
-                    // Geocoding API 실패 시 기존 방식으로 폴백
+                    // Geocoding API 실패 시 주소 컴포넌트에서 한국어 주소 조합 및 도시/지역구/국가 추출 시도
+                    let koreanAddress = '';
+                    let fallbackCity = '';
+                    let fallbackDistrict = '';
+                    let fallbackCountry = '';
+                    
+                    if (place.address_components) {
+                        const addressParts = [];
+                        place.address_components.forEach(component => {
+                            const types = component.types;
+                            console.log('📍 폴백 주소 컴포넌트:', component.long_name, types);
+                            
+                            // 한국어 주소 구성 요소들을 순서대로 조합
+                            if (types.includes('country')) {
+                                // 국가 정보 추출 (주소에는 포함하지 않음)
+                                fallbackCountry = component.long_name;
+                                console.log('🌍 폴백 국가:', fallbackCountry);
+                            } else if (types.includes('administrative_area_level_1')) {
+                                addressParts.unshift(component.long_name); // 시/도를 앞에 추가
+                                // 도시 정보 추출
+                                let rawCity = component.long_name;
+                                fallbackCity = rawCity.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
+                                console.log('🏙️ 폴백 도시 원본:', rawCity, '-> 정리:', fallbackCity);
+                            } else if (types.includes('sublocality_level_1')) {
+                                addressParts.push(component.long_name); // 구를 뒤에 추가
+                                // 지역구 정보 추출
+                                fallbackDistrict = component.long_name;
+                                console.log('🏘️ 폴백 지역구 (sublocality_level_1):', fallbackDistrict);
+                            } else if (types.includes('sublocality_level_2')) {
+                                addressParts.push(component.long_name); // 동을 뒤에 추가
+                            } else if (types.includes('street_number') || types.includes('premise')) {
+                                addressParts.push(component.long_name); // 번지를 뒤에 추가
+                            } else if (types.includes('locality') && !fallbackDistrict) {
+                                // 지역구가 없으면 locality 사용
+                                fallbackDistrict = component.long_name;
+                                console.log('🏘️ 폴백 지역구 (locality):', fallbackDistrict);
+                            }
+                        });
+                        koreanAddress = addressParts.join(' ');
+                    }
+                    
+                    // 조합된 한국어 주소가 있으면 사용, 없으면 원본 사용
+                    addressInput.value = koreanAddress || place.formatted_address || place.name;
+                    console.log('📝 폴백 주소 업데이트:', addressInput.value); // 디버깅 로그
+
+                    // 폴백으로 추출된 도시/지역구/국가 업데이트
+                    if (fallbackCity) {
+                        document.getElementById('listing-city').value = fallbackCity;
+                        console.log('🏙️ 폴백 도시 자동 업데이트:', fallbackCity);
+                    }
+                    if (fallbackDistrict) {
+                        document.getElementById('listing-district').value = fallbackDistrict;
+                        console.log('🏘️ 폴백 지역구 자동 업데이트:', fallbackDistrict);
+                    }
+                    if (fallbackCountry) {
+                        document.getElementById('listing-country').value = fallbackCountry;
+                        console.log('🌍 폴백 국가 자동 업데이트:', fallbackCountry);
+                    }
+                    
+                    console.log('🎯 폴백 최종 추출 결과 - 도시:', fallbackCity, '지역구:', fallbackDistrict, '국가:', fallbackCountry);
+                    
+                    // 지도 표시 (기존 로직)
                     if (!map) {
                         const mapContainer = document.getElementById('map-container');
                         const mapHint = document.getElementById('map-hint');
@@ -171,7 +291,8 @@ document.addEventListener('DOMContentLoaded', function() {
                             center: place.geometry.location,
                             zoom: 16,
                             mapTypeControl: false,
-                            streetViewControl: false
+                            streetViewControl: false,
+                            language: 'ko' // 한국어 지도 표시
                         });
                     }
                     
@@ -198,35 +319,64 @@ document.addEventListener('DOMContentLoaded', function() {
                 };
                 console.log('💾 선택된 위치 저장:', selectedLocation); // 디버깅 로그
 
-                // 주소 컴포넌트에서 도시와 지역구 자동 추출 시도
-                if (place.address_components) {
-                    let city = '';
-                    let district = '';
+                // 영어 주소도 가져오기 (다국어 지원을 위해)
+                console.log('🌍 영어 주소 가져오기 시작...'); // 디버깅 로그
+                
+                const geocoderEn = new google.maps.Geocoder();
+                geocoderEn.geocode({
+                    location: place.geometry.location,
+                    language: 'en', // 영어 결과 요청
+                    region: 'KR' // 한국 지역 설정
+                }, (resultsEn, statusEn) => {
+                    console.log('📡 영어 Geocoding API 응답:', statusEn, resultsEn); // 디버깅 로그
+                    
+                    if (statusEn === 'OK' && resultsEn[0]) {
+                        // 영어 주소 정보를 전역 변수에 저장
+                        window.currentEnglishAddress = {
+                            address: resultsEn[0].formatted_address,
+                            city: '',
+                            district: '',
+                            country: ''
+                        };
 
-                    place.address_components.forEach(component => {
+                        // 영어 주소 컴포넌트에서 도시, 지역구, 국가 추출
+                        if (resultsEn[0].address_components) {
+                            resultsEn[0].address_components.forEach(component => {
                         const types = component.types;
+                                console.log('📍 영어 주소 컴포넌트:', component.long_name, types);
                         
-                        // 도시 추출 (administrative_area_level_1 = 시/도)
+                                // 영어 도시 추출
                         if (types.includes('administrative_area_level_1')) {
-                            city = component.long_name.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
+                                    window.currentEnglishAddress.city = component.long_name;
+                                    console.log('🏙️ 영어 도시:', component.long_name);
                         }
                         
-                        // 지역구 추출 (sublocality_level_1 = 구/군)
-                        if (types.includes('sublocality_level_1') || types.includes('locality')) {
-                            district = component.long_name;
-                        }
-                    });
+                                // 영어 지역구 추출
+                                if (types.includes('sublocality_level_1')) {
+                                    window.currentEnglishAddress.district = component.long_name;
+                                    console.log('🏘️ 영어 지역구 (sublocality_level_1):', component.long_name);
+                                } else if (types.includes('locality') && !window.currentEnglishAddress.district) {
+                                    window.currentEnglishAddress.district = component.long_name;
+                                    console.log('🏘️ 영어 지역구 (locality):', component.long_name);
+                                }
 
-                // 자동 추출된 값으로 항상 업데이트 (주소 변경 시 도시/지역구도 함께 변경)
-                if (city) {
-                    document.getElementById('listing-city').value = city;
-                    console.log('🏙️ 도시 자동 업데이트:', city);
+                                // 영어 국가 추출
+                                if (types.includes('country')) {
+                                    window.currentEnglishAddress.country = component.long_name;
+                                    console.log('🌍 영어 국가:', component.long_name);
                 }
-                if (district) {
-                    document.getElementById('listing-district').value = district;
-                    console.log('🏘️ 지역구 자동 업데이트:', district);
+                            });
+                        }
+
+                        console.log('🌍 영어 주소 정보 저장 완료:', window.currentEnglishAddress);
+                    } else {
+                        console.error('❌ 영어 Geocoding API 실패:', statusEn);
+                        window.currentEnglishAddress = null;
                 }
-            }
+                });
+
+                // 기존의 place.address_components 사용 로직은 제거됨
+                // 이제 한국어 Geocoding API 결과 또는 폴백 로직에서 도시/지역구를 추출함
         });
         
         } catch (error) {
@@ -621,9 +771,14 @@ document.addEventListener('DOMContentLoaded', function() {
             bed: parseInt(document.getElementById('listing-beds').value),
             bathrooms: parseInt(document.getElementById('listing-bathrooms').value),
             maxGuests: parseInt(document.getElementById('listing-guests').value),
-            address: document.getElementById('listing-address').value,
-            city: document.getElementById('listing-city').value,
-            district: document.getElementById('listing-district').value,
+            addressKo: document.getElementById('listing-address').value, // 한국어 주소
+            cityKo: document.getElementById('listing-city').value, // 한국어 도시
+            districtKo: document.getElementById('listing-district').value, // 한국어 지역구
+            countryKo: document.getElementById('listing-country').value, // 한국어 국가
+            addressEn: window.currentEnglishAddress ? window.currentEnglishAddress.address : null, // 영어 주소
+            cityEn: window.currentEnglishAddress ? window.currentEnglishAddress.city : null, // 영어 도시  
+            districtEn: window.currentEnglishAddress ? window.currentEnglishAddress.district : null, // 영어 지역구
+            countryEn: window.currentEnglishAddress ? window.currentEnglishAddress.country : null, // 영어 국가
             latitude: selectedLocation ? selectedLocation.lat : null,
             longitude: selectedLocation ? selectedLocation.lng : null,
             viewportNortheastLat: window.currentViewport ? window.currentViewport.getNorthEast().lat() : null,
