@@ -1,5 +1,6 @@
 package com.stayswap.review.repository;
 
+import com.stayswap.review.model.dto.response.HouseReviewResponse;
 import com.stayswap.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.review.model.dto.response.WrittenReviewResponse;
 import org.springframework.data.domain.Page;
@@ -10,4 +11,6 @@ public interface ReviewRepositoryCustom {
     Slice<WrittenReviewResponse> findWrittenReviewsWithQueryDsl(Long userId, Pageable pageable);
     
     Slice<ReceivedReviewResponse> findReceivedReviewsWithQueryDsl(Long userId, Pageable pageable);
+    
+    Slice<HouseReviewResponse> findHouseReviewsWithQueryDsl(Long houseId, Pageable pageable);
 }
