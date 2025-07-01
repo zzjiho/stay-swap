@@ -22,4 +22,6 @@ public interface HouseRepositoryCustom {
     List<HouseImageResponse> getHouseImages(Long houseId);
     
     Slice<MyHouseResponse> getMyHouses(Long userId, Pageable pageable);
+    
+    List<CountryResponse> getDistinctCountries();
 } 

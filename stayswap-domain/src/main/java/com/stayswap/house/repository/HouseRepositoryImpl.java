@@ -153,6 +153,30 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
     }
 
     @Override
+    public List<CountryResponse> getDistinctCountries() {
+        return queryFactory
+                .select(Projections.constructor(
+                        CountryResponse.class,
+                        house.countryKo,
+                        house.countryEn
+                ))
+                .from(house)
+                .where(
+                    house.countryKo.isNotNull()
+                    .and(house.countryKo.ne(""))
+                    .or(
+                        house.countryEn.isNotNull()
+                        .and(house.countryEn.ne(""))
+                    )
+                    .and(house.isActive.isTrue())
+                    .and(house.isDelete.isFalse())
+                )
+                .distinct()
+                .orderBy(house.countryKo.asc())
+                .fetch();
+    }
+
+    @Override
     public HostDetailResponse getHostDetailById(Long hostId) {
         // 리뷰
         NumberExpression<Long> reviewCount = Expressions.numberTemplate(Long.class,
