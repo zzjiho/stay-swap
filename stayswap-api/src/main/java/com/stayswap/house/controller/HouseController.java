@@ -83,6 +83,16 @@ public class HouseController {
     }
 
     @Operation(
+            summary = "등록된 숙소 국가 목록 조회 API",
+            description = "현재 등록된 숙소들의 국가 목록을 중복 제거하여 조회합니다. " +
+                    "위치 필터링을 위한 select box 옵션으로 사용할 수 있습니다."
+    )
+    @GetMapping("/countries")
+    public RestApiResponse<List<CountryResponse>> getDistinctCountries() {
+        return RestApiResponse.success(houseService.getDistinctCountries());
+    }
+
+    @Operation(
             summary = "숙소 상세 조회 API",
             description = "숙소 상세 정보를 조회합니다. " +
                     "숙소의 기본 정보, 이미지, 편의시설 정보, 호스트 ID 등을 포함합니다."

@@ -90,6 +90,12 @@ public class HouseService {
         return houseRepository.getHouseList(request, pageable);
     }
 
+    // 등록된 숙소들의 국가 목록 조회
+    @Transactional(readOnly = true)
+    public List<CountryResponse> getDistinctCountries() {
+        return houseRepository.getDistinctCountries();
+    }
+
     // 숙소 상세 정보 조회
     @Transactional(readOnly = true)
     public HouseDetailResponse getHouseDetail(Long houseId) {
