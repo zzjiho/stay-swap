@@ -1,5 +1,6 @@
 package com.stayswap.notification.service.domain.checkinout;
 
+import com.stayswap.house.model.entity.House;
 import com.stayswap.notification.constant.NotificationType;
 import com.stayswap.notification.dto.request.NotificationMessage;
 import com.stayswap.notification.producer.NotificationPublisher;
@@ -118,12 +119,12 @@ public class CheckInOutNotificationService {
         
         if (swap.getSwapType() == SwapType.STAY) {
             // 숙박 요청인 경우: 신청자와 숙소 주인에게 다른 메시지 전송
-            sendCheckinNotificationToRequester(requester.getId(), host.getId(), swap.getId());
+            sendCheckinNotificationToRequester(requester.getId(), host.getId(), swap.getId(), swap.getHouse());
             sendCheckinNotificationToHost(host.getId(), requester.getId(), swap.getId());
         } else if (swap.getSwapType() == SwapType.SWAP) {
             // 교환 요청인 경우: 양쪽 모두 동일한 메시지 전송
-            sendCheckinNotificationToSwapParticipant(requester.getId(), host.getId(), swap.getId());
-            sendCheckinNotificationToSwapParticipant(host.getId(), requester.getId(), swap.getId());
+            sendCheckinNotificationToSwapParticipant(requester.getId(), host.getId(), swap.getId(), swap.getHouse());
+            sendCheckinNotificationToSwapParticipant(host.getId(), requester.getId(), swap.getId(), swap.getRequesterHouseId());
         }
     }
     
@@ -136,25 +137,28 @@ public class CheckInOutNotificationService {
         
         if (swap.getSwapType() == SwapType.STAY) {
             // 숙박 요청인 경우: 신청자와 숙소 주인에게 다른 메시지 전송
-            sendCheckoutNotificationToRequester(requester.getId(), host.getId(), swap.getId());
+            sendCheckoutNotificationToRequester(requester.getId(), host.getId(), swap.getId(), swap.getHouse());
             sendCheckoutNotificationToHost(host.getId(), requester.getId(), swap.getId());
         } else if (swap.getSwapType() == SwapType.SWAP) {
             // 교환 요청인 경우: 양쪽 모두 동일한 메시지 전송
-            sendCheckoutNotificationToSwapParticipant(requester.getId(), host.getId(), swap.getId());
-            sendCheckoutNotificationToSwapParticipant(host.getId(), requester.getId(), swap.getId());
+            sendCheckoutNotificationToSwapParticipant(requester.getId(), host.getId(), swap.getId(), swap.getHouse());
+            sendCheckoutNotificationToSwapParticipant(host.getId(), requester.getId(), swap.getId(), swap.getRequesterHouseId());
         }
     }
     
     /**
      * 숙박 신청자에게 체크인 알림 전송
      */
-    private void sendCheckinNotificationToRequester(Long requesterId, Long hostId, Long swapId) {
+    private void sendCheckinNotificationToRequester(Long requesterId, Long hostId, Long swapId, House house) {
+        String address = formatAddress(house);
+        String content = String.format("오늘은 체크인 날입니다. 호스트가 기다리고 있어요!\n📍 체크인 주소: %s", address);
+        
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(requesterId)
                 .senderId(hostId)
                 .type(NotificationType.CHECK_IN)
                 .title("[체크인 안내]")
-                .content("오늘은 체크인 날입니다. 호스트가 기다리고 있어요!")
+                .content(content)
                 .referenceId(swapId)
                 .build();
         
@@ -180,13 +184,16 @@ public class CheckInOutNotificationService {
     /**
      * 교환 참여자에게 체크인 알림 전송 (양쪽 동일 메시지)
      */
-    private void sendCheckinNotificationToSwapParticipant(Long recipientId, Long senderId, Long swapId) {
+    private void sendCheckinNotificationToSwapParticipant(Long recipientId, Long senderId, Long swapId, House house) {
+        String address = formatAddress(house);
+        String content = String.format("오늘은 숙소 교환 체크인 날입니다. 즐거운 여행 되세요!\n📍 체크인 주소: %s", address);
+        
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(recipientId)
                 .senderId(senderId)
                 .type(NotificationType.CHECK_IN)
                 .title("[숙소 교환 체크인]")
-                .content("오늘은 숙소 교환 체크인 날입니다. 즐거운 여행 되세요!")
+                .content(content)
                 .referenceId(swapId)
                 .build();
         
@@ -196,13 +203,16 @@ public class CheckInOutNotificationService {
     /**
      * 숙박 신청자에게 체크아웃 알림 전송
      */
-    private void sendCheckoutNotificationToRequester(Long requesterId, Long hostId, Long swapId) {
+    private void sendCheckoutNotificationToRequester(Long requesterId, Long hostId, Long swapId, House house) {
+        String address = formatAddress(house);
+        String content = String.format("오늘은 체크아웃 날입니다. 이용해 주셔서 감사합니다!\n📍 체크아웃 숙소: %s", address);
+        
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(requesterId)
                 .senderId(hostId)
                 .type(NotificationType.CHECK_OUT)
                 .title("[체크아웃 안내]")
-                .content("오늘은 체크아웃 날입니다. 이용해 주셔서 감사합니다!")
+                .content(content)
                 .referenceId(swapId)
                 .build();
         
@@ -228,16 +238,67 @@ public class CheckInOutNotificationService {
     /**
      * 교환 참여자에게 체크아웃 알림 전송 (양쪽 동일 메시지)
      */
-    private void sendCheckoutNotificationToSwapParticipant(Long recipientId, Long senderId, Long swapId) {
+    private void sendCheckoutNotificationToSwapParticipant(Long recipientId, Long senderId, Long swapId, House house) {
+        String address = formatAddress(house);
+        String content = String.format("오늘은 숙소 교환 체크아웃 날입니다. 즐거운 시간 되셨나요?\n📍 체크아웃 숙소: %s", address);
+        
         NotificationMessage message = NotificationMessage.builder()
                 .recipientId(recipientId)
                 .senderId(senderId)
                 .type(NotificationType.CHECK_OUT)
                 .title("[숙소 교환 체크아웃]")
-                .content("오늘은 숙소 교환 체크아웃 날입니다. 즐거운 시간 되셨나요?")
+                .content(content)
                 .referenceId(swapId)
                 .build();
         
         notificationPublisher.sendNotification(message);
+    }
+
+    /**
+     * 주소 정보를 포맷팅하여 반환
+     * 한국어 주소를 우선으로 하고, 없으면 영어 주소 사용
+     */
+    private String formatAddress(House house) {
+        if (house == null) {
+            return "주소 정보 없음";
+        }
+        
+        // 한국어 주소 정보가 있으면 한국어 사용
+        if (house.getAddressKo() != null && !house.getAddressKo().trim().isEmpty()) {
+            StringBuilder address = new StringBuilder();
+            
+            if (house.getCountryKo() != null && !house.getCountryKo().trim().isEmpty()) {
+                address.append(house.getCountryKo()).append(" ");
+            }
+            if (house.getCityKo() != null && !house.getCityKo().trim().isEmpty()) {
+                address.append(house.getCityKo()).append(" ");
+            }
+            if (house.getDistrictKo() != null && !house.getDistrictKo().trim().isEmpty()) {
+                address.append(house.getDistrictKo()).append(" ");
+            }
+            address.append(house.getAddressKo());
+            
+            return address.toString().trim();
+        }
+        
+        // 영어 주소 정보 사용
+        if (house.getAddressEn() != null && !house.getAddressEn().trim().isEmpty()) {
+            StringBuilder address = new StringBuilder();
+            
+            if (house.getCountryEn() != null && !house.getCountryEn().trim().isEmpty()) {
+                address.append(house.getCountryEn()).append(" ");
+            }
+            if (house.getCityEn() != null && !house.getCityEn().trim().isEmpty()) {
+                address.append(house.getCityEn()).append(" ");
+            }
+            if (house.getDistrictEn() != null && !house.getDistrictEn().trim().isEmpty()) {
+                address.append(house.getDistrictEn()).append(" ");
+            }
+            address.append(house.getAddressEn());
+            
+            return address.toString().trim();
+        }
+        
+        return "주소 정보 없음";
     }
 } 
