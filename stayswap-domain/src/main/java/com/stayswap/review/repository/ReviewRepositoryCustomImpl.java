@@ -3,6 +3,7 @@ package com.stayswap.review.repository;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.stayswap.review.model.dto.response.HouseReviewResponse;
 import com.stayswap.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.review.model.dto.response.WrittenReviewResponse;
 import lombok.RequiredArgsConstructor;
@@ -81,6 +82,36 @@ public class ReviewRepositoryCustomImpl implements ReviewRepositoryCustom {
                         house.user.id.eq(userId),
                         isMainImage()
                 )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize() + 1)
+                .orderBy(review.regTime.desc())
+                .fetch();
+
+        boolean hasNext = false;
+        if (content.size() > pageable.getPageSize()) {
+            content.remove(content.size() - 1);
+            hasNext = true;
+        }
+
+        return new SliceImpl<>(content, pageable, hasNext);
+    }
+    
+    @Override
+    public Slice<HouseReviewResponse> findHouseReviewsWithQueryDsl(Long houseId, Pageable pageable) {
+        List<HouseReviewResponse> content = queryFactory
+                .select(Projections.constructor(
+                        HouseReviewResponse.class,
+                        review.id,
+                        review.user.id,
+                        review.user.nickname.as("reviewerNickname"),
+                        review.user.profile.as("reviewerProfile"),
+                        review.rating,
+                        review.comment,
+                        review.regTime.as("createdDate")
+                ))
+                .from(review)
+                .innerJoin(review.user, user)
+                .where(review.targetHouse.id.eq(houseId))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize() + 1)
                 .orderBy(review.regTime.desc())

@@ -5,9 +5,11 @@ import com.stayswap.error.exception.ForbiddenException;
 import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.house.model.entity.House;
 import com.stayswap.house.repository.HouseImageRepository;
+import com.stayswap.house.repository.HouseRepository;
 import com.stayswap.house.service.HouseImgService;
 import com.stayswap.house.service.HouseRedisService;
 import com.stayswap.review.model.dto.request.ReviewRequest;
+import com.stayswap.review.model.dto.response.HouseReviewResponse;
 import com.stayswap.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.review.model.dto.response.ReviewResponse;
 import com.stayswap.review.model.dto.response.WrittenReviewResponse;
@@ -36,6 +38,7 @@ public class ReviewServiceImpl implements ReviewService {
     private final ReviewRepository reviewRepository;
     private final SwapRepository swapRepository;
     private final UserRepository userRepository;
+    private final HouseRepository houseRepository;
     private final HouseRedisService houseRedisService;
     private final HouseImageRepository houseImageRepository;
     private final HouseImgService houseImgService;
@@ -107,5 +110,14 @@ public class ReviewServiceImpl implements ReviewService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         
         return reviewRepository.findWrittenReviewsWithQueryDsl(userId, pageable);
+    }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Slice<HouseReviewResponse> getHouseReviews(Long houseId, Pageable pageable) {
+        houseRepository.findById(houseId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
+        
+        return reviewRepository.findHouseReviewsWithQueryDsl(houseId, pageable);
     }
 }

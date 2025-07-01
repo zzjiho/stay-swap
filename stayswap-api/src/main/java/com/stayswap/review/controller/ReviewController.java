@@ -4,6 +4,7 @@ import com.stayswap.model.RestApiResponse;
 import com.stayswap.common.resolver.userinfo.UserInfo;
 import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import com.stayswap.review.model.dto.request.ReviewRequest;
+import com.stayswap.review.model.dto.response.HouseReviewResponse;
 import com.stayswap.review.model.dto.response.ReceivedReviewResponse;
 import com.stayswap.review.model.dto.response.ReviewResponse;
 import com.stayswap.review.model.dto.response.WrittenReviewResponse;
@@ -33,11 +34,12 @@ public class ReviewController {
     )
     @PostMapping
     public RestApiResponse<ReviewResponse> createReview(
-            @RequestParam("userId") Long userId,
+            @UserInfo UserInfoDto userInfo,
             @Valid @RequestBody ReviewRequest request,
             BindingResult bindingResult) {
         
-        return RestApiResponse.success(reviewService.createReview(userId, request));
+        return RestApiResponse.success(
+                reviewService.createReview(userInfo.getUserId(), request));
     }
     
     @Operation(
@@ -64,5 +66,18 @@ public class ReviewController {
             
         return RestApiResponse.success(
                 reviewService.getWrittenReviews(userInfo.getUserId(), pageable));
+    }
+    
+    @Operation(
+            summary = "특정 숙소의 리뷰 목록 조회 API",
+            description = "특정 숙소에 대한 리뷰 목록을 조회합니다. 리뷰 작성자 정보와 평점, 내용을 포함합니다."
+    )
+    @GetMapping("/house/{houseId}")
+    public RestApiResponse<Slice<HouseReviewResponse>> getHouseReviews(
+            @PathVariable("houseId") Long houseId,
+            @PageableDefault(size = 10) Pageable pageable) {
+            
+        return RestApiResponse.success(
+                reviewService.getHouseReviews(houseId, pageable));
     }
 } 
