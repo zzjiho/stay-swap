@@ -17,6 +17,21 @@
     <script>
         console.log('🔍 TEST 1: HTML HEAD에서 스크립트 실행됨');
         
+        // 렌더링 시점 추적
+        window.renderingDebug = {
+            startTime: performance.now(),
+            events: []
+        };
+        
+        function logRenderEvent(event, data = {}) {
+            const timestamp = performance.now() - window.renderingDebug.startTime;
+            const logData = { event, timestamp: timestamp.toFixed(2), ...data };
+            window.renderingDebug.events.push(logData);
+            console.log(`🔍 [${timestamp.toFixed(2)}ms] ${event}:`, data);
+        }
+        
+        logRenderEvent('HEAD_SCRIPT_START');
+        
         // auth 객체 미리 초기화 (auth-common.js가 없는 경우 대비)
         window.auth = window.auth || {
             accessToken: null,
@@ -32,35 +47,105 @@
             errors: []
         };
         
-        // 이전 로그인 상태를 로컬스토리지에서 확인하여 초기 UI 설정
-        const lastLoginState = localStorage.getItem('stayswap_last_login_state');
-        
-        // 페이지 로드 즉시 초기 상태 설정 (깜빡임 최소화)
-        function setInitialUIState() {
-            const userProfile = document.getElementById('user-profile');
-            const notificationIcon = document.getElementById('notification-icon');
-            const authButtons = document.getElementById('auth-buttons');
+        // 즉시 로그인 상태 확인하여 body 클래스 설정
+        (function setInitialAuthClass() {
+            const token = localStorage.getItem('access_token');
+            const expireTime = localStorage.getItem('token_expire_time');
+            const now = new Date().getTime();
+            const isLoggedIn = !!(token && expireTime && now < parseInt(expireTime));
             
-            if (lastLoginState === 'true') {
-                // 이전에 로그인 상태였다면 미리 로그인 UI 표시
-                if (userProfile) userProfile.style.display = 'block';
-                if (notificationIcon) notificationIcon.style.display = 'block';
-                if (authButtons) authButtons.style.display = 'none';
-                console.log('🔍 이전 로그인 상태 기반으로 UI 미리 설정됨');
+            logRenderEvent('TOKEN_CHECK', {
+                hasToken: !!token,
+                isExpired: expireTime ? now > parseInt(expireTime) : true,
+                isLoggedIn: isLoggedIn
+            });
+            
+            // 즉시 body 클래스 설정 (DOM 로드를 기다리지 않음)
+            const targetClass = isLoggedIn ? 'auth-logged-in' : 'auth-logged-out';
+            
+            // body가 아직 없으면 HTML에 클래스 추가
+            if (!document.body) {
+                document.documentElement.className += ' ' + targetClass + '-pending';
+                logRenderEvent('HTML_CLASS_SET', { className: targetClass + '-pending' });
+                
+                // body가 생성되는 즉시 클래스 이동
+                const observer = new MutationObserver(function(mutations) {
+                    if (document.body) {
+                        document.body.className = targetClass;
+                        document.documentElement.className = document.documentElement.className.replace(targetClass + '-pending', '');
+                        logRenderEvent('BODY_CLASS_SET_IMMEDIATE', { className: targetClass });
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(document.documentElement, { childList: true });
             } else {
-                // 이전에 로그아웃 상태였다면 로그인 버튼 표시
-                if (authButtons) authButtons.style.display = 'flex';
-                console.log('🔍 이전 로그아웃 상태 기반으로 UI 미리 설정됨');
+                document.body.className = targetClass;
+                logRenderEvent('BODY_CLASS_SET_IMMEDIATE', { className: targetClass });
             }
-        }
+            
+            // DOM 로드 후 추가 확인
+            document.addEventListener('DOMContentLoaded', function() {
+                logRenderEvent('DOM_CONTENT_LOADED_START');
+                
+                // 클래스가 제대로 설정되었는지 확인
+                if (document.body.className !== targetClass) {
+                    document.body.className = targetClass;
+                    logRenderEvent('BODY_CLASS_CORRECTED', { 
+                        expectedClass: targetClass,
+                        actualClass: document.body.className 
+                    });
+                }
+                
+                // UI 요소 상태 즉시 확인
+                setTimeout(() => {
+                    const userProfile = document.getElementById('user-profile');
+                    const authButtons = document.getElementById('auth-buttons');
+                    const notificationIcon = document.getElementById('notification-icon');
+                    
+                    logRenderEvent('UI_ELEMENTS_CHECK', {
+                        userProfile: userProfile ? {
+                            display: getComputedStyle(userProfile).display,
+                            visibility: getComputedStyle(userProfile).visibility
+                        } : 'not found',
+                        authButtons: authButtons ? {
+                            display: getComputedStyle(authButtons).display,
+                            visibility: getComputedStyle(authButtons).visibility
+                        } : 'not found',
+                        notificationIcon: notificationIcon ? {
+                            display: getComputedStyle(notificationIcon).display,
+                            visibility: getComputedStyle(notificationIcon).visibility
+                        } : 'not found'
+                    });
+                }, 10);
+                
+                // 추가 체크 (CSS 로딩 완료 후)
+                setTimeout(() => {
+                    const userProfile = document.getElementById('user-profile');
+                    const authButtons = document.getElementById('auth-buttons');
+                    const notificationIcon = document.getElementById('notification-icon');
+                    
+                    logRenderEvent('UI_ELEMENTS_DELAYED_CHECK', {
+                        userProfile: userProfile ? {
+                            display: getComputedStyle(userProfile).display,
+                            visibility: getComputedStyle(userProfile).visibility,
+                            cssRules: Array.from(document.styleSheets).flatMap(sheet => {
+                                try {
+                                    return Array.from(sheet.cssRules || [])
+                                        .filter(rule => rule.selectorText && rule.selectorText.includes('#user-profile'))
+                                        .map(rule => ({ selector: rule.selectorText, style: rule.style.display }));
+                                } catch (e) { return []; }
+                            })
+                        } : 'not found',
+                        authButtons: authButtons ? {
+                            display: getComputedStyle(authButtons).display,
+                            visibility: getComputedStyle(authButtons).visibility
+                        } : 'not found'
+                    });
+                }, 200);
+            });
+        })();
         
-        // DOM이 준비되면 즉시 설정
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setInitialUIState);
-        } else {
-            setInitialUIState();
-        }
-        
+        logRenderEvent('HEAD_SCRIPT_END');
         console.log('🔍 TEST 2: Layout script loaded: auth and fcmDebug objects initialized');
     </script>
 </head>
@@ -81,25 +166,24 @@
 
             <div class="user-actions">
                 <!-- 프로필 / 드롭다운 -->
-                <div id="user-profile" class="user-profile-container" style="display:none;">
+                <div id="user-profile" class="user-profile-container">
                     <div class="profile-dropdown-container">
                         <a href="#" class="avatar-link" id="profile-dropdown-toggle">
                             <div class="avatar">
                                 <img id="profile-image" src="/images/profile.png" alt="프로필" />
-<!--                                <span id="profile-initial">사</span>-->
                             </div>
                         </a>
 
                         <div id="profile-dropdown" class="profile-dropdown">
-                            <a href="/page/profile"      class="dropdown-item">마이페이지</a>
+                            <a href="/page/profile" class="dropdown-item">마이페이지</a>
                             <a href="/page/subscription" class="dropdown-item">구독관리</a>
-                            <a href="#" id="logout-btn"  class="dropdown-item">로그아웃</a>
+                            <a href="#" id="logout-btn" class="dropdown-item">로그아웃</a>
                         </div>
                     </div>
                 </div>
                 
                 <!-- 알림 아이콘 -->
-                <div id="notification-icon" class="notification-container" style="display:none;">
+                <div id="notification-icon" class="notification-container">
                     <a href="#" id="notification-dropdown-toggle" class="notification-icon-link">
                         <i class="fas fa-bell"></i>
                         <span id="notification-badge" class="notification-badge dot-only" style="display:none;"></span>
@@ -116,7 +200,7 @@
                 </div>
 
                 <!-- 로그인 버튼 -->
-                <div id="auth-buttons" style="display:flex;">
+                <div id="auth-buttons">
                     <a href="/page/auth" class="btn btn-outline">로그인</a>
                 </div>
             </div>
@@ -254,22 +338,60 @@
         window.fillProfile = function(user) {
             console.log('🔍 fillProfile 호출:', user);
             if (!user) return;
-            const img  = document.getElementById('profile-image');
+            
+            const img = document.getElementById('profile-image');
             const init = document.getElementById('profile-initial');
+            const userProfile = document.getElementById('user-profile');
 
-            if (user.profile) {
-                if (img) {
-                    img.src = user.profile;
-                    img.style.display  = 'block';
-                    console.log('🔍 프로필 이미지 설정됨');
-                }
-                if (init) init.style.display = 'none';
+            // 프로필 컨테이너에 로딩 클래스 추가
+            if (userProfile) {
+                userProfile.classList.add('loading');
+            }
+
+            if (user.profile && user.profile !== '/images/profile.png') {
+                // 새 이미지 미리 로드
+                const newImg = new Image();
+                newImg.onload = function() {
+                    if (img) {
+                        // 부드러운 전환을 위해 opacity 조작
+                        img.style.opacity = '0.7';
+                        setTimeout(() => {
+                            img.src = user.profile;
+                            img.style.display = 'block';
+                            img.style.opacity = '1';
+                            console.log('🔍 프로필 이미지 부드럽게 설정됨');
+                        }, 100);
+                    }
+                    if (init) init.style.display = 'none';
+                    
+                    // 로딩 상태 제거
+                    if (userProfile) {
+                        userProfile.classList.remove('loading');
+                    }
+                };
+                newImg.onerror = function() {
+                    console.warn('🔍 프로필 이미지 로드 실패, 기본 이미지 사용');
+                    // 이미지 로드 실패 시 기본 이미지 유지
+                    if (userProfile) {
+                        userProfile.classList.remove('loading');
+                    }
+                };
+                newImg.src = user.profile;
             } else {
-                if (img) img.style.display  = 'none';
-                if (init) {
+                // 프로필 이미지가 없거나 기본 이미지인 경우
+                if (img) {
+                    img.style.display = 'block'; // 기본 이미지 유지
+                    console.log('🔍 기본 프로필 이미지 유지됨');
+                }
+                if (init && user.name) {
                     init.style.display = 'block';
-                    init.textContent   = user.name ? user.name.charAt(0) : '?';
+                    init.textContent = user.name.charAt(0);
                     console.log('🔍 프로필 이니셜 설정됨');
+                }
+                
+                // 로딩 상태 제거
+                if (userProfile) {
+                    userProfile.classList.remove('loading');
                 }
             }
         };

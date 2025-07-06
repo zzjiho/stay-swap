@@ -289,18 +289,15 @@ function highlightCurrentPage() {
 function updateUIBasedOnAuthState() {
     // auth-common.js의 isLoggedIn 함수에만 의존
     const isUserLoggedIn = (typeof window.isLoggedIn === 'function') ? window.isLoggedIn() : false;
-    const userProfile = document.getElementById('user-profile');
-    const authButtons = document.getElementById('auth-buttons');
-    const notificationIcon = document.getElementById('notification-icon');
 
     console.log('🔍 updateUIBasedOnAuthState 호출됨. 로그인 상태:', isUserLoggedIn);
 
-    // 현재 UI 상태 확인 (깜빡임 방지)
-    const currentUIState = userProfile?.style.display === 'block' ? 'logged-in' : 'logged-out';
-    const targetUIState = isUserLoggedIn ? 'logged-in' : 'logged-out';
+    // 현재 body 클래스 확인
+    const currentClass = document.body.className;
+    const targetClass = isUserLoggedIn ? 'auth-logged-in' : 'auth-logged-out';
     
-    if (currentUIState === targetUIState) {
-        console.log('🔍 UI 상태 변경 없음. 현재:', currentUIState);
+    if (currentClass === targetClass) {
+        console.log('🔍 UI 상태 변경 없음. 현재:', currentClass);
         
         // 상태가 같더라도 로그인 상태일 때는 알림 확인
         if (isUserLoggedIn && !window.notificationCheckedOnce) {
@@ -311,13 +308,12 @@ function updateUIBasedOnAuthState() {
         return;
     }
 
-    console.log('🔍 UI 상태 변경:', currentUIState, '→', targetUIState);
+    console.log('🔍 UI 상태 변경:', currentClass, '→', targetClass);
+    
+    // body 클래스 변경으로 CSS가 자동으로 UI 업데이트
+    document.body.className = targetClass;
 
     if (isUserLoggedIn) {
-        if (userProfile) userProfile.style.display = 'block';
-        if (notificationIcon) notificationIcon.style.display = 'block';
-        if (authButtons) authButtons.style.display = 'none';
-        
         // 로그인 상태일 때 새 알림 확인 (페이지당 1회만)
         if (!window.notificationCheckedOnce) {
             window.notificationCheckedOnce = true;
@@ -325,10 +321,6 @@ function updateUIBasedOnAuthState() {
             setTimeout(() => checkNewNotifications(), 200);
         }
     } else {
-        if (userProfile) userProfile.style.display = 'none';
-        if (notificationIcon) notificationIcon.style.display = 'none';
-        if (authButtons) authButtons.style.display = 'flex';
-        
         // 로그아웃 상태일 때 배지 숨기기
         updateNotificationBadge(false);
 

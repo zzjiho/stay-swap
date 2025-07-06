@@ -397,3 +397,188 @@
     padding: 1rem;
     display: none;
 }
+
+/* 리뷰 모달 스타일 */
+.review-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    width: 400px;
+    max-width: 90%;
+}
+
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
+.review-modal .modal-content {
+    position: relative;
+    width: 100%;
+}
+
+.review-modal .modal-header {
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.review-modal .modal-header h3 {
+    margin: 0;
+    font-size: 1.2em;
+    color: #333;
+}
+
+.review-modal .close-button {
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: #666;
+}
+
+.review-modal .close-button:hover {
+    color: #333;
+}
+
+.review-modal .modal-body {
+    margin-bottom: 20px;
+}
+
+.review-modal .modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+/* 별점 스타일 */
+.rating-container {
+    margin-bottom: 20px;
+}
+
+.rating-container p {
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #333;
+}
+
+.star-rating {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.star {
+    font-size: 24px;
+    color: #ddd;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.star:hover,
+.star.active {
+    color: #ffd700;
+}
+
+.rating-text {
+    font-size: 14px;
+    color: #666;
+    margin-left: 10px;
+}
+
+/* 댓글 입력 스타일 */
+.comment-container {
+    margin-top: 20px;
+}
+
+.comment-container p {
+    margin-bottom: 10px;
+    font-weight: 600;
+    color: #333;
+}
+
+#reviewComment {
+    width: 100%;
+    min-height: 100px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+#reviewComment:focus {
+    outline: none;
+    border-color: #4361ee;
+    box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.1);
+}
+
+/* 버튼 스타일 */
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary {
+    background-color: #f5f5f5;
+    color: #666;
+}
+
+.btn-secondary:hover {
+    background-color: #e9e9e9;
+}
+
+.btn-primary {
+    background-color: #4361ee;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #3a56d4;
+}
+
+.btn-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* 리뷰 버튼 스타일 */
+.btn-review {
+    background-color: #10b981;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-review:hover {
+    background-color: #059669;
+    transform: translateY(-1px);
+}

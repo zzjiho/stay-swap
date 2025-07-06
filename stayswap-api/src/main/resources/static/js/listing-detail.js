@@ -1405,6 +1405,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 지도 뷰를 viewport에 맞춤
                     map.fitBounds(bounds);
                     
+                    // 영역을 좀 더 넓게 보기 위해 zoom out
+                    const currentZoom = map.getZoom();
+                    map.setZoom(currentZoom - 1);
+                    
                     console.log('🎨 영역 표시 완료! (Geocoding API 호출 없음)');
                     
                 } else {
@@ -1531,8 +1535,8 @@ document.addEventListener('DOMContentLoaded', function() {
             container.append(reviewElement);
         });
 
-        // 메인 페이지에서 6개보다 많은 리뷰가 있으면 "더보기" 버튼 표시
-        if (isMainPage && reviews.length > 6) {
+        // 메인 페이지에서 6개 이상의 리뷰가 있거나 더 많은 페이지가 있으면 "더보기" 버튼 표시
+        if (isMainPage && (reviews.length >= 6 || hasNextPage)) {
             $('#show-all-reviews-btn').show();
             $('#total-reviews-count').text(reviews.length);
         } else if (isMainPage) {
@@ -1578,18 +1582,29 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#modal-reviews-rating').text($('#reviews-rating').text());
         $('#modal-reviews-count').text($('#reviews-count').text());
         
-        // 평점 분석 복사
-        $('.rating-breakdown-modal').html($('.rating-breakdown').html());
-        
-        // 리뷰 렌더링
-        renderModalReviews(allReviews);
-        
         // 모달 열기
         openPopup('reviews-modal');
         
-        // 모달이 열린 후 추가 리뷰 로드 (필요시)
-        if (allReviews.length <= 6 && hasNextPage) {
-            loadMoreReviews();
+        // 전체 리뷰 개수 확인
+        const totalReviewCount = parseInt($('#reviews-count').text()) || 0;
+        console.log('모달 열림: 전체 리뷰 개수', totalReviewCount, '개, 현재 로드된 리뷰', allReviews.length, '개');
+        
+        // 모든 리뷰가 로드되지 않았다면 전체 로드
+        if (allReviews.length < totalReviewCount) {
+            console.log('추가 리뷰 로드 필요');
+            fetchHouseReviews(houseId, totalReviewCount, 0).then(() => {
+                // 모든 리뷰 로드 후 렌더링
+                renderModalReviews(allReviews);
+                console.log('모달 리뷰 로드 완료:', allReviews.length, '개');
+            }).catch(error => {
+                console.error('모달 리뷰 로드 실패:', error);
+                // 실패해도 기존 리뷰는 표시
+                renderModalReviews(allReviews);
+            });
+        } else {
+            // 이미 모든 리뷰가 로드된 경우
+            console.log('모든 리뷰가 이미 로드됨');
+            renderModalReviews(allReviews);
         }
     }
 

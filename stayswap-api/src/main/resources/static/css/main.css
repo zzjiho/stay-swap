@@ -5,6 +5,121 @@
     transition: opacity 0.1s ease-out;
 }
 
+/* 프로필 요소 안정화 */
+#user-profile .avatar {
+    min-width: 32px;
+    min-height: 32px;
+    position: relative;
+}
+
+#user-profile .avatar img {
+    transition: opacity 0.2s ease-in-out;
+    opacity: 1;
+}
+
+/* 프로필 로딩 상태 */
+#user-profile.loading .avatar img {
+    opacity: 0.7;
+}
+
+/* 프로필 요소가 표시될 때 부드러운 전환 */
+html body.auth-logged-in #user-profile {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* 프로필 요소가 숨겨질 때 */
+html body.auth-logged-out #user-profile,
+html body:not(.auth-logged-in) #user-profile {
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0;
+    transform: translateX(10px);
+}
+
+/* 인증 상태별 요소 표시/숨김 제어 - 최고 우선순위 */
+/* 기본 상태: 로그아웃 (JavaScript 로드 전) */
+html body #user-profile,
+html body #notification-icon {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+html body #auth-buttons {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* HTML 레벨 클래스 (body 생성 전) */
+html.auth-logged-in-pending #user-profile,
+html.auth-logged-in-pending #notification-icon {
+    display: block !important;
+    visibility: visible !important;
+}
+
+html.auth-logged-in-pending #auth-buttons {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+html.auth-logged-out-pending #user-profile,
+html.auth-logged-out-pending #notification-icon {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+html.auth-logged-out-pending #auth-buttons {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* 로그인 상태 클래스가 적용된 경우 - 최고 우선순위 */
+html body.auth-logged-in #user-profile,
+html body.auth-logged-in #notification-icon {
+    display: block !important;
+    visibility: visible !important;
+}
+
+html body.auth-logged-in #auth-buttons {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* 로그아웃 상태 클래스가 적용된 경우 (명시적) - 최고 우선순위 */
+html body.auth-logged-out #user-profile,
+html body.auth-logged-out #notification-icon {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+html body.auth-logged-out #auth-buttons {
+    display: flex !important;
+    visibility: visible !important;
+}
+
+/* 추가 방어 규칙 - 다른 CSS의 간섭 방지 */
+body:not(.auth-logged-in) #user-profile,
+body:not(.auth-logged-in) #notification-icon {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+body:not(.auth-logged-out) #auth-buttons {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* 브라우저별 호환성 */
+@supports (display: flex) {
+    html body #auth-buttons,
+    html body.auth-logged-out #auth-buttons,
+    html.auth-logged-out-pending #auth-buttons {
+        display: flex !important;
+    }
+}
+
 /* 기본 스타일 */
 :root {
     --primary-color: #4f46e5;

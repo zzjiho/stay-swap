@@ -8,6 +8,10 @@ $(document).ready(function() {
     let activeStatus = "all"; // 기본값은 모든 상태
     let isInitialized = false; // 초기화 중복 방지 플래그
 
+    // 리뷰 모달 관련 변수
+    let currentExchangeId = null;
+    let currentRating = 0;
+
     // 페이지 초기화 시 로딩 표시
     showInitialLoading();
     
@@ -391,6 +395,13 @@ $(document).ready(function() {
             // 메시지 보내기 페이지로 이동 또는 모달 표시
             alert("메시지 기능은 준비 중입니다.");
         });
+
+        // 리뷰 작성 버튼
+        $(".write-review").on("click", function() {
+            const swapId = $(this).data("id");
+            const targetHouseId = $(this).data("target-house");
+            openReviewModal(swapId, targetHouseId);
+        });
     }
 
     /**
@@ -583,6 +594,11 @@ $(document).ready(function() {
                     <button class="btn btn-outline send-message" data-id="${exchange.swapId}">메시지 보내기</button>
                     <button class="btn btn-outline cancel-request" data-id="${exchange.swapId}">취소 요청</button>
                 `;
+            } else if (status === "COMPLETED") {
+                // 게스트가 완료된 교환/숙박에 대해 리뷰 작성 (리뷰 미작성시만)
+                if (!exchange.hasReview) {
+                    return `<button class="btn btn-review write-review" data-id="${exchange.swapId}" data-target-house="${exchange.hostHouseId}">리뷰 작성</button>`;
+                }
             }
         } else { // 호스트
             if (status === "PENDING") {
@@ -595,6 +611,11 @@ $(document).ready(function() {
                     <button class="btn btn-outline send-message" data-id="${exchange.swapId}">메시지 보내기</button>
                     <button class="btn btn-outline cancel-request" data-id="${exchange.swapId}">취소 요청</button>
                 `;
+            } else if (status === "COMPLETED") {
+                // 호스트가 완료된 교환에 대해 리뷰 작성 (교환 타입이면서 리뷰 미작성시만)
+                if (exchange.swapType === "SWAP" && !exchange.hasReview) {
+                    return `<button class="btn btn-review write-review" data-id="${exchange.swapId}" data-target-house="${exchange.requesterHouseId}">리뷰 작성</button>`;
+                }
             }
         }
         
@@ -624,4 +645,98 @@ $(document).ready(function() {
 
         return typeMap[type] || "기타";
     }
+
+    /**
+     * 리뷰 모달 열기
+     */
+    window.openReviewModal = function(exchangeId) {
+        currentExchangeId = exchangeId;
+        currentRating = 0;
+        $('#modalOverlay').show();
+        $('#reviewModal').show();
+        resetReviewForm();
+    }
+
+    /**
+     * 리뷰 모달 닫기
+     */
+    function closeReviewModal() {
+        $('#modalOverlay').hide();
+        $('#reviewModal').hide();
+        resetReviewForm();
+    }
+
+    function resetReviewForm() {
+        currentRating = 0;
+        $('#reviewComment').val('');
+        $('.star').removeClass('active');
+    }
+
+    function highlightStars(rating) {
+        $('.star').each(function() {
+            const starRating = parseInt($(this).data('rating'));
+            $(this).toggleClass('active', starRating <= rating);
+        });
+    }
+
+    async function submitReview() {
+        if (!currentRating) {
+            alert('별점을 선택해주세요.');
+            return;
+        }
+
+        const comment = $('#reviewComment').val();
+        
+        try {
+            // fetchWithAuth 함수를 사용하여 인증된 API 호출
+            const response = await window.fetchWithAuth('/api/review', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    swapId: currentExchangeId,
+                    rating: currentRating,
+                    comment: comment || null
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error('리뷰 작성에 실패했습니다.');
+            }
+
+            alert('리뷰가 성공적으로 작성되었습니다!');
+            closeReviewModal();
+            location.reload(); // 페이지 새로고침
+        } catch (error) {
+            console.error('Error:', error);
+            alert(error.message);
+        }
+    }
+
+    // 리뷰 모달 이벤트 핸들러
+    $('#closeReviewBtn, #cancelReviewBtn').on('click', closeReviewModal);
+    $('#submitReviewBtn').on('click', submitReview);
+
+    $('.star').on('mouseover', function() {
+        const rating = $(this).data('rating');
+        highlightStars(rating);
+    }).on('mouseout', function() {
+        highlightStars(currentRating);
+    }).on('click', function() {
+        currentRating = parseInt($(this).data('rating'));
+        highlightStars(currentRating);
+    });
+
+    $('#modalOverlay').on('click', function(e) {
+        if (e.target === this) {
+            closeReviewModal();
+        }
+    });
+
+    $(document).on('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeReviewModal();
+        }
+    });
 });
