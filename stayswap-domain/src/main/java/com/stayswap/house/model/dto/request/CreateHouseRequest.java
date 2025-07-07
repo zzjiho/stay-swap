@@ -40,14 +40,29 @@ public class CreateHouseRequest {
     @Schema(description = "최대 수용 인원", example = "4")
     private Integer maxGuests;
 
-    @Schema(description = "상세 주소", example = "서울특별시 강남구 테헤란로 123, 456동 789호")
-    private String address;
+    @Schema(description = "한국어 상세 주소", example = "서울특별시 강남구 테헤란로 123, 456동 789호")
+    private String addressKo;
 
-    @Schema(description = "도시명", example = "서울")
-    private String city;
+    @Schema(description = "한국어 도시명", example = "서울")
+    private String cityKo;
 
-    @Schema(description = "지역구", example = "강남구")
-    private String district;
+    @Schema(description = "한국어 지역구", example = "강남구")
+    private String districtKo;
+
+    @Schema(description = "한국어 국가명", example = "대한민국")
+    private String countryKo;
+
+    @Schema(description = "영어 상세 주소", example = "123 Teheran-ro, Gangnam-gu, Seoul, South Korea")
+    private String addressEn;
+
+    @Schema(description = "영어 도시명", example = "Seoul")
+    private String cityEn;
+
+    @Schema(description = "영어 지역구", example = "Gangnam-gu")
+    private String districtEn;
+
+    @Schema(description = "영어 국가명", example = "South Korea")
+    private String countryEn;
 
     @Schema(description = "위도", example = "37.5665")
     private Double latitude;
@@ -162,9 +177,14 @@ public class CreateHouseRequest {
                 bed,
                 bathrooms,
                 maxGuests,
-                address,
-                city,
-                district,
+                addressKo,
+                cityKo,
+                districtKo,
+                countryKo,
+                addressEn,
+                cityEn,
+                districtEn,
+                countryEn,
                 latitude,
                 longitude,
                 viewportNortheastLat,
