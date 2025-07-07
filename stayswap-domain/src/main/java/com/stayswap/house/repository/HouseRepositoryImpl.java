@@ -7,6 +7,7 @@ import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.core.types.dsl.Expressions;
 import com.querydsl.core.types.dsl.NumberExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.stayswap.house.model.dto.request.HouseSearchRequest;
 import com.stayswap.house.model.dto.response.*;
@@ -44,8 +45,14 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         house.id,
                         house.title,
                         house.houseType,
-                        house.city,
-                        house.district,
+                        house.cityKo,
+                        house.districtKo,
+                        house.countryKo,
+                        house.addressKo,
+                        house.cityEn,
+                        house.districtEn,
+                        house.countryEn,
+                        house.addressEn,
                         house.bedrooms,
                         house.bed,
                         house.maxGuests,
@@ -64,6 +71,7 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                 .where(
                         wholeKeyword(request.getKeyword()),
                         cityEq(request.getCity()),
+                        countryEq(request.getCountry()),
                         houseTypeEq(request.getHouseType()),
                         amenitiesContains(request.getAmenities()),
                         isActive(),
@@ -95,20 +103,23 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         house.bed,
                         house.bathrooms,
                         house.maxGuests,
-                        house.city,
-                        house.district,
+                        house.cityKo,
+                        house.districtKo,
+                        house.countryKo,
+                        house.addressKo,
+                        house.cityEn,
+                        house.districtEn,
+                        house.countryEn,
+                        house.addressEn,
                         house.petsAllowed,
-                        // 평점
                         queryFactory.select(review.rating.avg().coalesce(0.0))
                                 .from(review)
                                 .where(review.targetHouse.id.eq(house.id))
                                 .where(review.rating.isNotNull()),
-                        // 리뷰 수
                         queryFactory.select(review.count().coalesce(0L))
                                 .from(review)
                                 .where(review.targetHouse.id.eq(house.id)),
                         house.user.id,
-                        // 편의시설 - 순서 수정
                         Projections.constructor(
                                 HouseDetailResponse.AmenityInfo.class,
                                 houseOption.hasFreeWifi,
@@ -272,14 +283,27 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
     private BooleanExpression wholeKeyword(String keyword) {
         return hasText(keyword) ? house.title.containsIgnoreCase(keyword)
                 .or(house.description.containsIgnoreCase(keyword))
-                .or(house.address.containsIgnoreCase(keyword))
-                .or(house.city.containsIgnoreCase(keyword))
-                .or(house.district.containsIgnoreCase(keyword))
+                .or(house.addressKo.containsIgnoreCase(keyword))
+                .or(house.cityKo.containsIgnoreCase(keyword))
+                .or(house.districtKo.containsIgnoreCase(keyword))
+                .or(house.countryKo.containsIgnoreCase(keyword))
+                .or(house.addressEn.containsIgnoreCase(keyword))
+                .or(house.cityEn.containsIgnoreCase(keyword))
+                .or(house.districtEn.containsIgnoreCase(keyword))
+                .or(house.countryEn.containsIgnoreCase(keyword))
                 : null;
     }
 
     private BooleanExpression cityEq(String city) {
-        return hasText(city) ? house.city.eq(city) : null;
+        return hasText(city) ? house.cityKo.eq(city)
+                .or(house.cityEn.eq(city))
+                .or(house.countryKo.eq(city))
+                .or(house.countryEn.eq(city)) : null;
+    }
+
+    private BooleanExpression countryEq(String country) {
+        return hasText(country) ? house.countryKo.eq(country)
+                .or(house.countryEn.eq(country)) : null;
     }
 
     private BooleanExpression houseTypeEq(com.stayswap.house.constant.HouseType houseType) {
@@ -358,7 +382,7 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         orderSpecifiers.add(new OrderSpecifier<>(direction, house.title));
                         break;
                     case "city":
-                        orderSpecifiers.add(new OrderSpecifier<>(direction, house.city));
+                        orderSpecifiers.add(new OrderSpecifier<>(direction, house.cityKo));
                         break;
                 }
             }

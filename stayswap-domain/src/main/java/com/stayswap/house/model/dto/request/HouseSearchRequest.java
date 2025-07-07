@@ -22,6 +22,9 @@ public class HouseSearchRequest {
     @Schema(description = "도시", example = "서울")
     private String city;
 
+    @Schema(description = "국가", example = "대한민국")
+    private String country;
+
     @Schema(description = "숙소 유형", example = "APT")
     private HouseType houseType;
 

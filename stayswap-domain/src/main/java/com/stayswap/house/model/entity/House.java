@@ -46,11 +46,30 @@ public class House extends BaseTimeEntity {
 
     private Integer maxGuests;
 
-    private String address;
+    // 다국어 지원 필드들
+    @Column(name = "address_ko")
+    private String addressKo;
 
-    private String city;
+    @Column(name = "city_ko")
+    private String cityKo;
 
-    private String district;
+    @Column(name = "district_ko")
+    private String districtKo;
+
+    @Column(name = "country_ko")
+    private String countryKo;
+
+    @Column(name = "address_en")
+    private String addressEn;
+
+    @Column(name = "city_en")
+    private String cityEn;
+
+    @Column(name = "district_en")
+    private String districtEn;
+
+    @Column(name = "country_en")
+    private String countryEn;
 
     @Column(columnDefinition = "DECIMAL(10,7)")
     private Double latitude;
@@ -58,41 +77,39 @@ public class House extends BaseTimeEntity {
     @Column(columnDefinition = "DECIMAL(10,7)")
     private Double longitude;
 
-    // viewport 영역 정보 (빨간색 영역 표시용)
-    @Column(name = "viewport_northeast_lat", columnDefinition = "DECIMAL(10,7)")
+    @Column(columnDefinition = "DECIMAL(10,7)")
     private Double viewportNortheastLat;
 
-    @Column(name = "viewport_northeast_lng", columnDefinition = "DECIMAL(10,7)")
+    @Column(columnDefinition = "DECIMAL(10,7)")
     private Double viewportNortheastLng;
 
-    @Column(name = "viewport_southwest_lat", columnDefinition = "DECIMAL(10,7)")
+    @Column(columnDefinition = "DECIMAL(10,7)")
     private Double viewportSouthwestLat;
 
-    @Column(name = "viewport_southwest_lng", columnDefinition = "DECIMAL(10,7)")
+    @Column(columnDefinition = "DECIMAL(10,7)")
     private Double viewportSouthwestLng;
 
-    @Column(name = "pets_allowed")
     private Boolean petsAllowed;
 
-    @Column(name = "is_active")
     private Boolean isActive;
 
-    @Column(name = "is_delete")
     private Boolean isDelete;
 
-    @ManyToOne
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToOne(fetch = LAZY, cascade = ALL)
+    @OneToOne(cascade = ALL, orphanRemoval = true)
     @JoinColumn(name = "house_option_id")
     private HouseOption houseOption;
     
-    @OneToMany(mappedBy = "house", cascade = CascadeType.ALL)
-    @Builder.Default
+    @OneToMany(mappedBy = "house", cascade = ALL, orphanRemoval = true)
+    private List<HouseImage> houseImages = new ArrayList<>();
+
+    @OneToMany(mappedBy = "house", cascade = ALL, orphanRemoval = true)
     private List<HouseLike> houseLikes = new ArrayList<>();
 
-    public static House newHouse(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, String district, Double latitude, Double longitude, Double viewportNortheastLat, Double viewportNortheastLng, Double viewportSouthwestLat, Double viewportSouthwestLng, Boolean petsAllowed, User user, HouseOption houseOption) {
+    public static House newHouse(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String addressKo, String cityKo, String districtKo, String countryKo, String addressEn, String cityEn, String districtEn, String countryEn, Double latitude, Double longitude, Double viewportNortheastLat, Double viewportNortheastLng, Double viewportSouthwestLat, Double viewportSouthwestLng, Boolean petsAllowed, User user, HouseOption houseOption) {
         return House.builder()
                 .title(title)
                 .description(description)
@@ -103,9 +120,14 @@ public class House extends BaseTimeEntity {
                 .bed(bed)
                 .bathrooms(bathrooms)
                 .maxGuests(maxGuests)
-                .address(address)
-                .city(city)
-                .district(district)
+                .addressKo(addressKo)
+                .cityKo(cityKo)
+                .districtKo(districtKo)
+                .countryKo(countryKo)
+                .addressEn(addressEn)
+                .cityEn(cityEn)
+                .districtEn(districtEn)
+                .countryEn(countryEn)
                 .latitude(latitude)
                 .longitude(longitude)
                 .viewportNortheastLat(viewportNortheastLat)
@@ -121,8 +143,10 @@ public class House extends BaseTimeEntity {
     }
     
     public void update(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, 
-                      Integer bed, Integer bathrooms, Integer maxGuests, String address, String city, 
-                      String district, Double latitude, Double longitude, Double viewportNortheastLat, Double viewportNortheastLng, Double viewportSouthwestLat, Double viewportSouthwestLng, Boolean petsAllowed, HouseOption houseOption) {
+                      Integer bed, Integer bathrooms, Integer maxGuests, String addressKo, String cityKo, String districtKo, String countryKo,
+                      String addressEn, String cityEn, String districtEn, String countryEn, Double latitude, Double longitude, 
+                      Double viewportNortheastLat, Double viewportNortheastLng, Double viewportSouthwestLat, 
+                      Double viewportSouthwestLng, Boolean petsAllowed, HouseOption houseOption) {
         this.title = title;
         this.description = description;
         this.rule = rule;
@@ -132,9 +156,14 @@ public class House extends BaseTimeEntity {
         this.bed = bed;
         this.bathrooms = bathrooms;
         this.maxGuests = maxGuests;
-        this.address = address;
-        this.city = city;
-        this.district = district;
+        this.addressKo = addressKo;
+        this.cityKo = cityKo;
+        this.districtKo = districtKo;
+        this.countryKo = countryKo;
+        this.addressEn = addressEn;
+        this.cityEn = cityEn;
+        this.districtEn = districtEn;
+        this.countryEn = countryEn;
         this.latitude = latitude;
         this.longitude = longitude;
         this.viewportNortheastLat = viewportNortheastLat;
