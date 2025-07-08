@@ -70,4 +70,22 @@ public class SwapNotificationService {
         notificationPublisher.sendNotification(message);
         log.info("교환 거절 알림 생성 완료 - recipientId: {}, swapId: {}", recipientId, swapId);
     }
+    
+    /**
+     * 교환 요청 만료 알림 생성 (게스트에게만)
+     */
+    public void createSwapExpiredNotification(Long recipientId, Long hostId, Long swapId) {
+        NotificationMessage message = NotificationMessage.builder()
+                .recipientId(recipientId)
+                .senderId(hostId)
+                .type(NotificationType.SWAP_EXPIRED)
+                .title("[교환 요청 안내]")
+                .content("호스트님께서 일정 기간 동안 응답을 하지 않아 숙박 요청이 자동으로 만료되었어요 😢\n새로운 숙소를 찾아보는 건 어떨까요? ✨")
+                // todo: 근처 위치의 숙소 추천해주기
+                .referenceId(swapId)
+                .build();
+        
+        notificationPublisher.sendNotification(message);
+        log.info("교환 만료 알림 생성 완료 - recipientId: {}, hostId: {}, swapId: {}", recipientId, hostId, swapId);
+    }
 } 

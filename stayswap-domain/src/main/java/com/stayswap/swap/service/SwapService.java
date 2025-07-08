@@ -11,4 +11,9 @@ public interface SwapService {
     SwapResponse acceptSwapRequest(Long userId, Long swapId);
     SwapResponse rejectSwapRequest(Long userId, Long swapId);
     SwapResponse cancelSwapRequest(Long userId, Long swapId);
+    
+    /**
+     * 36시간 이상 지난 PENDING 상태의 Swap들을 EXPIRED로 변경
+     */
+    void expirePendingSwaps();
 } 

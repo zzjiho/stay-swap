@@ -17,12 +17,17 @@ import com.stayswap.swap.repository.SwapRepository;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 import static com.stayswap.code.ErrorCode.*;
 
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -40,12 +45,17 @@ public class SwapServiceImpl implements SwapService {
 
         House requesterHouse = houseRepository.findById(request.getRequesterHouseId())
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
-        
+
         if (!requesterHouse.getUser().getId().equals(requesterId)) {
             throw new ForbiddenException(NOT_MY_HOUSE);
         }
 
         House targetHouse = validateTargetHouse(requesterId, request.getTargetHouseId());
+
+        // 대기 중인 요청이 있는지 확인
+        if (swapRepository.existsByHouseIdAndSwapStatus(targetHouse.getId(), SwapStatus.PENDING)) {
+            throw new BusinessException(ALREADY_PENDING_REQUEST);
+        }
 
         Swap swap = request.toEntity(requester, requesterHouse, targetHouse);
         Swap savedSwap = swapRepository.save(swap);
@@ -63,6 +73,11 @@ public class SwapServiceImpl implements SwapService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
 
         House targetHouse = validateTargetHouse(requesterId, request.getTargetHouseId());
+
+        // 대기 중인 요청이 있는지 확인
+        if (swapRepository.existsByHouseIdAndSwapStatus(targetHouse.getId(), SwapStatus.PENDING)) {
+            throw new BusinessException(ALREADY_PENDING_REQUEST);
+        }
 
         Swap swap = request.toEntity(requester, targetHouse);
         Swap savedSwap = swapRepository.save(swap);
@@ -146,6 +161,34 @@ public class SwapServiceImpl implements SwapService {
         swap.cancel();
         
         return SwapResponse.of(swap);
+    }
+
+    @Override
+    public void expirePendingSwaps() {
+        LocalDateTime cutoffTime = LocalDateTime.now().minusHours(36);
+        List<Swap> expiredSwaps = swapRepository.findPendingSwapsOlderThan(SwapStatus.PENDING, cutoffTime);
+        
+        log.info("만료 처리 대상 요청 {} 건 발견", expiredSwaps.size());
+        
+        for (Swap swap : expiredSwaps) {
+            try {
+                swap.expire();
+
+                // 알림 발송
+                Long requesterId = swap.getRequester().getId();
+                Long hostId = swap.getHouse().getUser().getId();
+                if (swap.getSwapType() == SwapType.SWAP) {
+                    swapRequestNotificationService.createSwapExpiredNotification(requesterId, hostId, swap.getId());
+                } else {
+                    swapRequestNotificationService.createBookingExpiredNotification(requesterId, hostId, swap.getId());
+                }
+                
+                log.info("요청 ID {} 만료 처리 완료 (게스트: {})", swap.getId(), requesterId);
+                
+            } catch (Exception e) {
+                log.error("요청 ID {} 만료 처리 중 오류 발생", swap.getId(), e);
+            }
+        }
     }
 
     // 자신의 숙소에는 교환, 숙박 요청 불가

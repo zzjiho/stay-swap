@@ -22,7 +22,7 @@ public enum ErrorCode {
     NOT_EXISTS_SWAP_REQUEST(NOT_FOUND, false, "NF003", "존재하지 않는 교환/숙박 요청입니다."),
     NOT_EXISTS_SWAP_HOUSE(NOT_FOUND, false, "NF004", "숙박 요청에는 상대방의 숙소에 리뷰를 작성할 수 없습니다."),
 
-    CANNOT_SWAP_WITH_OWN_HOUSE(BAD_REQUEST, false, "BR006", "자신의 숙소와는 교환할 수 없습니다."),
+    CANNOT_SWAP_WITH_OWN_HOUSE(BAD_REQUEST, false, "BR006", "자신의 숙소에는 신청할 수 없습니다."),
     ALREADY_PROCESSED_REQUEST(BAD_REQUEST, false, "BR007", "이미 처리된 요청입니다."),
     CANNOT_CANCEL_OTHERS_REQUEST(FORBIDDEN, false, "BR008", "본인이 보낸 요청, 본인의 숙소만 취소할 수 있습니다."),
     CANNOT_CANCEL_COMPLETED_REQUEST(BAD_REQUEST, false, "BR009", "완료된 요청은 취소할 수 없습니다."),
@@ -31,6 +31,7 @@ public enum ErrorCode {
     CANNOT_REVIEW_OWN_HOUSE(BAD_REQUEST, false, "BR012", "자신의 숙소에는 리뷰를 작성할 수 없습니다."),
 
     NOT_EXISTS_RESOURCE(BAD_REQUEST, false, "BR013", "존재하지 않는 알림입니다."),
+    ALREADY_PENDING_REQUEST(BAD_REQUEST, false, "BR014", "이미 대기 중인 요청이 있는 숙소입니다."),
 
 
     /**
