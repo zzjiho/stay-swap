@@ -7,6 +7,8 @@ public enum NotificationType {
     SWAP_ACCEPTED("교환 승인"),
     BOOKING_REJECTED("숙박 거절"),
     SWAP_REJECTED("교환 거절"),
+    BOOKING_EXPIRED("숙박 만료"),
+    SWAP_EXPIRED("교환 만료"),
     CHECK_IN("체크인 알림"),
     CHECK_OUT("체크아웃 알림"),
     LIKE_ADDED("좋아요 추가"),

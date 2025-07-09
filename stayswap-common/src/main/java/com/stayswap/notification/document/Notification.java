@@ -60,6 +60,7 @@ public abstract class Notification {
             case BOOKING_REQUEST:
             case BOOKING_ACCEPTED:
             case BOOKING_REJECTED:
+            case BOOKING_EXPIRED:
             case CHECK_IN:
             case CHECK_OUT:
                 return BookingNotification.builder()
@@ -78,6 +79,7 @@ public abstract class Notification {
             case SWAP_REQUEST:
             case SWAP_ACCEPTED:
             case SWAP_REJECTED:
+            case SWAP_EXPIRED:
                 return SwapNotification.builder()
                         .recipientId(message.getRecipientId())
                         .senderId(message.getSenderId())

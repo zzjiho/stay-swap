@@ -31,4 +31,7 @@ public class SwapListForHostResponse {
 //    private String requesterHouseTitle; // 요청자 숙소 제목
     private HouseType houseType;      // 숙소 유형
     private String imageUrl;          // 대표 이미지 URL
+    
+    // Review 정보
+    private Boolean hasReview;        // 리뷰 작성 여부
 } 

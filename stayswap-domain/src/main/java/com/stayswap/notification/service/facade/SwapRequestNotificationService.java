@@ -61,4 +61,18 @@ public class SwapRequestNotificationService {
     public void createSwapRejectedNotification(Long recipientId, Long senderId, Long swapId) {
         swapNotificationService.createSwapRejectedNotification(recipientId, senderId, swapId);
     }
+    
+    /**
+     * 숙박 요청 만료 알림 생성 (게스트에게만)
+     */
+    public void createBookingExpiredNotification(Long recipientId, Long hostId, Long bookingId) {
+        bookingNotificationService.createBookingExpiredNotification(recipientId, hostId, bookingId);
+    }
+    
+    /**
+     * 교환 요청 만료 알림 생성 (게스트에게만)
+     */
+    public void createSwapExpiredNotification(Long recipientId, Long hostId, Long swapId) {
+        swapNotificationService.createSwapExpiredNotification(recipientId, hostId, swapId);
+    }
 } 

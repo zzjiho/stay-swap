@@ -17,6 +17,7 @@ import java.util.List;
 
 import static com.stayswap.house.model.entity.QHouse.house;
 import static com.stayswap.house.model.entity.QHouseImage.houseImage;
+import static com.stayswap.review.model.entity.QReview.review;
 import static com.stayswap.swap.model.entity.QSwap.swap;
 
 @RequiredArgsConstructor
@@ -44,12 +45,19 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
                         JPAExpressions
                                 .select(houseImage.imageUrl.min())
                                 .from(houseImage)
-                                .where(houseImage.house.eq(house))
+                                .where(houseImage.house.eq(house)),
+                        JPAExpressions
+                                .selectOne()
+                                .from(review)
+                                .where(review.swap.eq(swap)
+                                        .and(review.user.id.eq(userId))
+                                        .and(review.targetHouse.eq(swap.house)))
+                                .exists()
                 ))
                 .from(swap)
                 .join(swap.house, house)
                 .where(
-//                        requesterIdEq(userId),
+                        requesterIdEq(userId),
                         statusEq(swapStatus),
                         typeEq(swapType),
                         notCanceled()
@@ -84,7 +92,15 @@ public class SwapRepositoryCustomImpl implements SwapRepositoryCustom {
                         JPAExpressions
                                 .select(houseImage.imageUrl.min())
                                 .from(houseImage)
-                                .where(houseImage.house.eq(swap.house))
+                                .where(houseImage.house.eq(swap.house)),
+                        JPAExpressions
+                                .selectOne()
+                                .from(review)
+                                .where(review.swap.eq(swap)
+                                        .and(review.user.id.eq(userId))
+                                        .and(swap.swapType.eq(SwapType.SWAP))
+                                        .and(review.targetHouse.eq(swap.requesterHouseId)))
+                                .exists()
                 ))
                 .from(swap)
                 .join(swap.house).on(swap.house.user.id.eq(userId))
