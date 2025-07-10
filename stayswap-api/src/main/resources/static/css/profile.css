@@ -300,19 +300,22 @@
 }
 
 /* 내 숙소 탭 */
-.listings-header {
+.listings-header,
+.favorites-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1.5rem;
 }
 
-.listings-count {
+.listings-count,
+.favorites-count {
     font-size: 1rem;
     color: #666;
 }
 
-.listings-grid {
+.listings-grid,
+.favorites-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
@@ -868,7 +871,8 @@ input:checked + .toggle-slider:before {
         gap: 0.5rem;
     }
 
-    .listings-grid {
+    .listings-grid,
+    .favorites-grid {
         grid-template-columns: 1fr;
     }
 }

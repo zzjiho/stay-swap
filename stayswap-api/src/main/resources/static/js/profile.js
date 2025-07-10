@@ -215,6 +215,10 @@ function renderProfileHTML(userData) {
                 <i class="fas fa-home"></i>
                 <span>내 숙소</span>
             </button>
+            <button class="profile-tab" data-tab="favorites">
+                <i class="fas fa-heart"></i>
+                <span>찜</span>
+            </button>
             <button class="profile-tab" data-tab="reviews">
                 <i class="fas fa-star"></i>
                 <span>후기</span>
@@ -248,6 +252,17 @@ function renderProfileHTML(userData) {
                 </div>
                 <div class="listings-grid">
                     <!-- 숙소 목록은 별도 API 호출로 로드 -->
+                </div>
+            </div>
+
+            <!-- 찜 탭 -->
+            <div class="profile-tab-content" id="favorites-content">
+                <h2 class="content-title">찜한 숙소</h2>
+                <div class="favorites-header">
+                    <span class="favorites-count">총 <span id="favorites-total-count">0</span>개의 숙소</span>
+                </div>
+                <div class="favorites-grid">
+                    <!-- 찜한 숙소 목록은 별도 API 호출로 로드 -->
                 </div>
             </div>
 
@@ -357,6 +372,11 @@ function setupProfileEventListeners() {
             })
 
             document.getElementById(`${tabName}-content`).classList.add("active")
+            
+            // 찜 탭이 선택되었을 때 찜한 숙소 로드
+            if (tabName === 'favorites') {
+                loadFavoriteHouses();
+            }
         })
     })
 
@@ -402,6 +422,7 @@ function setupProfileEventListeners() {
 function handleInfiniteScroll() {
     // 현재 활성화된 탭 확인
     const listingsTab = document.querySelector('.profile-tab[data-tab="listings"]');
+    const favoritesTab = document.querySelector('.profile-tab[data-tab="favorites"]');
     const reviewsTab = document.querySelector('.profile-tab[data-tab="reviews"]');
     
     // listings 탭이 활성화된 경우
@@ -418,6 +439,22 @@ function handleInfiniteScroll() {
         if (scrollTop + clientHeight >= scrollHeight - 300 && !isLoading && hasNextPage) {
             // 다음 페이지 로드
             loadMyHouses(currentPage + 1);
+        }
+    }
+    // favorites 탭이 활성화된 경우
+    else if (favoritesTab && favoritesTab.classList.contains('active')) {
+        const favoritesGrid = document.querySelector('.favorites-grid');
+        if (!favoritesGrid) return;
+        
+        // 스크롤 위치 확인
+        const scrollHeight = document.documentElement.scrollHeight;
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const clientHeight = document.documentElement.clientHeight;
+        
+        // 페이지 하단에 도달했고, 로딩 중이 아니고, 다음 페이지가 있는 경우
+        if (scrollTop + clientHeight >= scrollHeight - 300 && !favoritesLoading && favoritesHasNext) {
+            // 다음 페이지 로드
+            loadFavoriteHouses(favoritesPage + 1);
         }
     }
     // reviews 탭이 활성화된 경우
@@ -1323,4 +1360,253 @@ function showNotificationMessage(message, type = 'info') {
             messageDiv.remove();
         }
     }, 3000);
+}
+
+// 찜 관련 변수들
+let favoritesPage = 0;
+let favoritesLoading = false;
+let favoritesHasNext = true;
+
+/**
+ * 찜한 숙소 목록 로드
+ */
+function loadFavoriteHouses(page = 0) {
+    if (favoritesLoading) return;
+    
+    favoritesLoading = true;
+    
+    // 첫 페이지 로드 시 로딩 표시
+    if (page === 0) {
+        const favoritesGrid = document.querySelector('.favorites-grid');
+        if (favoritesGrid) {
+            favoritesGrid.innerHTML = `
+                <div class="loading-indicator">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>찜한 숙소를 불러오는 중...</span>
+                </div>
+            `;
+        }
+    }
+    
+    // API 호출
+    fetchWithAuth(`/api/house/likes/my?page=${page}&size=12`)
+        .then(response => {
+            if (!response || !response.ok) {
+                throw new Error("API 응답 오류");
+            }
+            return response.json();
+        })
+        .then(response => {
+            if (response && response.data) {
+                const houses = response.data.content || [];
+                const totalElements = response.data.totalElements || 0;
+                
+                // 총 개수 업데이트
+                const totalCountElement = document.getElementById('favorites-total-count');
+                if (totalCountElement) {
+                    totalCountElement.textContent = totalElements;
+                }
+                
+                // 첫 페이지인 경우 그리드 초기화
+                if (page === 0) {
+                    const favoritesGrid = document.querySelector('.favorites-grid');
+                    if (favoritesGrid) {
+                        favoritesGrid.innerHTML = '';
+                    }
+                }
+                
+                // 숙소 목록 렌더링
+                renderFavoriteHouses(houses);
+                
+                // 페이지네이션 정보 업데이트
+                favoritesPage = page;
+                favoritesHasNext = !response.data.last;
+                
+                // 데이터가 없는 경우 empty state 표시
+                if (page === 0 && houses.length === 0) {
+                    showFavoritesEmptyState();
+                }
+            }
+        })
+        .catch(error => {
+            console.error('찜한 숙소 로드 실패:', error);
+            if (page === 0) {
+                showFavoritesError();
+            }
+        })
+        .finally(() => {
+            favoritesLoading = false;
+        });
+}
+
+/**
+ * 찜한 숙소 목록 렌더링
+ */
+function renderFavoriteHouses(houses) {
+    const favoritesGrid = document.querySelector('.favorites-grid');
+    if (!favoritesGrid) return;
+    
+    houses.forEach(house => {
+        const houseCard = createFavoriteHouseCard(house);
+        favoritesGrid.appendChild(houseCard);
+    });
+}
+
+/**
+ * 찜한 숙소 카드 생성 (내 숙소와 유사하지만 액션 버튼 없음)
+ */
+function createFavoriteHouseCard(house) {
+    const cardDiv = document.createElement('div');
+    cardDiv.className = 'listing-card';
+    
+    // 이미지 URL 처리
+    const imageUrl = (house.images && house.images.length > 0) 
+        ? house.images[0].imageUrl 
+        : '/images/house-placeholder.jpg';
+    
+    // 평점 계산
+    const rating = house.averageRating || 0;
+    const reviewCount = house.reviewCount || 0;
+    
+    cardDiv.innerHTML = `
+        <a href="/page/listing-detail?id=${house.id}" class="listing-card-link">
+            <div class="listing-image">
+                <img src="${imageUrl}" alt="${house.title}" loading="lazy">
+                <div class="listing-rating">
+                    <i class="fas fa-star"></i>
+                    <span>${rating.toFixed(1)} (${reviewCount})</span>
+                </div>
+            </div>
+            <div class="listing-info">
+                <h3 class="listing-title">${house.title}</h3>
+                <div class="listing-location">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>${house.address}</span>
+                    <span class="listing-type-inline">${getHouseTypeText(house.houseType)}</span>
+                </div>
+                <div class="listing-meta">
+                    <div class="listing-details">
+                        <span><i class="fas fa-users"></i> 최대 ${house.maxGuests}명</span>
+                        <span><i class="fas fa-bed"></i> 침실 ${house.bedrooms}개</span>
+                        <span><i class="fas fa-bath"></i> 욕실 ${house.bathrooms}개</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        <div class="listing-actions">
+            <button class="btn btn-outline" onclick="removeFavorite(${house.id}, this)">
+                <i class="fas fa-heart-broken"></i> 찜 해제
+            </button>
+            <button class="btn btn-primary" onclick="goToHouseDetail(${house.id})">
+                <i class="fas fa-eye"></i> 상세보기
+            </button>
+        </div>
+    `;
+    
+    return cardDiv;
+}
+
+/**
+ * 찜 해제 기능
+ */
+function removeFavorite(houseId, buttonElement) {
+    if (!confirm('정말로 찜을 해제하시겠습니까?')) return;
+    
+    fetchWithAuth(`/api/house/likes/${houseId}`, {
+        method: 'DELETE'
+    })
+    .then(response => {
+        if (!response || !response.ok) {
+            throw new Error("찜 해제 실패");
+        }
+        
+        // 카드 제거 애니메이션
+        const card = buttonElement.closest('.listing-card');
+        if (card) {
+            card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                card.remove();
+                
+                // 총 개수 업데이트
+                const totalCountElement = document.getElementById('favorites-total-count');
+                if (totalCountElement) {
+                    const currentCount = parseInt(totalCountElement.textContent) || 0;
+                    totalCountElement.textContent = Math.max(0, currentCount - 1);
+                }
+                
+                // 카드가 모두 없어진 경우 empty state 표시
+                const remainingCards = document.querySelectorAll('.favorites-grid .listing-card');
+                if (remainingCards.length === 0) {
+                    showFavoritesEmptyState();
+                }
+            }, 300);
+        }
+        
+        showProfileNotification('찜이 해제되었습니다.', 'success');
+    })
+    .catch(error => {
+        console.error('찜 해제 실패:', error);
+        showProfileNotification('찜 해제에 실패했습니다.', 'error');
+    });
+}
+
+/**
+ * 숙소 상세페이지로 이동
+ */
+function goToHouseDetail(houseId) {
+    window.location.href = `/page/listing-detail?id=${houseId}`;
+}
+
+/**
+ * 찜 목록 빈 상태 표시
+ */
+function showFavoritesEmptyState() {
+    const favoritesGrid = document.querySelector('.favorites-grid');
+    if (favoritesGrid) {
+        favoritesGrid.innerHTML = `
+            <div class="empty-state">
+                <i class="fas fa-heart"></i>
+                <p>아직 찜한 숙소가 없습니다.</p>
+                <a href="/page/listings" class="btn btn-primary">
+                    <i class="fas fa-search"></i> 숙소 둘러보기
+                </a>
+            </div>
+        `;
+    }
+}
+
+/**
+ * 찜 목록 에러 상태 표시
+ */
+function showFavoritesError() {
+    const favoritesGrid = document.querySelector('.favorites-grid');
+    if (favoritesGrid) {
+        favoritesGrid.innerHTML = `
+            <div class="error-state">
+                <i class="fas fa-exclamation-triangle"></i>
+                <p>찜한 숙소를 불러오는데 실패했습니다.</p>
+                <button class="btn btn-outline" onclick="loadFavoriteHouses()">
+                    <i class="fas fa-refresh"></i> 다시 시도
+                </button>
+            </div>
+        `;
+    }
+}
+
+/**
+ * 숙소 타입 텍스트 반환
+ */
+function getHouseTypeText(houseType) {
+    const typeMap = {
+        'APARTMENT': '아파트',
+        'HOUSE': '주택',
+        'CONDO': '콘도',
+        'VILLA': '빌라',
+        'STUDIO': '원룸',
+        'ROOM': '방'
+    };
+    return typeMap[houseType] || houseType;
 }
