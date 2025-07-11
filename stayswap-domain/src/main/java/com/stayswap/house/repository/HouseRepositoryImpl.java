@@ -26,6 +26,7 @@ import java.util.List;
 
 import static com.stayswap.house.model.entity.QHouse.house;
 import static com.stayswap.house.model.entity.QHouseImage.houseImage;
+import static com.stayswap.house.model.entity.QHouseLike.houseLike;
 import static com.stayswap.house.model.entity.QHouseOption.houseOption;
 import static com.stayswap.review.model.entity.QReview.review;
 import static com.stayswap.user.model.entity.QUser.user;
@@ -266,6 +267,48 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize() + 1)
                 .orderBy(house.updateTime.desc())
+                .fetch();
+
+        boolean hasNext = false;
+        if (content.size() > pageable.getPageSize()) {
+            content.remove(content.size() - 1);
+            hasNext = true;
+        }
+
+        return new SliceImpl<>(content, pageable, hasNext);
+    }
+
+    @Override
+    public Slice<MyHouseResponse> getLikedHouses(Long userId, Pageable pageable) {
+        List<MyHouseResponse> content = queryFactory
+                .select(Projections.constructor(
+                        MyHouseResponse.class,
+                        house.id,
+                        house.title,
+                        houseImage.imageUrl,
+                        queryFactory.select(review.rating.avg().coalesce(0.0))
+                                .from(review)
+                                .where(review.targetHouse.id.eq(house.id))
+                                .where(review.rating.isNotNull()),
+                        queryFactory.select(review.count().coalesce(0L))
+                                .from(review)
+                                .where(review.targetHouse.id.eq(house.id)),
+                        house.regTime,
+                        house.isActive.as("active"),
+                        house.houseType
+                ))
+                .from(house)
+                .innerJoin(houseLike).on(houseLike.house.id.eq(house.id))
+                .leftJoin(houseImage).on(houseImage.house.id.eq(house.id))
+                .where(
+                        houseLike.user.id.eq(userId),
+                        house.isDelete.isFalse(),
+                        house.isActive.isTrue(),
+                        isMainImage()
+                )
+                .offset(pageable.getOffset())
+                .limit(pageable.getPageSize() + 1)
+                .orderBy(houseLike.regTime.desc())
                 .fetch();
 
         boolean hasNext = false;

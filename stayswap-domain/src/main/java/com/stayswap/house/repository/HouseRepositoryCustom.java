@@ -23,5 +23,7 @@ public interface HouseRepositoryCustom {
     
     Slice<MyHouseResponse> getMyHouses(Long userId, Pageable pageable);
     
+    Slice<MyHouseResponse> getLikedHouses(Long userId, Pageable pageable);
+    
     List<CountryResponse> getDistinctCountries();
 } 
