@@ -52,6 +52,7 @@ public class HouseLikeNotificationService {
     
     /**
      * 숙소 좋아요 취소 알림 생성
+     * //todo: 필요없나
      */
     public void createHouseLikeRemovedNotification(Long recipientId, Long senderId, Long houseId) {
         House house = houseRepository.findById(houseId)

@@ -150,6 +150,16 @@ public class HouseService {
         return houseRepository.getMyHouses(userId, pageable);
     }
     
+    // 좋아요 누른 숙소 목록 조회
+    @Transactional(readOnly = true)
+    public Slice<MyHouseResponse> getLikedHouses(Long userId, Pageable pageable) {
+        if (!userRepository.existsById(userId)) {
+            throw new NotFoundException(NOT_EXISTS_USER);
+        }
+        
+        return houseRepository.getLikedHouses(userId, pageable);
+    }
+    
     // 숙소 삭제
     public void deleteHouse(Long houseId, Long userId) {
         House house = houseRepository.findById(houseId)
