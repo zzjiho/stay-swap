@@ -95,13 +95,16 @@ public class HouseController {
     @Operation(
             summary = "숙소 상세 조회 API",
             description = "숙소 상세 정보를 조회합니다. " +
-                    "숙소의 기본 정보, 이미지, 편의시설 정보, 호스트 ID 등을 포함합니다."
+                    "숙소의 기본 정보, 이미지, 편의시설 정보, 호스트 ID 등을 포함합니다. " +
+                    "로그인한 사용자의 경우 좋아요 상태도 함께 반환합니다."
     )
     @GetMapping("/{houseId}")
     public RestApiResponse<HouseDetailResponse> getHouseDetail(
-            @PathVariable("houseId") Long houseId) {
+            @PathVariable("houseId") Long houseId,
+            @UserInfo(required = false) UserInfoDto userInfo) {
         
-        return RestApiResponse.success(houseService.getHouseDetail(houseId));
+        Long userId = userInfo != null ? userInfo.getUserId() : null;
+        return RestApiResponse.success(houseService.getHouseDetail(houseId, userId));
     }
     
     @Operation(

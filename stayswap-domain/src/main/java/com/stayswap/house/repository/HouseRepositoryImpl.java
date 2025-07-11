@@ -145,7 +145,8 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                         house.viewportNortheastLat,
                         house.viewportNortheastLng,
                         house.viewportSouthwestLat,
-                        house.viewportSouthwestLng
+                        house.viewportSouthwestLng,
+                        Expressions.constant(false) // isLiked
                 ))
                 .from(house)
                 .join(house.user, user)
