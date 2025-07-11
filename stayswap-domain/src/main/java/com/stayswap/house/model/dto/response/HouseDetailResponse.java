@@ -97,6 +97,14 @@ public class HouseDetailResponse {
     @Schema(description = "지도 영역 남서쪽 경도", example = "126.9775")
     private Double viewportSouthwestLng;
 
+    @Schema(description = "사용자가 좋아요 누른 숙소 여부", example = "true")
+    private Boolean isLiked;
+
+    // 좋아요 상태 설정 메서드
+    public void setIsLiked(Boolean isLiked) {
+        this.isLiked = isLiked;
+    }
+
     @Getter
     @Builder
     @NoArgsConstructor

@@ -8,6 +8,7 @@ import com.stayswap.house.model.dto.request.UpdateHouseRequest;
 import com.stayswap.house.model.dto.response.*;
 import com.stayswap.house.model.entity.House;
 import com.stayswap.house.repository.HouseRepository;
+import com.stayswap.house.service.HouseLikeService;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import jakarta.validation.Valid;
@@ -34,6 +35,7 @@ public class HouseService {
     private final HouseImgService houseImgService;
     private final UserRepository userRepository;
     private final HouseRedisService houseRedisService;
+    private final HouseLikeService houseLikeService;
 
     // 숙소 등록
     public CreateHouseResponse createHouse(Long userId,
@@ -98,13 +100,24 @@ public class HouseService {
 
     // 숙소 상세 정보 조회
     @Transactional(readOnly = true)
-    public HouseDetailResponse getHouseDetail(Long houseId) {
+    public HouseDetailResponse getHouseDetail(Long houseId, Long userId) {
+
         HouseDetailResponse houseDetail = houseRepository.getHouseDetail(houseId);
         
         if (houseDetail == null) {
             throw new NotFoundException(NOT_EXISTS_HOUSE);
         }
+
+        // 좋아요 상태 확인 (로그인한 사용자만)
+        boolean isLiked = false;
+        if (userId != null) {
+            isLiked = houseLikeService.isLiked(houseId, userId);
+        } else {
+        }
         
+        // 좋아요 상태 설정
+        houseDetail.setIsLiked(isLiked);
+
         return houseDetail;
     }
 
