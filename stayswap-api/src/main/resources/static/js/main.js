@@ -35,6 +35,7 @@ async function initializeMainComponents() {
         highlightCurrentPage();
         initDropdowns();
         initLogoutButton();
+        initAuthRequiredLinks();
 
         // 2. Firebase 및 토큰 설정
         await setupFirebaseMessaging();
@@ -66,6 +67,43 @@ function setupAuthEventListeners() {
             }
         });
     }
+}
+
+// 로그인 필요 체크 및 리다이렉트 함수
+function requireLogin(action = '') {
+    if (typeof window.isLoggedIn === 'function' && window.isLoggedIn()) {
+        return true; // 로그인 상태
+    }
+    
+    // 친근한 메시지와 함께 리다이렉트
+    const messages = [
+        '로그인하고 더 많은 기능을 이용해보세요! 🌟',
+        '회원만의 특별한 서비스가 기다리고 있어요! ✨',
+        '로그인하면 더 편리하게 이용할 수 있어요! 🚀',
+        '잠깐! 로그인 후 이용 가능한 서비스예요 😊',
+        '로그인하고 멋진 여행을 시작해보세요! 🎒'
+    ];
+    
+    const actionMessages = {
+        '숙소 등록': '나만의 특별한 숙소를 등록하려면 로그인이 필요해요! 🏠✨',
+        '교환 관리': '교환 내역을 확인하려면 로그인해주세요! 🔄',
+        '프로필': '내 정보를 보려면 로그인이 필요해요! 👤',
+        '알림': '알림을 확인하려면 로그인해주세요! 🔔'
+    };
+    
+    const message = actionMessages[action] || messages[Math.floor(Math.random() * messages.length)];
+    
+    // 현재 페이지 URL을 저장 (로그인 후 돌아올 수 있도록)
+    sessionStorage.setItem('redirectAfterLogin', window.location.href);
+    
+    // 친근한 알림 메시지
+    if (typeof alert !== 'undefined') {
+        alert(message);
+    }
+    
+    // 로그인 페이지로 리다이렉트
+    window.location.href = '/page/auth';
+    return false;
 }
 
 // 드롭다운 초기화 (중복 방지)
@@ -136,11 +174,15 @@ function reinitializeDropdowns() {
     // 드롭다운 다시 초기화
     initDropdowns();
     
+    // 인증 필요 링크들도 다시 초기화
+    initAuthRequiredLinks();
+    
     console.log('🔍 드롭다운 재초기화 완료');
 }
 
 // 전역에서 접근 가능하도록 노출
 window.reinitializeDropdowns = reinitializeDropdowns;
+window.requireLogin = requireLogin;
 
 function handleProfileDropdownClick(e) {
     e.preventDefault();
@@ -159,6 +201,11 @@ function handleNotificationDropdownClick(e) {
     console.log('🔍 알림 드롭다운 클릭 이벤트 발생');
     e.preventDefault();
     
+    // 로그인 체크
+    if (!requireLogin('알림')) {
+        return; // 로그인하지 않은 경우 리다이렉트됨
+    }
+    
     const profileDropdown = document.getElementById('profile-dropdown');
     const notificationDropdown = document.getElementById('notification-dropdown');
     
@@ -176,6 +223,18 @@ function handleNotificationDropdownClick(e) {
     const isOpening = !notificationDropdown.classList.contains('active');
     console.log('🔍 드롭다운 상태 변경:', isOpening ? '열기' : '닫기');
     
+    // 드롭다운이 닫힐 때 무한 스크롤 설정 초기화
+    if (!isOpening) {
+        const notificationList = document.querySelector('.notification-list');
+        if (notificationList) {
+            notificationList.dataset.infiniteScrollSetup = 'false';
+            if (window.notificationState) {
+                window.notificationState.infiniteScrollSetup = false;
+            }
+            console.log('🔍 알림 드롭다운 닫힘 - 무한 스크롤 설정 초기화');
+        }
+    }
+    
     notificationDropdown.classList.toggle('active');
     if (profileDropdown) {
         profileDropdown.classList.remove('active');
@@ -185,8 +244,6 @@ function handleNotificationDropdownClick(e) {
     if (isOpening && window.auth?.accessToken) {
         console.log('🔍 알림 드롭다운 열림 - 알림 로드 시작');
         loadNotificationsOnDropdownOpen();
-        // 무한 스크롤 설정 (드롭다운이 열릴 때)
-        setTimeout(() => setupNotificationInfiniteScroll(), 100);
     } else if (isOpening && !window.auth?.accessToken) {
         console.log('🔍 액세스 토큰이 없어서 알림 로드하지 않음');
     }
@@ -204,6 +261,17 @@ function handleOutsideClick(e) {
     }
     if (notificationToggle && notificationDropdown &&
         !notificationToggle.contains(e.target) && !notificationDropdown.contains(e.target)) {
+        // 알림 드롭다운이 열려있었다면 무한 스크롤 설정 초기화
+        if (notificationDropdown.classList.contains('active')) {
+            const notificationList = document.querySelector('.notification-list');
+            if (notificationList) {
+                notificationList.dataset.infiniteScrollSetup = 'false';
+                if (window.notificationState) {
+                    window.notificationState.infiniteScrollSetup = false;
+                }
+                console.log('🔍 외부 클릭으로 알림 드롭다운 닫힘 - 무한 스크롤 설정 초기화');
+            }
+        }
         notificationDropdown.classList.remove('active');
     }
 }
@@ -225,6 +293,51 @@ function initLogoutButton() {
             }
         });
     }
+}
+
+// 로그인이 필요한 링크들 초기화
+function initAuthRequiredLinks() {
+    // 숙소 등록 링크
+    const newListingLinks = document.querySelectorAll('a[href="/page/new"]');
+    newListingLinks.forEach(link => {
+        if (!link.dataset.authInitialized) {
+            link.dataset.authInitialized = 'true';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (requireLogin('숙소 등록')) {
+                    window.location.href = '/page/new';
+                }
+            });
+        }
+    });
+
+    // 교환 관리 링크
+    const exchangeLinks = document.querySelectorAll('a[href="/page/exchanges"]');
+    exchangeLinks.forEach(link => {
+        if (!link.dataset.authInitialized) {
+            link.dataset.authInitialized = 'true';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (requireLogin('교환 관리')) {
+                    window.location.href = '/page/exchanges';
+                }
+            });
+        }
+    });
+
+    // 프로필 관련 링크
+    const profileLinks = document.querySelectorAll('a[href="/page/profile"]');
+    profileLinks.forEach(link => {
+        if (!link.dataset.authInitialized) {
+            link.dataset.authInitialized = 'true';
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (requireLogin('프로필')) {
+                    window.location.href = '/page/profile';
+                }
+            });
+        }
+    });
 }
 
 // Firebase 메시징 설정
@@ -737,6 +850,8 @@ function renderNotifications(notifications, append = false) {
                 </div>
             </div>
         `;
+        // 빈 목록이어도 무한 스크롤 설정
+        setTimeout(() => setupNotificationInfiniteScroll(), 50);
         return;
     }
 
@@ -779,6 +894,19 @@ function renderNotifications(notifications, append = false) {
     const unreadCount = notifications.filter(n => !n.read).length;
     const totalUnreadInList = document.querySelectorAll('.notification-item.unread').length;
     updateNotificationBadge(totalUnreadInList > 0);
+    
+    // 렌더링 완료 후 무한 스크롤 설정 및 초기 스크롤 체크
+    if (!append) {
+        // 초기 렌더링 시에만 무한 스크롤 설정
+        setTimeout(() => {
+            setupNotificationInfiniteScroll();
+            // 초기에 스크롤이 없으면 자동으로 더 로드
+            checkAndLoadMoreIfNeeded();
+        }, 50);
+    } else {
+        // 추가 렌더링 후에도 스크롤 체크
+        setTimeout(() => checkAndLoadMoreIfNeeded(), 50);
+    }
 }
 
 // 시간 포맷팅 함수
@@ -898,6 +1026,33 @@ async function loadMoreNotifications() {
     }
 }
 
+// 스크롤이 필요한지 체크하고 필요하면 더 로드
+function checkAndLoadMoreIfNeeded() {
+    const notificationList = document.querySelector('.notification-list');
+    if (!notificationList) return;
+    
+    const { scrollHeight, clientHeight } = notificationList;
+    
+    console.log('🔍 스크롤 필요 여부 체크:', {
+        scrollHeight,
+        clientHeight,
+        needsScroll: scrollHeight > clientHeight,
+        hasNext: window.notificationState?.hasNext,
+        loading: window.notificationState?.loading,
+        totalNotifications: window.notificationState?.notifications?.length || 0
+    });
+    
+    // 스크롤이 필요하지 않고 더 로드할 데이터가 있으면 자동 로드
+    // 단, 최소 알림 개수(예: 3개) 이상일 때만 자동 로드 (무한 루프 방지)
+    if (scrollHeight <= clientHeight && 
+        window.notificationState?.hasNext && 
+        !window.notificationState?.loading &&
+        (window.notificationState?.notifications?.length || 0) < 15) { // 최대 15개까지만 자동 로드
+        console.log('🔍 스크롤이 필요없어서 자동으로 더 로드함');
+        loadMoreNotifications();
+    }
+}
+
 // 무한 스크롤 설정
 function setupNotificationInfiniteScroll() {
     // window.notificationState가 아직 초기화되지 않은 경우 초기화
@@ -913,12 +1068,6 @@ function setupNotificationInfiniteScroll() {
         };
     }
     
-    // 이미 설정되었으면 재설정하지 않음
-    if (window.notificationState.infiniteScrollSetup) {
-        console.log('무한 스크롤 이미 설정됨');
-        return;
-    }
-    
     // notification-list가 실제 스크롤이 일어나는 요소
     const notificationList = document.querySelector('.notification-list');
     if (!notificationList) {
@@ -926,18 +1075,28 @@ function setupNotificationInfiniteScroll() {
         return;
     }
     
-    console.log('알림 무한 스크롤 설정 완료 (notification-list에 설정)');
+    // 이미 설정되었는지 확인 (DOM 요소에 직접 체크)
+    if (notificationList.dataset.infiniteScrollSetup === 'true') {
+        console.log('무한 스크롤 이미 설정됨 (DOM 체크)');
+        return;
+    }
+    
+    console.log('알림 무한 스크롤 설정 시작 (notification-list에 설정)');
+    
+    // DOM 요소에 설정 완료 표시
+    notificationList.dataset.infiniteScrollSetup = 'true';
     window.notificationState.infiniteScrollSetup = true;
     
-    notificationList.addEventListener('scroll', function() {
+    // 스크롤 이벤트 핸들러 정의
+    const scrollHandler = function() {
         const { scrollTop, scrollHeight, clientHeight } = this;
         
         console.log('스크롤 이벤트 (notification-list):', {
             scrollTop,
             scrollHeight,
             clientHeight,
-            hasNext: window.notificationState.hasNext,
-            loading: window.notificationState.loading,
+            hasNext: window.notificationState?.hasNext,
+            loading: window.notificationState?.loading,
             trigger: scrollTop + clientHeight >= scrollHeight - 50
         });
         
@@ -946,7 +1105,13 @@ function setupNotificationInfiniteScroll() {
             console.log('무한 스크롤 트리거됨');
             loadMoreNotifications();
         }
-    });
+    };
+    
+    // 기존 이벤트 리스너 제거 후 새로 추가
+    notificationList.removeEventListener('scroll', scrollHandler);
+    notificationList.addEventListener('scroll', scrollHandler);
+    
+    console.log('알림 무한 스크롤 설정 완료');
 }
 
 // ========== 개별 알림 읽음 처리 ==========

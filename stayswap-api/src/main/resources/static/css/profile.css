@@ -383,6 +383,78 @@
     color: #f59e0b;
 }
 
+/* 하트 버튼 스타일 */
+.heart-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.heart-btn:hover {
+    background-color: rgba(255, 255, 255, 1);
+    transform: scale(1.1);
+}
+
+.heart-btn i {
+    font-size: 1.2rem;
+    color: #e74c3c;
+    transition: all 0.3s ease;
+}
+
+.heart-btn.liked i {
+    color: #e74c3c;
+}
+
+.heart-btn:not(.liked) i {
+    color: #ccc;
+}
+
+.heart-btn:not(.liked):hover i {
+    color: #e74c3c;
+}
+
+.heart-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.heart-btn:disabled:hover {
+    transform: none;
+}
+
+/* 하트 액션 버튼 스타일 */
+.heart-action-btn.liked {
+    color: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.heart-action-btn.liked:hover {
+    background-color: #e74c3c;
+    color: white;
+}
+
+.heart-action-btn:not(.liked) {
+    color: #666;
+    border-color: #ccc;
+}
+
+.heart-action-btn:not(.liked):hover {
+    background-color: #e74c3c;
+    border-color: #e74c3c;
+    color: white;
+}
+
 .listing-badge.active {
     background-color: #10b981;
 }

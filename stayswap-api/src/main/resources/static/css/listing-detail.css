@@ -102,6 +102,39 @@
     font-size: 1rem;
 }
 
+/* 좋아요 버튼 스타일 */
+.save-btn {
+    transition: all 0.2s ease;
+}
+
+.save-btn:hover {
+    background-color: #f5f5f5;
+    transform: translateY(-1px);
+}
+
+.save-btn i.fas.fa-heart {
+    color: #ff385c;
+}
+
+.save-btn i.far.fa-heart {
+    color: #666;
+}
+
+.save-btn:hover i.far.fa-heart {
+    color: #ff385c;
+}
+
+.save-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.save-btn:disabled:hover {
+    background-color: transparent;
+    transform: none;
+}
+
 /* 갤러리 섹션 */
 .gallery-container {
     position: relative;
@@ -931,12 +964,15 @@
 
 .message-host-btn {
     position: relative;
+    width: 100% !important;
+}
+
+.message-host-btn:disabled {
     cursor: not-allowed !important;
     opacity: 0.6;
     background-color: #f8f9fa !important;
     border: 2px dashed #dee2e6 !important;
     color: #6c757d !important;
-    width: 100% !important;
 }
 
 .message-host-btn:hover {

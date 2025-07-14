@@ -1,5 +1,32 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // 전역에서 접근 가능한 인증 체크 함수
+    function checkAuthToken() {
+        if (!window.auth?.accessToken) {
+            alert('로그인이 필요한 서비스예요 ✨');
+            window.location.href = '/page/auth';
+            return false;
+        }
+        return true;
+    }
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const houseId = urlParams.get('id');
+
     console.log('listing-detail.js 로드됨');
+    
+    // 중복 초기화 방지 플래그
+    let isInitialized = false;
+    
+    // 메인 초기화 함수
+    function initializeListingDetail() {
+        if (isInitialized) {
+            console.log('이미 초기화됨, 중복 실행 방지');
+            return;
+        }
+        isInitialized = true;
+        
+        console.log('숙소 상세 페이지 초기화 시작');
+        console.log('window.auth 상태:', window.auth);
     
     // Google Maps API 로딩 상태 확인
     function checkGoogleMapsAPI() {
@@ -74,10 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 대기 중인 지도 데이터 저장용
     window.pendingMapData = null;
-    
-    // 페이지 로드 시 URL에서 id 파라미터 가져오기
-    const urlParams = new URLSearchParams(window.location.search);
-    const houseId = urlParams.get('id');
     
     console.log('URL 파라미터:', window.location.search);
     console.log('추출된 houseId:', houseId);
@@ -184,24 +207,97 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 공유 버튼 클릭 이벤트
     $('.share-btn').on('click', function() {
-        // 실제 구현에서는 공유 기능 추가
-        alert('공유 기능은 준비 중입니다.');
+        alert('공유 기능이 곧 찾아올 예정이에요! 조금만 기다려주세요 ✨');
     });
 
     // 저장 버튼 클릭 이벤트
     $('.save-btn').on('click', function() {
-        const $icon = $(this).find('i');
+        if (!checkAuthToken()) {
+            return;
+        }
 
-        if ($icon.hasClass('far')) {
-            // 저장 안된 상태 -> 저장
-            $icon.removeClass('far').addClass('fas');
-            alert('숙소가 저장되었습니다.');
+        const $button = $(this);
+        const $icon = $button.find('i');
+        const isCurrentlyLiked = $icon.hasClass('fas'); // 현재 좋아요 상태
+
+        // 버튼 비활성화 (중복 클릭 방지)
+        $button.prop('disabled', true);
+
+        if (isCurrentlyLiked) {
+            // 좋아요 취소
+            cancelLike(houseId).then(() => {
+                updateLikeButton(false);
+            }).catch(error => {
+                console.error('좋아요 취소 실패:', error);
+                alert('좋아요 취소에 실패했습니다.');
+            }).always(() => {
+                $button.prop('disabled', false);
+            });
         } else {
-            // 저장된 상태 -> 저장 취소
-            $icon.removeClass('fas').addClass('far');
-            alert('숙소 저장이 취소되었습니다.');
+            // 좋아요 등록
+            addLike(houseId).then(() => {
+                updateLikeButton(true);
+            }).catch(error => {
+                console.error('좋아요 등록 실패:', error);
+                alert('좋아요 등록에 실패했습니다.');
+            }).always(() => {
+                $button.prop('disabled', false);
+            });
         }
     });
+
+    // 좋아요 등록 API 호출
+    function addLike(houseId) {
+        return $.ajax({
+            url: `/api/house/${houseId}/like`,
+            type: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + window.auth.accessToken
+            },
+            dataType: 'json'
+        });
+    }
+
+    // 좋아요 취소 API 호출
+    function cancelLike(houseId) {
+        return $.ajax({
+            url: `/api/house/${houseId}/like`,
+            type: 'DELETE',
+            headers: {
+                'Authorization': 'Bearer ' + window.auth.accessToken
+            },
+            dataType: 'json'
+        });
+    }
+
+    // 좋아요 버튼 상태 업데이트
+    function updateLikeButton(isLiked) {
+        console.log('updateLikeButton 호출됨, isLiked:', isLiked);
+        const $button = $('.save-btn');
+        console.log('save-btn 요소 찾음:', $button.length);
+        
+        if ($button.length === 0) {
+            console.error('save-btn 요소를 찾을 수 없습니다!');
+            return;
+        }
+        
+        const $icon = $button.find('i');
+        console.log('아이콘 요소 찾음:', $icon.length);
+
+        if (isLiked) {
+            console.log('좋아요 상태로 업데이트 (빨간색 하트)');
+            $button.html('<i class="fas fa-heart"></i> 저장됨');
+        } else {
+            console.log('좋아요 안함 상태로 업데이트 (회색 하트)');
+            $button.html('<i class="far fa-heart"></i> 저장');
+        }
+        
+        // 업데이트 후 상태 확인
+        const updatedIcon = $button.find('i');
+        console.log('업데이트 후 아이콘 클래스:', updatedIcon.attr('class'));
+    }
+
+
 
     // 옵션 적용 버튼 클릭 이벤트
     $('#options-apply-btn').on('click', function() {
@@ -237,16 +333,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         alert('옵션이 적용되었습니다.');
     });
-
-    // 토큰 체크 함수
-    function checkAuthToken() {
-        if (!window.auth?.accessToken) {
-            alert('로그인이 필요한 서비스입니다.');
-            window.location.href = '/login?redirect=' + encodeURIComponent(window.location.href);
-            return false;
-        }
-        return true;
-    }
 
     // 내 숙소 목록을 가져오는 API 호출 함수
     function fetchMyListings() {
@@ -349,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('날짜 정보:', { checkinDate, checkoutDate, guestCount });
 
         if (!checkinDate || !checkoutDate) {
-            alert('체크인/체크아웃 날짜를 선택해주세요.');
+            alert('체크인/체크아웃 날짜를 선택해주세요 ✨');
             return;
         }
 
@@ -386,7 +472,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const guestCount = $('#guest-count').val();
 
         if (!checkinDate || !checkoutDate) {
-            alert('체크인/체크아웃 날짜를 선택해주세요.');
+            alert('체크인/체크아웃 날짜를 선택해주세요 ✨');
             return;
         }
 
@@ -486,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const selectedListing = $('.my-listing-item.selected');
 
         if (selectedListing.length === 0) {
-            alert('교환할 숙소를 선택해주세요.');
+            alert('교환할 숙소를 선택해주세요 🏠');
             return;
         }
 
@@ -505,9 +591,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 팝업 닫기
                 closePopup('exchange-popup');
                 // 성공 메시지
-                alert('교환 요청이 성공적으로 전송되었습니다.');
+                alert('교환 요청을 보냈어요! 호스트의 답변을 기다려주세요 🙌');
             } else {
-                alert('교환 요청 전송에 실패했습니다: ' + response.message);
+                alert('앗! 교환 요청 중에 문제가 발생했어요: ' + response.message);
             }
         }).fail(function(xhr, status, error) {
             console.error('교환 요청 API 호출 실패:', error);
@@ -518,14 +604,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 서버에서 반환된 JSON 에러 메시지 파싱
                 const errorResponse = JSON.parse(xhr.responseText);
                 if (errorResponse && errorResponse.errorMessage) {
-                    alert(errorResponse.errorMessage);
+                    alert('앗! ' + errorResponse.errorMessage);
+                    // 존재하지 않는 숙소인 경우 메인 페이지로 리디렉션
+                    if (errorResponse.errorCode === "NOT_EXISTS_HOUSE") {
+                        alert('존재하지 않는 숙소예요. 메인 페이지로 이동할게요 🏠');
+                        setTimeout(function() {
+                            window.location.href = "/";
+                        }, 1000);
+                    }
                     return;
                 }
             } catch (e) {
                 console.error('에러 응답 파싱 실패:', e);
             }
             
-            alert('서버 연결에 문제가 발생했습니다.');
+            alert('서버와 연결하는데 문제가 있어요. 잠시 후 다시 시도해주세요 🔄');
         });
     });
 
@@ -545,9 +638,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 팝업 닫기
                 closePopup('stay-popup');
                 // 성공 메시지
-                alert('숙박 요청이 성공적으로 전송되었습니다.');
+                alert('숙박 요청을 보냈어요! 호스트의 답변을 기다려주세요 🙌');
             } else {
-                alert('숙박 요청 전송에 실패했습니다: ' + response.message);
+                alert('앗! 숙박 요청 중에 문제가 발생했어요: ' + response.message);
             }
         }).fail(function(xhr, status, error) {
             console.error('숙박 요청 API 호출 실패:', error);
@@ -558,14 +651,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 // 서버에서 반환된 JSON 에러 메시지 파싱
                 const errorResponse = JSON.parse(xhr.responseText);
                 if (errorResponse && errorResponse.errorMessage) {
-                    alert(errorResponse.errorMessage);
+                    alert('앗! ' + errorResponse.errorMessage);
+                    // 존재하지 않는 숙소인 경우 메인 페이지로 리디렉션
+                    if (errorResponse.errorCode === "NOT_EXISTS_HOUSE") {
+                        alert('존재하지 않는 숙소예요. 메인 페이지로 이동할게요 🏠');
+                        setTimeout(function() {
+                            window.location.href = "/";
+                        }, 1000);
+                    }
                     return;
                 }
             } catch (e) {
                 console.error('에러 응답 파싱 실패:', e);
             }
             
-            alert('서버 연결에 문제가 발생했습니다.');
+            alert('서버와 연결하는데 문제가 있어요. 잠시 후 다시 시도해주세요 🔄');
         });
     });
 
@@ -573,15 +673,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchHouseDetail(houseId) {
         console.log('API 호출 시작: houseId =', houseId);
         
+        // Authorization 헤더 설정 (로그인한 사용자만)
+        const headers = {
+            'Content-Type': 'application/json'
+        };
+        
+        if (window.auth && window.auth.accessToken) {
+            headers['Authorization'] = 'Bearer ' + window.auth.accessToken;
+            console.log('Authorization 헤더 포함하여 API 호출');
+        } else {
+            console.log('비로그인 사용자로 API 호출');
+        }
+        
         return $.ajax({
             url: `/api/house/${houseId}`,
             type: 'GET',
             dataType: 'json',
+            headers: headers,
             success: function(response) {
                 console.log('API 응답 성공:', response);
                 
                 if (response.httpStatus === 'OK') {
                     console.log('숙소 데이터:', response.data);
+                    console.log('좋아요 상태 (API 응답):', response.data.isLiked);
                     updateHouseDetailUI(response.data);
                     
                     // 호스트 정보 API 호출
@@ -600,9 +714,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 서버에서 반환된 JSON 에러 메시지 파싱
                     const errorResponse = JSON.parse(xhr.responseText);
                     if (errorResponse && errorResponse.errorMessage) {
-                        alert(errorResponse.errorMessage);
+                        alert('앗! ' + errorResponse.errorMessage);
                         // 존재하지 않는 숙소인 경우 메인 페이지로 리디렉션
                         if (errorResponse.errorCode === "NOT_EXISTS_HOUSE") {
+                            alert('존재하지 않는 숙소예요. 메인 페이지로 이동할게요 🏠');
                             setTimeout(function() {
                                 window.location.href = "/";
                             }, 1000);
@@ -613,7 +728,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('에러 응답 파싱 실패:', e);
                 }
                 
-                alert('서버 연결에 문제가 발생했습니다.');
+                alert('서버와 연결하는데 문제가 있어요. 잠시 후 다시 시도해주세요 🔄');
             }
         });
     }
@@ -806,6 +921,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         mapContainer.style.display = 'none';
                     }
                 }
+            }
+
+            // 좋아요 상태 업데이트 (API 응답에서 확인)
+            if (houseData.isLiked !== undefined) {
+                console.log('=== 좋아요 상태 디버깅 ===');
+                console.log('houseData.isLiked 값:', houseData.isLiked);
+                console.log('houseData.isLiked 타입:', typeof houseData.isLiked);
+                console.log('window.auth 상태:', window.auth);
+                updateLikeButton(houseData.isLiked);
+                console.log('=== 좋아요 상태 디버깅 끝 ===');
+            } else {
+                console.warn('houseData.isLiked가 undefined입니다. API 응답 확인 필요');
+                console.log('전체 houseData:', houseData);
             }
 
             console.log('UI 업데이트 완료');
@@ -1480,10 +1608,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchHouseReviews(houseId, size = 10, page = 0) {
         console.log(`리뷰 API 호출: houseId=${houseId}, size=${size}, page=${page}`);
         
+        const headers = {};
+        if (window.auth && window.auth.accessToken) {
+            headers['Authorization'] = 'Bearer ' + window.auth.accessToken;
+        }
         return $.ajax({
             url: `/api/review/house/${houseId}?page=${page}&size=${size}`,
             type: 'GET',
             dataType: 'json',
+            headers: headers,
             success: function(response) {
                 console.log('리뷰 API 응답 성공:', response);
                 
@@ -1524,7 +1657,7 @@ document.addEventListener('DOMContentLoaded', function() {
         container.empty();
 
         if (!reviews || reviews.length === 0) {
-            container.html('<div class="no-reviews"><p>아직 등록된 리뷰가 없습니다.</p></div>');
+            container.html('<div class="no-reviews"><p>아직 첫 리뷰를 기다리고 있어요 ✨</p></div>');
             return;
         }
 
@@ -1614,7 +1747,7 @@ document.addEventListener('DOMContentLoaded', function() {
         container.empty();
 
         if (!reviews || reviews.length === 0) {
-            container.html('<div class="no-reviews"><p>표시할 리뷰가 없습니다.</p></div>');
+            container.html('<div class="no-reviews"><p>해당하는 리뷰가 없어요 🔍</p></div>');
             updateLoadMoreButton();
             return;
         }
@@ -1680,13 +1813,13 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        $('#load-more-reviews-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 로딩 중...');
+        $('#load-more-reviews-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> 리뷰를 더 가져오고 있어요...');
 
         fetchHouseReviews(houseId, 10, currentPage + 1).then(() => {
             updateLoadMoreButton();
         }).catch(error => {
             console.error('추가 리뷰 로드 실패:', error);
-            $('#load-more-reviews-btn').prop('disabled', false).html('<i class="fas fa-plus"></i> 더 많은 후기 보기');
+            $('#load-more-reviews-btn').prop('disabled', false).html('<i class="fas fa-plus"></i> 더 많은 후기 보기 ✨');
         });
     }
 
@@ -1695,7 +1828,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const loadMoreBtn = $('#load-more-reviews-btn');
         
         if (hasNextPage) {
-            loadMoreBtn.show().prop('disabled', false).html('<i class="fas fa-plus"></i> 더 많은 후기 보기');
+            loadMoreBtn.show().prop('disabled', false).html('<i class="fas fa-plus"></i> 더 많은 후기 보기 ✨');
         } else {
             loadMoreBtn.hide();
         }
@@ -1711,4 +1844,52 @@ document.addEventListener('DOMContentLoaded', function() {
             $('#reviews-count, #modal-reviews-count, #total-reviews-count').text(reviewCount);
         }
     }
+    } // initializeListingDetail 함수 종료
+    
+    // 인증 상태 변경 이벤트 리스너 등록
+    document.addEventListener('authStateChanged', function(event) {
+        console.log('인증 상태 변경 이벤트 수신:', event.detail.isLoggedIn);
+        // 인증 초기화가 완료되면 (로그인 여부와 관계없이) 메인 로직 실행
+        initializeListingDetail();
+    });
+    
+    // 이미 인증이 초기화된 경우 즉시 실행
+    if (window.authInitialized) {
+        console.log('인증이 이미 초기화됨, 즉시 실행');
+        initializeListingDetail();
+    }
+
+    // 호스트에게 메시지 보내기 버튼 이벤트
+    $(document).on('click', '#message-host-btn', function() {
+        if (!checkAuthToken()) {
+            return;
+        }
+
+        const $button = $(this);
+        $button.prop('disabled', true).text('채팅방으로 이동 중...');
+
+        $.ajax({
+            url: `/api/chats/house/${houseId}/inquiry`,
+            type: 'POST',
+            headers: {
+                'Authorization': 'Bearer ' + window.auth.accessToken
+            }
+        }).done(function(response) {
+            console.log('response');
+            console.log(response.data); // 실제 응답 객체를 콘솔에 출력
+            if (response.httpStatus === 'OK' && response.data && (response.data.chatroomId || response.data.chatRoomId)) {
+                const chatroomId = response.data.chatroomId || response.data.chatRoomId;
+                // 성공 시 채팅방으로 이동
+                window.location.href = `/page/messages?chatroomId=${chatroomId}`;
+            } else {
+                alert('채팅방을 열 수 없습니다. 다시 시도해주세요.');
+                $button.prop('disabled', false).text('💬 호스트에게 메시지 보내기');
+            }
+        }).fail(function(xhr) {
+            console.error('채팅방 생성/조회 실패:', xhr.responseText);
+            const error = xhr.responseJSON || {};
+            alert(error.errorMessage || '채팅방을 열 수 없습니다. 잠시 후 다시 시도해주세요.');
+            $button.prop('disabled', false).text('💬 호스트에게 메시지 보내기');
+        });
+    });
 });

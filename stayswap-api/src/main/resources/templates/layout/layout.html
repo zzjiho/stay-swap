@@ -177,6 +177,7 @@
                         <div id="profile-dropdown" class="profile-dropdown">
                             <a href="/page/profile" class="dropdown-item">마이페이지</a>
                             <a href="/page/subscription" class="dropdown-item">구독관리</a>
+                            <a href="/page/messages" class="dropdown-item">메시지</a>
                             <a href="#" id="logout-btn" class="dropdown-item">로그아웃</a>
                         </div>
                     </div>
@@ -444,28 +445,9 @@
             }
         });
 
-        /* ⑤ 페이지 로드 시 헤더 동기화 */
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🔍 TEST 11: Layout DOMContentLoaded - 헤더 동기화 시작');
-            // auth-common.js 로드 대기 후 실행
-            setTimeout(() => {
-                console.log('🔍 TEST 12: 지연 후 fetchUserInfo 호출');
-                window.fetchUserInfo();
-            }, 200); // 200ms로 증가
-        });
-
-        // 추가: 페이지 로드 완료 후에도 한번 더 체크 (백업)
-        window.addEventListener('load', function() {
-            console.log('🔍 TEST 13: Window load 완료 - 추가 체크');
-            setTimeout(() => {
-                // auth 상태가 설정되었지만 UI가 업데이트되지 않았을 경우를 대비
-                if (window.auth?.accessToken && 
-                    document.getElementById('user-profile')?.style.display === 'none') {
-                    console.log('🔍 토큰은 있지만 UI가 업데이트되지 않음 - 강제 업데이트');
-                    window.fetchUserInfo();
-                }
-            }, 300);
-        });
+        /* ⑤ 페이지 로드 시 헤더 동기화 - authStateChanged 이벤트에만 의존 */
+        // auth-common.js에서 발생시키는 authStateChanged 이벤트에만 의존하도록 변경
+        // 중복 초기화 방지
     } else {
         console.log('🔍 TEST 10-1: 헤더 UI 이미 초기화됨');
     }

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메시지 - StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/message-detail.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<!-- 헤더 포함 -->
+<div th:replace="~{layout/layout :: header}"></div>
+
+<main class="chat-main">
+    <div class="chat-container">
+        <!-- 채팅 헤더 -->
+        <div class="chat-header">
+            <div class="chat-header-left">
+                <button class="back-btn" onclick="goBack()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="chat-partner-info">
+                    <img id="partner-avatar" src="/images/default-avatar.png" alt="상대방" class="partner-avatar">
+                    <div class="partner-details">
+                        <div id="partner-name" class="partner-name">-</div>
+                        <div id="house-info" class="house-info">
+                            <i class="fas fa-home"></i>
+                            <span id="house-name">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-header-right">
+                <div id="chat-status" class="chat-status">
+                    <span class="status-badge active">활성</span>
+                </div>
+                <div class="chat-actions">
+                    <button class="action-btn" onclick="toggleChatOptions()" title="옵션">
+                        <i class="fas fa-ellipsis-v"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 채팅 옵션 드롭다운 -->
+        <div id="chat-options" class="chat-options" style="display: none;">
+            <button onclick="viewHouseDetail()" class="option-item">
+                <i class="fas fa-home"></i>
+                숙소 상세보기
+            </button>
+            <button onclick="viewSwapDetail()" class="option-item">
+                <i class="fas fa-exchange-alt"></i>
+                교환 내역 보기
+            </button>
+            <button onclick="closeChatRoom()" class="option-item danger">
+                <i class="fas fa-times"></i>
+                대화 종료
+            </button>
+        </div>
+
+        <!-- 채팅 메시지 영역 -->
+        <div class="chat-messages" id="chat-messages">
+            <div id="messages-loading" class="loading-spinner" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>메시지를 불러오는 중...</span>
+            </div>
+
+            <div id="messages-container" class="messages-container">
+                <!-- 메시지들이 여기에 동적으로 추가됩니다 -->
+            </div>
+
+            <div id="load-more-messages" class="load-more-messages" style="display: none;">
+                <button class="btn btn-outline" onclick="loadMoreMessages()">
+                    이전 메시지 더보기
+                </button>
+            </div>
+        </div>
+
+        <!-- 메시지 입력 영역 -->
+        <div class="chat-input-container">
+            <div class="chat-input">
+                <div class="input-wrapper">
+                    <textarea id="message-input"
+                              placeholder="메시지를 입력하세요..."
+                              rows="1"
+                              maxlength="1000"></textarea>
+                    <div class="input-actions">
+                        <span id="char-count" class="char-count">0/1000</span>
+                        <button id="send-btn" class="send-btn" onclick="sendMessage()" disabled>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 푸터 포함 -->
+<div th:replace="~{layout/footer :: footer}"></div>
+
+<!-- JavaScript -->
+<script th:src="@{/js/auth-common.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/message-detail.js}"></script>
+</body>
+</html>

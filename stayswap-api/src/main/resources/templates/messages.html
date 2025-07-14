@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>메시지 - StaySwap</title>
+    <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="stylesheet" th:href="@{/css/messages.css}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+<div id="header"></div>
+<main class="chat-layout-container">
+  <div class="chat-layout">
+    <!-- 채팅방 목록 -->
+    <aside class="chat-sidebar">
+      <div class="sidebar-header">
+        <h2>메시지</h2>
+      </div>
+      <div class="chat-list-container" id="chat-list-container">
+        <!-- 채팅방 목록 동적 로드 -->
+      </div>
+    </aside>
+    <!-- 대화창 -->
+    <section class="chat-main">
+      <header class="chat-header">
+        <img src="/images/profile.png" alt="상대방 프로필" class="chat-header-avatar" id="partner-avatar">
+        <span class="chat-header-name" id="partner-name">상대방 이름</span>
+      </header>
+      <div class="message-list" id="message-list">
+        <!-- 메시지 동적 로드 -->
+      </div>
+      <footer class="chat-footer">
+        <textarea id="message-input" placeholder="메시지를 입력하세요..."></textarea>
+        <button id="send-message-btn" class="send-btn"><i class="fas fa-paper-plane"></i></button>
+      </footer>
+    </section>
+  </div>
+</main>
+<div id="footer"></div>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sockjs-client@1.5.1/dist/sockjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+<script th:src="@{/js/auth-common.js}"></script>
+<script th:src="@{/js/main.js}"></script>
+<script th:src="@{/js/messages.js}"></script>
+</body>
+</html>
