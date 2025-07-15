@@ -28,6 +28,10 @@ dependencies {
     implementation("org.springframework.cloud:spring-cloud-stream")
     implementation("org.springframework.cloud:spring-cloud-stream-binder-kafka")
     implementation("org.springframework.kafka:spring-kafka")
+
+    // websocket
+    implementation ("org.springframework.boot:spring-boot-starter-websocket")
+
 }
 
 // ✅ bootJar 활성화
