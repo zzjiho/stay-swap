@@ -13,7 +13,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 		"com.stayswap.user.repository",
 		"com.stayswap.config",
 		"com.stayswap.common.config.firebase",
-		"com.stayswap.notification.consumer"
+		"com.stayswap.notification.consumer",
+		"com.stayswap.chat.consumer"
 })
 public class StayswapConsumerApplication {
 

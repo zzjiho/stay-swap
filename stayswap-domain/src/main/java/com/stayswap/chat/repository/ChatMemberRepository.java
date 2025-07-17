@@ -10,6 +10,8 @@ import org.springframework.data.domain.Slice;
 
 public interface ChatMemberRepository extends JpaRepository<ChatMember, Long> {
 
+    List<ChatMember> findByChatroomId(Long chatRoomId);
+
     Boolean existsByUserIdAndChatroomId(Long userId, Long chatroomId);
 
     void deleteByUserIdAndChatroomId(Long userId, Long chatroomId);

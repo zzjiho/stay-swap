@@ -9,12 +9,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ChatMessageResponse {
+    private Long senderId;
     private String sender;
     private String message;
     private String createdAt;
     
     public static ChatMessageResponse of(Message message) {
         return new ChatMessageResponse(
+                message.getUser().getId(),
                 message.getUser().getNickname(),
                 message.getText(),
                 message.getCreatedAt().toString()
