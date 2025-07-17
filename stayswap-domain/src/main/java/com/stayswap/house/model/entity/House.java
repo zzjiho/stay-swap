@@ -1,5 +1,6 @@
 package com.stayswap.house.model.entity;
 
+import com.stayswap.chat.model.entity.Chatroom;
 import com.stayswap.common.entity.BaseTimeEntity;
 import com.stayswap.house.constant.HouseType;
 import com.stayswap.user.model.entity.User;
@@ -108,6 +109,9 @@ public class House extends BaseTimeEntity {
 
     @OneToMany(mappedBy = "house", cascade = ALL, orphanRemoval = true)
     private List<HouseLike> houseLikes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "house", cascade = ALL, orphanRemoval = true)
+    private List<Chatroom> chatrooms = new ArrayList<>();
 
     public static House newHouse(String title, String description, String rule, HouseType type, Float size, Integer bedrooms, Integer bed, Integer bathrooms, Integer maxGuests, String addressKo, String cityKo, String districtKo, String countryKo, String addressEn, String cityEn, String districtEn, String countryEn, Double latitude, Double longitude, Double viewportNortheastLat, Double viewportNortheastLng, Double viewportSouthwestLat, Double viewportSouthwestLng, Boolean petsAllowed, User user, HouseOption houseOption) {
         return House.builder()

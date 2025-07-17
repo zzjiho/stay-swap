@@ -21,6 +21,8 @@ public enum ErrorCode {
     NOT_EXISTS_HOUSE(NOT_FOUND, false, "NF002", "존재하지 않는 숙소입니다."),
     NOT_EXISTS_SWAP_REQUEST(NOT_FOUND, false, "NF003", "존재하지 않는 교환/숙박 요청입니다."),
     NOT_EXISTS_SWAP_HOUSE(NOT_FOUND, false, "NF004", "숙박 요청에는 상대방의 숙소에 리뷰를 작성할 수 없습니다."),
+    NOT_EXISTS_CHATROOM(NOT_FOUND, false, "NF005", "존재하지 않는 채팅방입니다."),
+    NOT_EXISTS_MESSAGE(NOT_FOUND, false, "NF006", "존재하지 않는 메시지입니다."),
 
     CANNOT_SWAP_WITH_OWN_HOUSE(BAD_REQUEST, false, "BR006", "자신의 숙소에는 신청할 수 없습니다."),
     ALREADY_PROCESSED_REQUEST(BAD_REQUEST, false, "BR007", "이미 처리된 요청입니다."),
@@ -32,6 +34,9 @@ public enum ErrorCode {
 
     NOT_EXISTS_RESOURCE(BAD_REQUEST, false, "BR013", "존재하지 않는 알림입니다."),
     ALREADY_PENDING_REQUEST(BAD_REQUEST, false, "BR014", "이미 대기 중인 요청이 있는 숙소입니다."),
+    NOT_MEMBER_OF_CHATROOM(FORBIDDEN, false, "BR015", "해당 채팅방의 멤버가 아닙니다."),
+    ALREADY_MEMBER_OF_CHATROOM(BAD_REQUEST, false, "BR016", "이미 참여한 채팅방입니다."),
+    CANNOT_LEAVE_CHATROOM(BAD_REQUEST, false, "BR017", "참여하지 않은 채팅방에서 나갈 수 없습니다."),
 
 
     /**

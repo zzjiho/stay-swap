@@ -75,4 +75,9 @@ public class PageController {
         return "notifications";
     }
 
+    @GetMapping("/page/messages")
+    public String messages() {
+        return "messages";
+    }
+
 }
