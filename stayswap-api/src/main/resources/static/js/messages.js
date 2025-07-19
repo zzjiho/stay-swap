@@ -29,11 +29,20 @@ document.addEventListener('DOMContentLoaded', function () {
     function connectWebSocket() {
         const socket = new SockJS('/stomp/chats');
         stompClient = Stomp.over(socket);
-        stompClient.connect({}, function (frame) {
+        
+        // JWT 토큰을 헤더에 포함하여 연결
+        const headers = {
+            'Authorization': 'Bearer ' + window.auth.accessToken
+        };
+        
+        stompClient.connect(headers, function (frame) {
+            console.log('WebSocket 연결 성공:', frame);
             // 전체 채팅방 목록 실시간 갱신 필요시 /sub/chats/updates 구독
             stompClient.subscribe('/sub/chats/updates', function (message) {
                 loadChatRooms();
             });
+        }, function(error) {
+            console.error('WebSocket 연결 실패:', error);
         });
     }
 
@@ -64,12 +73,14 @@ document.addEventListener('DOMContentLoaded', function () {
         chatrooms.forEach(room => {
             const roomElement = document.createElement('div');
             roomElement.classList.add('chat-list-item');
-            roomElement.dataset.chatroomId = room.id || room.chatroomId;
-            const partner = room.partnerNickname || room.partnerName || '상대방';
+            roomElement.dataset.chatroomId = room.id;
+            
+            const partner = room.partnerNickname || '상대방';
             const profileUrl = room.partnerProfileUrl || '/images/profile.png';
             const lastMsg = room.lastMessage || '';
-            const lastTime = room.lastMessageCreatedAt || room.lastMessageTimestamp || room.updatedAt;
+            const lastTime = room.lastMessageCreatedAt || room.createdAt;
             const unread = room.unreadCount || 0;
+            
             roomElement.innerHTML = `
                 <img src="${profileUrl}" class="chat-list-avatar" />
                 <div class="chat-list-info">
@@ -81,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 ${unread > 0 ? `<span class="chat-list-unread">${unread}</span>` : ''}
             `;
-            roomElement.addEventListener('click', () => selectChatRoom(room.id || room.chatroomId));
+            roomElement.addEventListener('click', () => selectChatRoom(room.id));
             chatListContainer.appendChild(roomElement);
         });
     }
@@ -130,7 +141,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 개별 메시지 추가
     function appendMessage(message) {
-        const isMine = message.senderId === currentUserId || message.nickname === window.currentUserNickname;
+        const isMine = message.senderId === currentUserId;
         const messageElement = document.createElement('div');
         messageElement.classList.add('message-bubble');
         messageElement.classList.add(isMine ? 'my-message' : 'partner-message');
@@ -159,7 +170,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (text && currentChatroomId && stompClient) {
             stompClient.send(
                 `/pub/chats/${currentChatroomId}`,
-                {},
+                { 'Authorization': 'Bearer ' + window.auth.accessToken },
                 JSON.stringify({ message: text })
             );
             messageInput.value = '';
