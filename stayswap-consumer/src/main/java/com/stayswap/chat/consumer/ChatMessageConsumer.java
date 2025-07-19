@@ -41,6 +41,7 @@ public class ChatMessageConsumer {
      * 채팅 메시지 이벤트 처리
      */
     private void processChatMessage(ChatMessageEvent event) {
+<<<<<<< Updated upstream
         try {
             ChatEventType eventType = ChatEventType.valueOf(event.getEventType());
             
@@ -53,6 +54,16 @@ public class ChatMessageConsumer {
             }
         } catch (Exception e) {
             log.error("채팅 메시지 처리 중 오류 발생: {}", e.getMessage(), e);
+=======
+        ChatEventType eventType = ChatEventType.valueOf(event.getEventType());
+        
+        switch (eventType) {
+            case MESSAGE_SENT:
+                handleMessageSent(event);
+                break;
+            default:
+                log.warn("알 수 없는 채팅 이벤트 타입: {}", eventType);
+>>>>>>> Stashed changes
         }
     }
 
