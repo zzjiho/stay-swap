@@ -11,6 +11,9 @@ import com.stayswap.chat.repository.ChatMemberRepository;
 import com.stayswap.chat.repository.ChatroomRepository;
 import com.stayswap.chat.repository.MessageRepository;
 import com.stayswap.error.exception.BusinessException;
+import com.stayswap.chat.constant.ChatEventType;
+import com.stayswap.chat.dto.ChatMessageEvent;
+import com.stayswap.chat.producer.ChatMessagePublisher;
 import com.stayswap.error.exception.ForbiddenException;
 import com.stayswap.error.exception.NotFoundException;
 import com.stayswap.house.model.entity.House;
@@ -41,6 +44,7 @@ public class ChatService {
     private final MessageRepository messageRepository;
     private final UserRepository userRepository;
     private final HouseRepository houseRepository;
+    private final ChatMessagePublisher chatMessagePublisher;
 
     @Transactional
     public ChatRoomResponse createOrGetHouseInquiryChatRoom(Long userId, Long houseId) {
@@ -95,30 +99,6 @@ public class ChatService {
         return ChatRoomResponse.from(chatroom.getId(), chatroom.getTitle(), lastMessage, unreadCount, partnerNickname, hasNewMessage);
     }
 
-    public Chatroom createChatroom(User user, String title) {
-        Chatroom chatroom = Chatroom.builder()
-            .title(title)
-            .createdAt(LocalDateTime.now())
-            .build();
-
-        chatroom = chatroomRepository.save(chatroom);
-
-        ChatMember chatMember = chatroom.addMember(user);
-        chatMember = chatMemberRepository.save(chatMember);
-
-        return chatroom;
-    }
-
-    public void updateLastCheckedAt(Long userId, Long currentChatroomId) {
-        ChatMember chatMember =
-                chatMemberRepository.findByUserIdAndChatroomId(userId, currentChatroomId)
-                .orElseThrow(() -> new ForbiddenException(NOT_MEMBER_OF_CHATROOM));
-
-        chatMember.updateLastCheckedAt();
-
-        chatMemberRepository.save(chatMember);
-    }
-
     @Transactional
     public Boolean leaveChatroom(Long userId, Long chatroomId) {
         if (!chatMemberRepository.existsByUserIdAndChatroomId(userId, chatroomId)) {
@@ -166,22 +146,6 @@ public class ChatService {
         return new SliceImpl<>(chatroomDtos, pageable, chatMemberSlice.hasNext());
     }
 
-    public Message saveMessage(Long userId, Long chatroomId, String text) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
-        Chatroom chatroom = chatroomRepository.findById(chatroomId)
-                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_CHATROOM));
-
-        Message message = Message.builder()
-            .text(text)
-            .user(user)
-            .chatroom(chatroom)
-            .createdAt(LocalDateTime.now())
-            .build();
-
-        return messageRepository.save(message);
-    }
-
     @Transactional(readOnly = true)
     public Slice<ChatMessageResponse> getMessageList(Long chatroomId, Long userId, Pageable pageable) {
 
@@ -208,5 +172,58 @@ public class ChatService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_CHATROOM));
 
         return ChatroomDto.from(chatroom);
+    }
+
+    public Message saveMessage(Long userId, Long chatroomId, String text) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
+        Chatroom chatroom = chatroomRepository.findById(chatroomId)
+                .orElseThrow(() -> new NotFoundException(NOT_EXISTS_CHATROOM));
+
+        Message message = Message.builder()
+                .text(text)
+                .user(user)
+                .chatroom(chatroom)
+                .createdAt(LocalDateTime.now())
+                .build();
+
+        Message savedMessage = messageRepository.save(message);
+        
+        // Kafka로 채팅 메시지 이벤트 발행
+        ChatMessageEvent event = ChatMessageEvent.builder()
+                .chatRoomId(chatroomId)
+                .senderId(user.getId())
+                .senderNickname(user.getNickname())
+                .message(text)
+                .createdAt(savedMessage.getCreatedAt())
+                .eventType(ChatEventType.MESSAGE_SENT.name())
+                .build();
+        chatMessagePublisher.sendChatMessage(event);
+        
+        return savedMessage;
+    }
+
+    public Chatroom createChatroom(User user, String title) {
+        Chatroom chatroom = Chatroom.builder()
+            .title(title)
+            .createdAt(LocalDateTime.now())
+            .build();
+
+        chatroom = chatroomRepository.save(chatroom);
+
+        ChatMember chatMember = chatroom.addMember(user);
+        chatMember = chatMemberRepository.save(chatMember);
+
+        return chatroom;
+    }
+
+    public void updateLastCheckedAt(Long userId, Long currentChatroomId) {
+        ChatMember chatMember =
+                chatMemberRepository.findByUserIdAndChatroomId(userId, currentChatroomId)
+                        .orElseThrow(() -> new ForbiddenException(NOT_MEMBER_OF_CHATROOM));
+
+        chatMember.updateLastCheckedAt();
+
+        chatMemberRepository.save(chatMember);
     }
 }
