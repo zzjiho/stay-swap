@@ -1,9 +1,10 @@
 package com.stayswap;
 
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.stayswap.config.JpaConfig;
+import com.stayswap.house.service.HouseImgService;
+import com.stayswap.notification.service.integration.FCMService;
+import com.stayswap.util.EnvironmentUtil;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.test.context.ActiveProfiles;
@@ -11,11 +12,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 @SpringBootTest
 @ActiveProfiles("test")
-//@SpringBootApplication
 @EnableAutoConfiguration
 @ComponentScan(basePackages = {
-        "com.stayswap.notification.repository",
-        "com.stayswap.config.test"
+        "com.stayswap"
 })
 public abstract class IntegrationTest {
 
@@ -23,6 +22,13 @@ public abstract class IntegrationTest {
     private AmazonS3Client amazonS3Client;
 
     @MockitoBean
-    private JpaConfig jpaConfig;
+    private FCMService fcmService;
+
+    @MockitoBean
+    private EnvironmentUtil environmentUtil;
+
+    @MockitoBean
+    private HouseImgService houseImgService;
 
 }
+

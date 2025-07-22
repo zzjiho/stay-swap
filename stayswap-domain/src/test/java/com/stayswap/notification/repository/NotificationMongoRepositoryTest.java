@@ -3,11 +3,7 @@ package com.stayswap.notification.repository;
 import com.stayswap.IntegrationTest;
 import com.stayswap.notification.document.Notification;
 import com.stayswap.notification.document.TestNotification;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +15,6 @@ import java.util.Optional;
 import static com.stayswap.notification.constant.NotificationType.TEST_NOTIFICATION;
 import static java.time.temporal.ChronoUnit.DAYS;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class NotificationMongoRepositoryTest extends IntegrationTest {
 
@@ -32,7 +27,6 @@ class NotificationMongoRepositoryTest extends IntegrationTest {
     private final String title = "테스트 알림";
     private final String content = "테스트 알림 내용입니다.";
     private final Instant now = Instant.now();
-    private final Instant ninetyDaysAfter = Instant.now().plus(90, DAYS);
 
     @BeforeEach
     void setUp() {
