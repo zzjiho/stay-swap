@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Slice;
@@ -25,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.stayswap.code.ErrorCode.NOT_EXISTS_USER;
 import static com.stayswap.notification.constant.NotificationType.TEST_NOTIFICATION;
@@ -37,7 +39,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("NotificationListService 단위테스트 - 커서 기반 무한스크롤 알림 목록 조회 서비스")
+@DisplayName("알림 목록 조회 서비스")
 class NotificationListServiceTest {
 
     @Mock
@@ -45,6 +47,9 @@ class NotificationListServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private IndividualNotificationReadService individualNotificationReadService;
 
     @InjectMocks
     private NotificationListService notificationListService;
@@ -75,6 +80,9 @@ class NotificationListServiceTest {
             given(userRepository.findById(validUserId)).willReturn(Optional.of(mockUser));
             given(notificationMongoRepository.findAllByRecipientIdOrderByOccurredAtDesc(eq(validUserId), any()))
                     .willReturn(createMockSlice(mockNotifications, true));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, null);
@@ -98,8 +106,8 @@ class NotificationListServiceTest {
 
             assertEquals(NOT_EXISTS_USER, exception.getErrorCode());
             verify(userRepository).findById(invalidUserId);
-            verify(notificationMongoRepository, org.mockito.Mockito.never()).findAllByRecipientIdOrderByOccurredAtDesc(any(), any());
-            verify(notificationMongoRepository, org.mockito.Mockito.never()).findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(any(), any(), any());
+            verify(notificationMongoRepository, Mockito.never()).findAllByRecipientIdOrderByOccurredAtDesc(any(), any());
+            verify(notificationMongoRepository, Mockito.never()).findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(any(), any(), any());
         }
     }
 
@@ -108,13 +116,16 @@ class NotificationListServiceTest {
     class FirstPageRetrievalTest {
 
         @Test
-        @DisplayName("정상 케이스: pivot=null로 요청시 최신 알림 3개를 조회하고 다음 페이지가 있으면 마지막 알림의 시간을 nextPivot으로 설정")
+        @DisplayName("정상 케이스: pivot=null로 요청시 최신 알림 5개를 조회하고 다음 페이지가 있으면 마지막 알림의 시간을 nextPivot으로 설정")
         void firstPageWithNullPivotReturnsLatestNotificationsWithNextPivot() {
 
             // Given
             given(userRepository.findById(validUserId)).willReturn(Optional.of(mockUser));
             given(notificationMongoRepository.findAllByRecipientIdOrderByOccurredAtDesc(eq(validUserId), any()))
                     .willReturn(createMockSlice(mockNotifications, true));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, null);
@@ -130,7 +141,7 @@ class NotificationListServiceTest {
             assertEquals(expectedNextPivot, response.getPivot());
             verify(notificationMongoRepository).findAllByRecipientIdOrderByOccurredAtDesc(
                     eq(validUserId),
-                    eq(PageRequest.of(0, 3)));
+                    eq(PageRequest.of(0, 5)));
         }
 
         @Test
@@ -141,6 +152,9 @@ class NotificationListServiceTest {
             given(userRepository.findById(validUserId)).willReturn(Optional.of(mockUser));
             given(notificationMongoRepository.findAllByRecipientIdOrderByOccurredAtDesc(eq(validUserId), any()))
                     .willReturn(createMockSlice(mockNotifications, false));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, null);
@@ -160,6 +174,9 @@ class NotificationListServiceTest {
             given(userRepository.findById(validUserId)).willReturn(Optional.of(mockUser));
             given(notificationMongoRepository.findAllByRecipientIdOrderByOccurredAtDesc(eq(validUserId), any()))
                     .willReturn(createMockSlice(Collections.emptyList(), false));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, null);
@@ -186,6 +203,9 @@ class NotificationListServiceTest {
             given(notificationMongoRepository.findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(
                     eq(validUserId), eq(pivot), any()))
                     .willReturn(createMockSlice(olderNotifications, true));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, pivot);
@@ -199,7 +219,7 @@ class NotificationListServiceTest {
             Instant expectedNextPivot = olderNotifications.get(2).getOccurredAt();
             assertEquals(expectedNextPivot, response.getPivot());
             verify(notificationMongoRepository).findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(
-                    eq(validUserId), eq(pivot), eq(PageRequest.of(0, 3)));
+                    eq(validUserId), eq(pivot), eq(PageRequest.of(0, 5)));
         }
 
         @Test
@@ -215,6 +235,9 @@ class NotificationListServiceTest {
             given(notificationMongoRepository.findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(
                     eq(validUserId), eq(pivot), any()))
                     .willReturn(createMockSlice(lastPageNotifications, false));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, pivot);
@@ -235,6 +258,9 @@ class NotificationListServiceTest {
             given(notificationMongoRepository.findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(
                     eq(validUserId), eq(pivot), any()))
                     .willReturn(createMockSlice(Collections.emptyList(), false));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, pivot);
@@ -259,6 +285,9 @@ class NotificationListServiceTest {
             given(userRepository.findById(validUserId)).willReturn(Optional.of(mockUser));
             given(notificationMongoRepository.findAllByRecipientIdOrderByOccurredAtDesc(eq(validUserId), any()))
                     .willReturn(createMockSlice(mockNotifications, false));
+            given(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .willReturn(Set.of());
+            given(userRepository.findByIdIn(any())).willReturn(List.of(createMockUser(456L)));
 
             // When
             NotificationListResponse response = notificationListService.getUserNotificationsByPivot(validUserId, null);
@@ -280,41 +309,46 @@ class NotificationListServiceTest {
     }
 
     @Nested
-    @DisplayName("페이지 크기 고정값 테스트 - 항상 3개씩 조회하는 비즈니스 규칙 검증")
+    @DisplayName("페이지 크기 고정값 테스트 - 항상 5개씩 조회하는 비즈니스 규칙 검증")
     class PageSizeConstantTest {
 
         @Test
-        @DisplayName("페이지 크기 검증: 첫 번째 페이지 조회시 항상 PageRequest.of(0, 3)으로 Repository를 호출한다")
-        void firstPageAlwaysUsesPageSizeThree() {
+        @DisplayName("페이지 크기 검증: 첫 번째 페이지 조회시 항상 PageRequest.of(0, 5)으로 Repository를 호출한다")
+        void firstPageAlwaysUsesPageSizeFive() {
 
             // Given
             when(userRepository.findById(validUserId)).thenReturn(Optional.of(mockUser));
             when(notificationMongoRepository.findAllByRecipientIdOrderByOccurredAtDesc(eq(validUserId), any()))
                     .thenReturn(createMockSlice(mockNotifications, false));
+            when(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .thenReturn(Set.of());
+            when(userRepository.findByIdIn(any())).thenReturn(List.of(createMockUser(456L)));
 
             // When
             notificationListService.getUserNotificationsByPivot(validUserId, null);
 
             // Then
             verify(notificationMongoRepository).findAllByRecipientIdOrderByOccurredAtDesc(
-                    eq(validUserId), eq(PageRequest.of(0, 3))); // 페이지 크기 3 확인
+                    eq(validUserId), eq(PageRequest.of(0, 5))); // 페이지 크기 5 확인
         }
 
         @Test
-        @DisplayName("페이지 크기 검증: 다음 페이지 조회시에도 항상 PageRequest.of(0, 3)으로 Repository를 호출한다")
-        void nextPageAlwaysUsesPageSizeThree() {
+        @DisplayName("페이지 크기 검증: 다음 페이지 조회시에도 항상 PageRequest.of(0, 5)으로 Repository를 호출한다")
+        void nextPageAlwaysUsesPageSizeFive() {
             // Given
             when(userRepository.findById(validUserId)).thenReturn(Optional.of(mockUser));
             when(notificationMongoRepository.findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(
                     eq(validUserId), eq(pivot), any()))
                     .thenReturn(createMockSlice(mockNotifications, false));
+            when(individualNotificationReadService.getReadNotificationIds(validUserId))
+                    .thenReturn(Set.of());
 
             // When
             notificationListService.getUserNotificationsByPivot(validUserId, pivot);
 
             // Then
             verify(notificationMongoRepository).findAllByRecipientIdAndOccurredAtLessThanOrderByOccurredAtDesc(
-                    eq(validUserId), eq(pivot), eq(PageRequest.of(0, 3))); // 페이지 크기 3 확인
+                    eq(validUserId), eq(pivot), eq(PageRequest.of(0, 5))); // 페이지 크기 5 확인
         }
     }
 
@@ -360,6 +394,6 @@ class NotificationListServiceTest {
     }
 
     private Slice<Notification> createMockSlice(List<Notification> content, boolean hasNext) {
-        return new SliceImpl<>(content, PageRequest.of(0, 3), hasNext);
+        return new SliceImpl<>(content, PageRequest.of(0, 5), hasNext);
     }
 }

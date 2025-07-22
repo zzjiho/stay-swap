@@ -35,6 +35,7 @@ import static org.mockito.Mockito.*;
 class NotificationConsumerTest extends ConsumerIntegrationTest {
 
     @Autowired
+    // Kafka message가 실제로 들어오는 상황 시뮬레이션
     private InputDestination inputDestination;
 
     @Autowired
@@ -90,8 +91,8 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
         void shouldProcessBookingNotificationWithFCMSuccessfully_WithInputDestination() {
 
             // Given
-            given(userRepository.findById(1L))
-                    .willReturn(Optional.of(testUser));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willReturn(testNotification);
 
@@ -126,8 +127,8 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
         void shouldProcessSwapNotificationSuccessfully_DirectCall() {
 
             // Given
-            given(userRepository.findById(1L))
-                    .willReturn(Optional.of(testUser));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willReturn(testSwapNotification);
 
@@ -153,8 +154,8 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
         void shouldConsumerBeanWorkCorrectlyWithFCM() {
 
             // Given
-            given(userRepository.findById(1L))
-                    .willReturn(Optional.of(testUser));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willReturn(testNotification);
 
@@ -175,8 +176,8 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
         void shouldProcessMessageWithHeadersAndFCM() {
 
             // Given
-            given(userRepository.findById(1L))
-                    .willReturn(Optional.of(testUser));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willReturn(testNotification);
 
@@ -259,6 +260,7 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
 
             // Given
             given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willThrow(new RuntimeException("MongoDB 연결 실패"));
 
@@ -342,8 +344,8 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
         void shouldPassCorrectParametersToFCM() {
 
             // Given
-            given(userRepository.findById(1L))
-                    .willReturn(Optional.of(testUser));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willReturn(testNotification);
 
@@ -375,16 +377,18 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
             User user1 = User.builder().id(1L).email("user1@test.com").build();
             User user2 = User.builder().id(2L).email("user2@test.com").build();
             User user3 = User.builder().id(3L).email("user3@test.com").build();
+            User recipientUser = User.builder().id(100L).email("recipient@test.com").build();
 
             given(userRepository.findById(1L)).willReturn(Optional.of(user1));
             given(userRepository.findById(2L)).willReturn(Optional.of(user2));
             given(userRepository.findById(3L)).willReturn(Optional.of(user3));
+            given(userRepository.findById(100L)).willReturn(Optional.of(recipientUser));
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willReturn(testNotification);
 
-            NotificationMessage message1 = createNotificationMessage(1L, "첫 번째 알림", 101L, NotificationType.BOOKING_REQUEST);
-            NotificationMessage message2 = createNotificationMessage(2L, "두 번째 알림", 102L, NotificationType.SWAP_ACCEPTED);
-            NotificationMessage message3 = createNotificationMessage(3L, "세 번째 알림", 103L, NotificationType.CHECK_IN);
+            NotificationMessage message1 = createNotificationMessage(1L, 100L, "첫 번째 알림", 101L, NotificationType.BOOKING_REQUEST);
+            NotificationMessage message2 = createNotificationMessage(2L, 100L, "두 번째 알림", 102L, NotificationType.SWAP_ACCEPTED);
+            NotificationMessage message3 = createNotificationMessage(3L, 100L, "세 번째 알림", 103L, NotificationType.CHECK_IN);
 
             // When
             inputDestination.send(MessageBuilder.withPayload(message1).build(), "notification");
@@ -395,7 +399,7 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
             await().pollDelay(1, TimeUnit.SECONDS)
                     .atMost(10, TimeUnit.SECONDS)
                     .untilAsserted(() -> {
-                        verify(userRepository, times(3)).findById(anyLong());
+                        verify(userRepository, times(6)).findById(anyLong());
                         verify(notificationMongoRepository, times(3)).save(any(Notification.class));
                         verify(pushNotificationService, times(3))
                                 .sendPushNotificationToUser(anyLong(), any(), any(), any(), anyLong());
@@ -408,8 +412,9 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
         void shouldHandleDuplicateRequestsFromSameUser() {
 
             // Given
-            given(userRepository.findById(1L))
-                    .willReturn(Optional.of(testUser));
+            given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
+
             given(notificationMongoRepository.save(any(Notification.class)))
                     .willReturn(testNotification);
 
@@ -440,6 +445,7 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
 
             // Given
             given(userRepository.findById(1L)).willReturn(Optional.of(testUser));
+            given(userRepository.findById(2L)).willReturn(Optional.of(testUser));
 
             ArgumentCaptor<Notification> notificationCaptor = ArgumentCaptor.forClass(Notification.class);
             given(notificationMongoRepository.save(notificationCaptor.capture()))
@@ -464,10 +470,10 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
         }
     }
 
-    private NotificationMessage createNotificationMessage(Long senderId, String content, Long referenceId, NotificationType type) {
+    private NotificationMessage createNotificationMessage(Long senderId, Long recipientId, String content, Long referenceId, NotificationType type) {
         return NotificationMessage.builder()
                 .senderId(senderId)
-                .recipientId(100L)
+                .recipientId(recipientId)
                 .title("테스트 알림")
                 .content(content)
                 .type(type)
@@ -475,4 +481,5 @@ class NotificationConsumerTest extends ConsumerIntegrationTest {
                 .occurredAt(Instant.now())
                 .build();
     }
+
 }
