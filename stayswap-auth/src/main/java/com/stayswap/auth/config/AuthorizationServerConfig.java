@@ -20,6 +20,8 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
@@ -45,9 +47,11 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSecurity
+@Slf4j
 public class AuthorizationServerConfig {
 
     /**
@@ -103,7 +107,11 @@ public class AuthorizationServerConfig {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
                 .redirectUri("http://localhost:8081/login/oauth2/code/kakao")
+                .redirectUri("http://localhost:8080/api/oauth/callback")
                 .redirectUri("https://stayswap.com/callback")
+                .scope(OidcScopes.OPENID)
+                .scope(OidcScopes.EMAIL)
+                .scope("user")
                 .scope("profile_nickname")
                 .scope("account_email")
                 .tokenSettings(TokenSettings.builder()
@@ -179,6 +187,11 @@ public class AuthorizationServerConfig {
         return OAuth2AuthorizationServerConfiguration.jwtDecoder(jwkSource);
     }
 
+    @Bean
+    public JwtEncoder jwtEncoder(JWKSource<SecurityContext> jwkSource) {
+        return new NimbusJwtEncoder(jwkSource);
+    }
+
     /**
      * Authorization Server 설정
      */
@@ -190,15 +203,25 @@ public class AuthorizationServerConfig {
     }
 
     /**
-     * 기존 JWT 구조와 호환되는 토큰 커스터마이저
+     * 토큰 커스터마이저
      */
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
         return (context) -> {
+            log.info("=== OAuth2TokenCustomizer 호출됨 ===");
+            log.info("Token Type: {}", context.getTokenType());
+            log.info("Grant Type: {}", context.getAuthorizationGrantType());
+            log.info("Principal: {}", context.getPrincipal().getName());
+            log.info("Authorities: {}", context.getPrincipal().getAuthorities());
+
             if (context.getTokenType().equals(OAuth2TokenType.ACCESS_TOKEN)) {
+                log.info("ACCESS_TOKEN 생성 중...");
                 context.getClaims().claims((claims) -> {
                     if (context.getAuthorizationGrantType().equals(AuthorizationGrantType.AUTHORIZATION_CODE)) {
+                        log.info("AUTHORIZATION_CODE 플로우로 토큰 커스터마이징 시작");
                         String username = context.getPrincipal().getName();
+                        log.info("Username from principal: {}", username);
+
                         claims.put("userId", Long.parseLong(username));
 
                         Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
@@ -208,8 +231,13 @@ public class AuthorizationServerConfig {
                         claims.put("role", roles.iterator().next());
 
                         claims.put("tokenType", "ACCESS");
+                        log.info("토큰 커스터마이징 완료 - userId: {}, role: {}", Long.parseLong(username), roles.iterator().next());
+                    } else {
+                        log.warn("AUTHORIZATION_CODE가 아닌 플로우: {}", context.getAuthorizationGrantType());
                     }
                 });
+            } else {
+                log.info("ACCESS_TOKEN이 아닌 토큰 타입: {}", context.getTokenType());
             }
         };
     }

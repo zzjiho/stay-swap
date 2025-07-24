@@ -10,10 +10,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.Map;
 
 /**
@@ -26,6 +31,7 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
 
     private final UserRepository userRepository;
     private final AuthUserService authUserService;
+    private final JwtEncoder jwtEncoder;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -64,8 +70,25 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 .orElseGet(() -> authUserService.createSocialUser(finalEmail, finalUserName, finalProfileImage));
 
         log.info("Social login success for user: {} (email: {})", user.getId(), email);
-        
-        // 기본 성공 처리
-        super.onAuthenticationSuccess(request, response, authentication);
+
+        // JWT Access Token 생성
+        Instant now = Instant.now();
+        long expiry = 36000L;
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer("stayswap")
+                .issuedAt(now)
+                .expiresAt(now.plusSeconds(expiry))
+                .subject(user.getId().toString())
+                .claim("role", "USER")
+                .build();
+
+        String token = this.jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+
+        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/auth")
+                .queryParam("token", token)
+                .build().toUriString();
+
+        getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
