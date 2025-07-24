@@ -14,6 +14,9 @@ dependencies {
     // Thymeleaf for login page
     implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
     
+    // Redis
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")
+    
     // Database 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     runtimeOnly("com.mysql:mysql-connector-j")

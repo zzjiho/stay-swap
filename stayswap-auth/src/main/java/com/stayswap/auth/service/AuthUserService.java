@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
+
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -39,6 +41,14 @@ public class AuthUserService {
         log.info("Social user created successfully: userId={}", savedUser.getId());
         
         return savedUser;
+    }
+
+    /**
+     * 사용자 ID로 조회
+     */
+    @Transactional(readOnly = true)
+    public Optional<User> findById(Long id) {
+        return userRepository.findById(id);
     }
 
     /**

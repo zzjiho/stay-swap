@@ -1,11 +1,12 @@
 package com.stayswap.auth.config;
 
-import com.stayswap.auth.handler.OAuth2LoginSuccessHandler;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import com.stayswap.auth.handler.OAuth2LoginSuccessHandler;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -13,7 +14,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -22,7 +22,6 @@ import org.springframework.security.oauth2.core.oidc.OidcScopes;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -32,8 +31,6 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
-import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
@@ -43,11 +40,7 @@ import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.time.Duration;
-import java.util.Collections;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
 
 @Configuration
 @EnableWebSecurity
@@ -87,13 +80,14 @@ public class AuthorizationServerConfig {
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, OAuth2LoginSuccessHandler successHandler) throws Exception {
         http.authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/login", "/oauth2/**", "/error", "/css/**", "/js/**",
-                                "/.well-known/**", "/test/**").permitAll()
+                                "/.well-known/**", "/test/**", "/api/auth/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .successHandler(successHandler)
-                );
+                )
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/**"));
 
         return http.build();
     }
@@ -202,45 +196,6 @@ public class AuthorizationServerConfig {
                 .build();
     }
 
-    /**
-     * 토큰 커스터마이저
-     */
-    @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> tokenCustomizer() {
-        return (context) -> {
-            log.info("=== OAuth2TokenCustomizer 호출됨 ===");
-            log.info("Token Type: {}", context.getTokenType());
-            log.info("Grant Type: {}", context.getAuthorizationGrantType());
-            log.info("Principal: {}", context.getPrincipal().getName());
-            log.info("Authorities: {}", context.getPrincipal().getAuthorities());
-
-            if (context.getTokenType().equals(OAuth2TokenType.ACCESS_TOKEN)) {
-                log.info("ACCESS_TOKEN 생성 중...");
-                context.getClaims().claims((claims) -> {
-                    if (context.getAuthorizationGrantType().equals(AuthorizationGrantType.AUTHORIZATION_CODE)) {
-                        log.info("AUTHORIZATION_CODE 플로우로 토큰 커스터마이징 시작");
-                        String username = context.getPrincipal().getName();
-                        log.info("Username from principal: {}", username);
-
-                        claims.put("userId", Long.parseLong(username));
-
-                        Set<String> roles = AuthorityUtils.authorityListToSet(context.getPrincipal().getAuthorities())
-                                .stream()
-                                .map(c -> c.replaceFirst("^ROLE_", ""))
-                                .collect(Collectors.collectingAndThen(Collectors.toSet(), Collections::unmodifiableSet));
-                        claims.put("role", roles.iterator().next());
-
-                        claims.put("tokenType", "ACCESS");
-                        log.info("토큰 커스터마이징 완료 - userId: {}, role: {}", Long.parseLong(username), roles.iterator().next());
-                    } else {
-                        log.warn("AUTHORIZATION_CODE가 아닌 플로우: {}", context.getAuthorizationGrantType());
-                    }
-                });
-            } else {
-                log.info("ACCESS_TOKEN이 아닌 토큰 타입: {}", context.getTokenType());
-            }
-        };
-    }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
