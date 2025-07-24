@@ -3,7 +3,7 @@ package com.stayswap.user.model.entity;
 import com.stayswap.common.entity.BaseTimeEntity;
 import com.stayswap.house.model.entity.HouseLike;
 import com.stayswap.jwt.constant.Role;
-import com.stayswap.jwt.dto.JwtTokenDto;
+
 import com.stayswap.user.constant.UserType;
 import com.stayswap.util.DateTimeUtils;
 import jakarta.persistence.*;
@@ -55,23 +55,9 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false)
     private Boolean pushNotificationYN = true;
 
-    @Column(length = 250)
-    private String refreshToken;
-
-    private LocalDateTime tokenExpirationTime;
-    
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @Builder.Default
     private List<HouseLike> houseLikes = new ArrayList<>();
-
-    public void updateRefreshToken(JwtTokenDto jwtTokenDto) {
-        refreshToken = jwtTokenDto.getRefreshToken();
-        tokenExpirationTime = DateTimeUtils.convertToLocalDateTime(jwtTokenDto.getRefreshTokenExpireTime());
-    }
-
-    public void updateRefreshTokenNow(LocalDateTime tokenExpirationTime) {
-        this.tokenExpirationTime = tokenExpirationTime;
-    }
 
     // 닉네임 수정
     public void updateNickname(String nickname) {

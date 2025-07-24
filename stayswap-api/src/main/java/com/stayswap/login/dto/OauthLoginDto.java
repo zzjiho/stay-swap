@@ -2,8 +2,7 @@ package com.stayswap.login.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.stayswap.jwt.dto.JwtTokenDto;
-import com.stayswap.util.TokenMaskingUtil;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,13 +37,11 @@ public class OauthLoginDto {
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "Asia/Seoul")
         private Date refreshTokenExpireTime;
 
-        public static Response of(JwtTokenDto jwtTokenDto) {
+        public static Response of(String grantType, String accessToken, Date accessTokenExpireTime) {
             return Response.builder()
-                    .grantType(jwtTokenDto.getGrantType())
-                    .accessToken(jwtTokenDto.getAccessToken())
-                    .accessTokenExpireTime(jwtTokenDto.getAccessTokenExpireTime())
-                    .refreshToken(jwtTokenDto.getRefreshToken())
-                    .refreshTokenExpireTime(jwtTokenDto.getRefreshTokenExpireTime())
+                    .grantType(grantType)
+                    .accessToken(accessToken)
+                    .accessTokenExpireTime(accessTokenExpireTime)
                     .build();
         }
     }

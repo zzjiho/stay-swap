@@ -11,8 +11,7 @@ dependencies {
     // mongodb
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 
-    // jwt
-    implementation("io.jsonwebtoken:jjwt:0.12.3")
+    
     
     // firebase
     implementation("com.google.firebase:firebase-admin:9.4.3")
