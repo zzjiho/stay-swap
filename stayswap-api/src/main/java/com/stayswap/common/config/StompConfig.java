@@ -1,14 +1,20 @@
 package com.stayswap.common.config;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
 @Configuration
 @EnableWebSocketMessageBroker
+@RequiredArgsConstructor
 public class StompConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final JwtDecoder jwtDecoder;
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
@@ -28,5 +34,10 @@ public class StompConfig implements WebSocketMessageBrokerConfigurer {
         
         // 특정 사용자에게 메시지를 보낼 때 사용할 prefix (1:1 채팅용)
         registry.setUserDestinationPrefix("/user");
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        registration.interceptors(new JwtWebSocketInterceptor(jwtDecoder));
     }
 }

@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface MessageRepository extends JpaRepository<Message, Long> {
 
     Slice<Message> findByChatroomIdOrderByCreatedAtAsc(Long chatroomId, Pageable pageable);
+    
+    Slice<Message> findByChatroomIdOrderByCreatedAtDesc(Long chatroomId, Pageable pageable);
 
     Boolean existsByChatroomIdAndCreatedAtAfter(Long chatroomId, LocalDateTime createdAt);
     

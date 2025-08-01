@@ -25,11 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.SliceImpl;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.stayswap.code.ErrorCode.*;
@@ -45,6 +47,8 @@ public class ChatService {
     private final UserRepository userRepository;
     private final HouseRepository houseRepository;
     private final ChatMessagePublisher chatMessagePublisher;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final ChatCacheService chatCacheService;
 
     @Transactional
     public ChatRoomResponse createOrGetHouseInquiryChatRoom(Long userId, Long houseId) {
@@ -157,7 +161,7 @@ public class ChatService {
             throw new NotFoundException(NOT_EXISTS_CHATROOM);
         }
         
-        Slice<Message> messageSlice = messageRepository.findByChatroomIdOrderByCreatedAtAsc(chatroomId, pageable);
+        Slice<Message> messageSlice = messageRepository.findByChatroomIdOrderByCreatedAtDesc(chatroomId, pageable);
 
         return messageSlice.map(ChatMessageResponse::of);
     }
@@ -174,11 +178,24 @@ public class ChatService {
         return ChatroomDto.from(chatroom);
     }
 
+    @Transactional(readOnly = true)
+    public ChatroomDto getChatroom(Chatroom chatroom, Long userId) {
+        return ChatroomDto.from(chatroom);
+    }
+
     public Message saveMessage(Long userId, Long chatroomId, String text) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         Chatroom chatroom = chatroomRepository.findById(chatroomId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_CHATROOM));
+        
+        return saveMessage(user, chatroom, text);
+    }
+
+    public Message saveMessage(User user, Chatroom chatroom, String text) {
+//        if (!chatMemberRepository.existsByUserIdAndChatroomId(user.getId(), chatroom.getId())) {
+//            throw new ForbiddenException(NOT_MEMBER_OF_CHATROOM);
+//        }
 
         Message message = Message.builder()
                 .text(text)
@@ -191,7 +208,7 @@ public class ChatService {
         
         // Kafka로 채팅 메시지 이벤트 발행
         ChatMessageEvent event = ChatMessageEvent.builder()
-                .chatRoomId(chatroomId)
+                .chatRoomId(chatroom.getId())
                 .senderId(user.getId())
                 .senderNickname(user.getNickname())
                 .message(text)
@@ -225,5 +242,21 @@ public class ChatService {
         chatMember.updateLastCheckedAt();
 
         chatMemberRepository.save(chatMember);
+    }
+
+    public ChatMessageResponse getChatMessageResponse(Long chatRoomId, Map<String, String> payload, Long userId) {
+        User user = chatCacheService.getCachedUser(userId);
+        Chatroom chatroom = chatCacheService.getCachedChatroom(chatRoomId);
+
+        Message savedMessage = saveMessage(user, chatroom, payload.get("message"));
+
+        messagingTemplate.convertAndSend("/sub/chats/updates", getChatroom(chatroom, userId));
+
+        return new ChatMessageResponse(
+                user.getId(),
+                user.getNickname(),
+                payload.get("message"),
+                savedMessage.getCreatedAt().toString()
+        );
     }
 }

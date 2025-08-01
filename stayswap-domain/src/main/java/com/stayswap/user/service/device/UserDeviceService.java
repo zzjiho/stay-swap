@@ -33,23 +33,19 @@ public class UserDeviceService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
 
-        // FCM 토큰이 이미 등록되어 있는지 확인
         Optional<UserDevice> existingDevice = userDeviceRepository.findByFcmToken(request.getFcmToken());
 
         if (existingDevice.isPresent()) {
             UserDevice device = existingDevice.get();
-            // 다른 사용자의 디바이스였다면 현재 사용자로 변경
+
+            // 다른 사용자의 디바이스였을 경우
             if (!device.getUser().getId().equals(userId)) {
-                // 기존 디바이스 비활성화
                 device.deactivate();
-                
-                // 새 디바이스로 등록
                 createNewDevice(user, request);
             }
-            // 같은 사용자의 디바이스라면 정보 업데이트
+            // 같은 사용자의 디바이스일 경우
             else {
-                // FCM 토큰이 같으므로 디바이스 정보만 업데이트
-                device.updateFcmToken(request.getFcmToken());
+                log.info("이미 등록된 디바이스입니다. userId={}, fcmToken={}", userId, request.getFcmToken());
             }
         } else {
             // 새 디바이스 등록
