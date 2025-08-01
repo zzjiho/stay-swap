@@ -38,7 +38,7 @@ public class SocialUserDetailsService implements UserDetailsService {
         }
 
         List<GrantedAuthority> authorities = Collections.singletonList(
-                new SimpleGrantedAuthority(user.getRole().name()) // 이미 ROLE_ 접두사 포함
+                new SimpleGrantedAuthority(user.getRole().name())
         );
 
         return org.springframework.security.core.userdetails.User.builder()

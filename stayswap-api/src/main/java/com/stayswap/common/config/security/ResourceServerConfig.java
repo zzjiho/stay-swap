@@ -9,6 +9,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -31,17 +32,17 @@ public class ResourceServerConfig {
                 .securityMatcher("/api/**")
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable()) // REST API이므로 CSRF 비활성화
+                .csrf(csrf -> csrf.disable())
+                .addFilterBefore(new JwtCookieAuthenticationFilter(), BearerTokenAuthenticationFilter.class)
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt
                                 .jwtAuthenticationConverter(customJwtAuthenticationConverter())
                         )
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // 기존 정책 유지
                         .requestMatchers("/api/oauth/**", "/api/health-check").permitAll()
                         .requestMatchers("/api/house/**").permitAll()
-                        .requestMatchers("/api/test/**").permitAll() // 개발 환경용
+                        .requestMatchers("/api/test/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .build();

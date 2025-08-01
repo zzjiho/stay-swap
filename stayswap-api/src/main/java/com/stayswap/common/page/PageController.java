@@ -28,6 +28,11 @@ public class PageController {
         return "/host/listings/new";
     }
 
+    @GetMapping("/page/host/listings/{houseId}/edit")
+    public String editListing() {
+        return "/host/listings/edit";
+    }
+
     @GetMapping("/page/listing-detail")
     public String listingDetail(Model model) {
         model.addAttribute("googleMapsApiKey", googleMapsConfig.getApiKey());
@@ -52,22 +57,6 @@ public class PageController {
     @GetMapping("/page/subscription")
     public String subscription() {
         return "subscription";
-    }
-
-    @GetMapping("/page/edit")
-    public String edit(Model model) {
-        model.addAttribute("googleMapsApiKey", googleMapsConfig.getApiKey());
-        return "/host/listings/edit";
-    }
-
-    @GetMapping("/page/fcm-debug")
-    public String fcmDebug() {
-        return "fcm-debug";
-    }
-
-    @GetMapping("/page/debug/fcm-test")
-    public String fcmTest() {
-        return "debug/fcm-test";
     }
 
     @GetMapping("/notifications")

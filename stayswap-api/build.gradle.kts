@@ -15,9 +15,7 @@ dependencies {
     // OAuth2 Resource Server
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
-    
-    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
-    
+
     // firebase
     implementation("com.google.firebase:firebase-admin:9.4.3")
 
