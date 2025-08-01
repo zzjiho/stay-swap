@@ -89,16 +89,16 @@ public class UserController {
                 userService.updateProfileImage(profileImage, userInfo.getUserId()));
     }
 
-    @Operation(
-            summary = "사용자 로그아웃 API",
-            description = "리프레시 토큰을 만료시켜 로그아웃합니다."
-    )
-    @PostMapping("/logout")
-    public RestApiResponse<LogoutResponse> logout(
-            @UserInfo UserInfoDto userInfo) {
-
-        return RestApiResponse.success(
-                userService.logout(userInfo.getUserId()));
-    }
+//    @Operation(
+//            summary = "사용자 로그아웃 API",
+//            description = "리프레시 토큰을 만료시켜 로그아웃합니다."
+//    )
+//    @PostMapping("/logout")
+//    public RestApiResponse<LogoutResponse> logout(
+//            @UserInfo UserInfoDto userInfo) {
+//
+//        return RestApiResponse.success(
+//                userService.logout(userInfo.getUserId()));
+//    }
 
 }

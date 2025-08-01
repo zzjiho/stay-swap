@@ -20,10 +20,7 @@ public interface UserRepository extends JpaRepository<User, Long>, UserRepositor
     @Query("SELECT u FROM User u WHERE u.id = :userId")
     Optional<User> findNicknameAndProfileById(@Param("userId") Long userId);
 
-    Optional<User> findByRefreshToken(String refreshToken);
-
-    @Query("SELECT u.refreshToken FROM User u WHERE u.id = :userId")
-    String findRefreshTokenById(@Param("userId") Long userId);
+    
 
     List<User> findByIdIn(Set<Long> userIds);
 

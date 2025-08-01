@@ -4,7 +4,9 @@ import com.stayswap.error.exception.AuthenticationException;
 import com.stayswap.error.exception.BusinessException;
 import com.stayswap.error.exception.ForbiddenException;
 import com.stayswap.error.exception.NotFoundException;
+import com.stayswap.jwt.constant.Role;
 import com.stayswap.review.repository.ReviewRepository;
+import com.stayswap.user.constant.UserType;
 import com.stayswap.user.model.dto.request.UpdateIntroductionRequest;
 import com.stayswap.user.model.dto.request.UpdateNicknameRequest;
 import com.stayswap.user.model.dto.response.*;
@@ -123,35 +125,7 @@ public class UserService {
         return UpdateNicknameResponse.of(user.getNickname());
     }
 
-    /**
-     * accessToken 재발급
-     */
-    @Transactional(readOnly = true)
-    public User findUserByRefreshToken(String refreshToken) {
-        User user = userRepository.findByRefreshToken(refreshToken)
-            .orElseThrow(() -> new AuthenticationException(NOT_FOUND_REFRESH_TOKEN));
-
-        LocalDateTime tokenExpireTime = user.getTokenExpirationTime();
-        if (tokenExpireTime.isBefore(LocalDateTime.now())) {
-            throw new AuthenticationException(REFRESH_TOKEN_EXPIRED);
-        }
-
-        return user;
-    }
-
-    /**
-     * 로그아웃
-     */
-    public LogoutResponse logout(Long userId) {
-        User user = userRepository.findById(userId)
-            .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
-
-        LocalDateTime now = LocalDateTime.now();
-
-        user.updateRefreshTokenNow(now);
-
-        return LogoutResponse.of(user);
-    }
+    
 
     /**
      * 사용자 소개 수정
@@ -197,5 +171,31 @@ public class UserService {
         user.updateProfile(uploadResponse.getFileUrl());
 
         return UpdateProfileImageResponse.of(uploadResponse.getFileUrl());
+    }
+    
+    /**
+     * 소셜 로그인 사용자 생성
+     */
+    public User createSocialUser(String email, String nickname, String profile) {
+        log.info("Creating social user: email={}, nickname={}", email, nickname);
+        
+        // 랜덤 닉네임 생성
+        String generatedNickname = (nickname != null && !nickname.trim().isEmpty()) ? 
+                                   nickname : generateRandomNickname();
+        
+        User newUser = User.builder()
+                .email(email)
+                .userName(generatedNickname) // userName도 닉네임으로 설정
+                .nickname(generatedNickname)
+                .profile(profile) // 프로필 이미지
+                .userType(UserType.KAKAO) // 카카오 소셜 사용자
+                .role(Role.ROLE_USER) // 기본 역할
+                .pushNotificationYN(true) // 기본값
+                .build();
+        
+        User savedUser = userRepository.save(newUser);
+        log.info("Social user created successfully: userId={}", savedUser.getId());
+        
+        return savedUser;
     }
 }
