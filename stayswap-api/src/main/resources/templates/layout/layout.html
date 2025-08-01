@@ -13,11 +13,9 @@
     <!-- Firebase / Auth 공통 -->
     <link rel="manifest" href="/manifest.json" />
     
-    <!-- 🔍 기본 테스트 로그 -->
+    <!-- 기본 설정 -->
     <script>
-        console.log('🔍 TEST 1: HTML HEAD에서 스크립트 실행됨');
-        
-        // 렌더링 시점 추적
+        // 렌더링 시점 추적 (개발용)
         window.renderingDebug = {
             startTime: performance.now(),
             events: []
@@ -27,15 +25,12 @@
             const timestamp = performance.now() - window.renderingDebug.startTime;
             const logData = { event, timestamp: timestamp.toFixed(2), ...data };
             window.renderingDebug.events.push(logData);
-            console.log(`🔍 [${timestamp.toFixed(2)}ms] ${event}:`, data);
         }
         
         logRenderEvent('HEAD_SCRIPT_START');
         
         // auth 객체 미리 초기화 (auth-common.js가 없는 경우 대비)
         window.auth = window.auth || {
-            accessToken: null,
-            tokenExpireTime: null,
             isInitialized: false
         };
         
@@ -47,106 +42,7 @@
             errors: []
         };
         
-        // 즉시 로그인 상태 확인하여 body 클래스 설정
-        (function setInitialAuthClass() {
-            const token = localStorage.getItem('access_token');
-            const expireTime = localStorage.getItem('token_expire_time');
-            const now = new Date().getTime();
-            const isLoggedIn = !!(token && expireTime && now < parseInt(expireTime));
-            
-            logRenderEvent('TOKEN_CHECK', {
-                hasToken: !!token,
-                isExpired: expireTime ? now > parseInt(expireTime) : true,
-                isLoggedIn: isLoggedIn
-            });
-            
-            // 즉시 body 클래스 설정 (DOM 로드를 기다리지 않음)
-            const targetClass = isLoggedIn ? 'auth-logged-in' : 'auth-logged-out';
-            
-            // body가 아직 없으면 HTML에 클래스 추가
-            if (!document.body) {
-                document.documentElement.className += ' ' + targetClass + '-pending';
-                logRenderEvent('HTML_CLASS_SET', { className: targetClass + '-pending' });
-                
-                // body가 생성되는 즉시 클래스 이동
-                const observer = new MutationObserver(function(mutations) {
-                    if (document.body) {
-                        document.body.className = targetClass;
-                        document.documentElement.className = document.documentElement.className.replace(targetClass + '-pending', '');
-                        logRenderEvent('BODY_CLASS_SET_IMMEDIATE', { className: targetClass });
-                        observer.disconnect();
-                    }
-                });
-                observer.observe(document.documentElement, { childList: true });
-            } else {
-                document.body.className = targetClass;
-                logRenderEvent('BODY_CLASS_SET_IMMEDIATE', { className: targetClass });
-            }
-            
-            // DOM 로드 후 추가 확인
-            document.addEventListener('DOMContentLoaded', function() {
-                logRenderEvent('DOM_CONTENT_LOADED_START');
-                
-                // 클래스가 제대로 설정되었는지 확인
-                if (document.body.className !== targetClass) {
-                    document.body.className = targetClass;
-                    logRenderEvent('BODY_CLASS_CORRECTED', { 
-                        expectedClass: targetClass,
-                        actualClass: document.body.className 
-                    });
-                }
-                
-                // UI 요소 상태 즉시 확인
-                setTimeout(() => {
-                    const userProfile = document.getElementById('user-profile');
-                    const authButtons = document.getElementById('auth-buttons');
-                    const notificationIcon = document.getElementById('notification-icon');
-                    
-                    logRenderEvent('UI_ELEMENTS_CHECK', {
-                        userProfile: userProfile ? {
-                            display: getComputedStyle(userProfile).display,
-                            visibility: getComputedStyle(userProfile).visibility
-                        } : 'not found',
-                        authButtons: authButtons ? {
-                            display: getComputedStyle(authButtons).display,
-                            visibility: getComputedStyle(authButtons).visibility
-                        } : 'not found',
-                        notificationIcon: notificationIcon ? {
-                            display: getComputedStyle(notificationIcon).display,
-                            visibility: getComputedStyle(notificationIcon).visibility
-                        } : 'not found'
-                    });
-                }, 10);
-                
-                // 추가 체크 (CSS 로딩 완료 후)
-                setTimeout(() => {
-                    const userProfile = document.getElementById('user-profile');
-                    const authButtons = document.getElementById('auth-buttons');
-                    const notificationIcon = document.getElementById('notification-icon');
-                    
-                    logRenderEvent('UI_ELEMENTS_DELAYED_CHECK', {
-                        userProfile: userProfile ? {
-                            display: getComputedStyle(userProfile).display,
-                            visibility: getComputedStyle(userProfile).visibility,
-                            cssRules: Array.from(document.styleSheets).flatMap(sheet => {
-                                try {
-                                    return Array.from(sheet.cssRules || [])
-                                        .filter(rule => rule.selectorText && rule.selectorText.includes('#user-profile'))
-                                        .map(rule => ({ selector: rule.selectorText, style: rule.style.display }));
-                                } catch (e) { return []; }
-                            })
-                        } : 'not found',
-                        authButtons: authButtons ? {
-                            display: getComputedStyle(authButtons).display,
-                            visibility: getComputedStyle(authButtons).visibility
-                        } : 'not found'
-                    });
-                }, 200);
-            });
-        })();
-        
         logRenderEvent('HEAD_SCRIPT_END');
-        console.log('🔍 TEST 2: Layout script loaded: auth and fcmDebug objects initialized');
     </script>
 </head>
 
@@ -211,11 +107,6 @@
 
 <main><!-- 페이지별 내용 --></main>
 
-<!-- 🔍 기본 테스트 로그 2 -->
-<script>
-    console.log('🔍 TEST 3: BODY 시작 부분 스크립트 실행됨');
-</script>
-
 <!-- jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -223,14 +114,30 @@
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-messaging-compat.js"></script>
 
-<!-- 🔍 jQuery 로드 테스트 -->
+<!-- Firebase SDK 로드 테스트 -->
 <script>
-    console.log('🔍 TEST 4: jQuery 로드 후, jQuery 버전:', $ ? $.fn.jquery : 'jQuery 없음');
+    // Firebase SDK 로딩을 확인하는 함수
+    function checkFirebaseSDK() {
+        if (typeof firebase !== 'undefined') {
+            try {
+                const testApp = firebase.apps[0];
+            } catch (e) {
+                // Firebase 앱 상태 확인 실패
+            }
+        }
+    }
+    
+    // 즉시 체크
+    checkFirebaseSDK();
+    
+    // 약간의 지연 후 다시 체크 (SDK 로딩 완료 대기)
+    setTimeout(checkFirebaseSDK, 500);
+    setTimeout(checkFirebaseSDK, 1000);
+    setTimeout(checkFirebaseSDK, 2000);
 </script>
 
 <!-- Firebase 설정 -->
 <script th:inline="javascript">
-    console.log('🔍 TEST 5: Firebase 설정 스크립트 실행 시작');
     try {
         const firebaseConfig = {
             apiKey:          /*[[${firebaseConfig.apiKey}]]*/ '',
@@ -242,7 +149,8 @@
             measurementId:   /*[[${firebaseConfig.measurementId}]]*/ ''
         };
         
-        console.log('🔍 TEST 6: Firebase 설정 객체 생성됨:', firebaseConfig);
+        // 전역으로 저장하여 동적 로딩에서 사용
+        window.firebaseConfig = firebaseConfig;
         
         // 설정 값 검증
         const missingValues = Object.entries(firebaseConfig)
@@ -252,96 +160,65 @@
         if (missingValues.length > 0) {
             console.error('⚠️ Firebase 설정에 빈 값이 있습니다:', missingValues.join(', '));
             window.fcmDebug.errors.push('Firebase 설정에 빈 값 있음: ' + missingValues.join(', '));
-        } else {
-            console.log('✅ Firebase 설정 값 확인됨');
         }
         
-        // Firebase 초기화
-        if (typeof firebase !== 'undefined') {
-            firebase.initializeApp(firebaseConfig);
-            window.vapidKey = /*[[${firebaseConfig.vapidKey}]]*/ '';
-            window.fcmDebug.firebaseInitialized = true;
-            console.log('✅ Firebase 초기화 완료');
-        } else {
-            console.error('❌ Firebase SDK가 로드되지 않았습니다.');
-            window.fcmDebug.errors.push('Firebase SDK 로드되지 않음');
-        }
+        // VAPID 키를 즉시 설정
+        window.vapidKey = /*[[${firebaseConfig.vapidKey}]]*/ '';
+        
+        // Firebase 초기화는 나중에 setupFirebaseMessaging에서 수행
+        // (초기화 타이밍 충돌 방지)
+        window.fcmDebug.configReady = true;
     } catch (error) {
         console.error('❌ Firebase 초기화 오류:', error);
         window.fcmDebug.errors.push('Firebase 초기화 실패: ' + error.message);
     }
 </script>
 
-<!-- 🔍 외부 JS 파일 로드 테스트 -->
-<script>
-    console.log('🔍 TEST 7: 외부 JS 파일 로드 전');
-</script>
-
 <!-- Auth 공통 스크립트 (모든 페이지에서 필요) -->
 <script th:src="@{/js/auth-common.js}"></script>
 <script th:src="@{/js/main.js}"></script>
 
-<!-- 🔍 외부 JS 파일 로드 후 테스트 -->
-<script>
-    console.log('🔍 TEST 8: 외부 JS 파일 로드 후');
-    console.log('🔍 window.auth 상태:', window.auth);
-    console.log('🔍 window.isLoggedIn 함수 존재:', typeof window.isLoggedIn);
-</script>
-
 <!-- 헤더 UI 제어 전용 스크립트 -->
 <script>
-    console.log('🔍 TEST 9: Layout 헤더 UI 스크립트 시작');
-    
     // 헤더 UI 업데이트 함수들 (중복 초기화 방지)
     if (!window.headerUIInitialized) {
         window.headerUIInitialized = true;
-        console.log('🔍 TEST 10: 헤더 UI 초기화 시작');
 
         /* ① 로그인/로그아웃에 따라 버튼만 토글 */
         window.toggleHeaderUI = function(isLoggedIn) {
-            console.log('🔍 toggleHeaderUI 호출:', isLoggedIn);
             const userProfile = document.getElementById('user-profile');
             const authButtons = document.getElementById('auth-buttons');
             const notificationIcon = document.getElementById('notification-icon');
             
             if (isLoggedIn) {
-                console.log('🔍 로그인 UI 표시');
                 if (userProfile) {
                     userProfile.style.display = 'block';
-                    console.log('🔍 user-profile 표시됨');
                 }
                 if (notificationIcon) {
                     notificationIcon.style.display = 'block';
-                    console.log('🔍 notification-icon 표시됨');
                 }
                 if (authButtons) {
                     authButtons.style.display = 'none';
-                    console.log('🔍 auth-buttons 숨김');
                 }
             } else {
-                console.log('🔍 로그아웃 UI 표시');
                 if (userProfile) {
                     userProfile.style.display = 'none';
-                    console.log('🔍 user-profile 숨김');
                 }
                 if (notificationIcon) {
                     notificationIcon.style.display = 'none';
-                    console.log('🔍 notification-icon 숨김');
                 }
                 if (authButtons) {
                     authButtons.style.display = 'flex';
-                    console.log('🔍 auth-buttons 표시됨');
                 }
             }
         };
 
         /* ② 아바타 이미지·이니셜 세팅 */
         window.fillProfile = function(user) {
-            console.log('🔍 fillProfile 호출:', user);
             if (!user) return;
             
             const img = document.getElementById('profile-image');
-            const init = document.getElementById('profile-initial');
+            const init = document.getElementById('profile-initial'); // 이니셜 표시를 위한 요소 (현재 HTML에 없음)
             const userProfile = document.getElementById('user-profile');
 
             // 프로필 컨테이너에 로딩 클래스 추가
@@ -360,7 +237,6 @@
                             img.src = user.profile;
                             img.style.display = 'block';
                             img.style.opacity = '1';
-                            console.log('🔍 프로필 이미지 부드럽게 설정됨');
                         }, 100);
                     }
                     if (init) init.style.display = 'none';
@@ -382,12 +258,10 @@
                 // 프로필 이미지가 없거나 기본 이미지인 경우
                 if (img) {
                     img.style.display = 'block'; // 기본 이미지 유지
-                    console.log('🔍 기본 프로필 이미지 유지됨');
                 }
                 if (init && user.name) {
                     init.style.display = 'block';
                     init.textContent = user.name.charAt(0);
-                    console.log('🔍 프로필 이니셜 설정됨');
                 }
                 
                 // 로딩 상태 제거
@@ -399,45 +273,92 @@
 
         /* ③ 사용자 정보 조회 */
         window.fetchUserInfo = async function() {
-            console.log('🔍 fetchUserInfo 호출');
-            
-            // 인증 상태는 auth-common.js에서 관리
-            const isUserLoggedIn = (typeof window.isLoggedIn === 'function') 
-                ? window.isLoggedIn() 
-                : (!!window.auth?.accessToken);
-            
-            console.log('🔍 로그인 상태 확인:', isUserLoggedIn);
+            // 로그인 상태는 window.isLoggedIn()을 통해 확인
+            const isUserLoggedIn = window.isLoggedIn();
             
             if (isUserLoggedIn) {
                 window.toggleHeaderUI(true);
                 try {
-                    console.log('🔍 사용자 정보 API 호출 시도');
                     // fetchWithAuth 함수 사용 (auth-common.js에서 제공)
-                    const r = (typeof window.fetchWithAuth === 'function')
-                        ? await window.fetchWithAuth('/api/user/me')
-                        : await fetch('/api/user/me', {
-                              headers: { Authorization: `Bearer ${window.auth.accessToken}` },
-                              credentials: 'include'
-                          });
+                    const r = await window.fetchWithAuth('/api/user/me');
                     
                     if (r && r.ok) {
                         const userData = await r.json();
-                        console.log('🔍 사용자 정보 조회 성공:', userData);
                         window.fillProfile(userData.data || userData);
                     } else {
-                        console.warn('🔍 사용자 정보 조회 실패 - API 응답 오류');
+                        console.warn('🔍 fetchUserInfo - 사용자 정보 조회 실패 - API 응답 오류 (상태 코드: ', r?.status, ')');
                     }
                 } catch (error) { 
-                    console.warn('🔍 사용자 정보 조회 실패:', error);
+                    console.warn('🔍 fetchUserInfo - 사용자 정보 조회 실패 (예외 발생):', error);
                 }
                 return;
             }
             window.toggleHeaderUI(false);
         };
 
+        /* ② 아바타 이미지·이니셜 세팅 */
+        window.fillProfile = function(user) {
+            if (!user) {
+                console.warn('🔍 fillProfile: 사용자 데이터가 유효하지 않습니다.');
+                return;
+            }
+            
+            const img = document.getElementById('profile-image');
+            const init = document.getElementById('profile-initial'); // 이니셜 표시를 위한 요소 (현재 HTML에 없음)
+            const userProfile = document.getElementById('user-profile');
+
+            // 프로필 컨테이너에 로딩 클래스 추가
+            if (userProfile) {
+                userProfile.classList.add('loading');
+            }
+
+            if (user.profile && user.profile !== '/images/profile.png') {
+                // 새 이미지 미리 로드
+                const newImg = new Image();
+                newImg.onload = function() {
+                    if (img) {
+                        // 부드러운 전환을 위해 opacity 조작
+                        img.style.opacity = '0.7';
+                        setTimeout(() => {
+                            img.src = user.profile;
+                            img.style.display = 'block';
+                            img.style.opacity = '1';
+                        }, 100);
+                    }
+                    if (init) init.style.display = 'none';
+                    
+                    // 로딩 상태 제거
+                    if (userProfile) {
+                        userProfile.classList.remove('loading');
+                    }
+                };
+                newImg.onerror = function() {
+                    console.warn('🔍 fillProfile: 프로필 이미지 로드 실패, 기본 이미지 사용');
+                    // 이미지 로드 실패 시 기본 이미지 유지
+                    if (userProfile) {
+                        userProfile.classList.remove('loading');
+                    }
+                };
+                newImg.src = user.profile;
+            } else {
+                // 프로필 이미지가 없거나 기본 이미지인 경우
+                if (img) {
+                    img.style.display = 'block'; // 기본 이미지 유지
+                }
+                if (init && user.name) {
+                    init.style.display = 'block';
+                    init.textContent = user.name.charAt(0);
+                }
+                
+                // 로딩 상태 제거
+                if (userProfile) {
+                    userProfile.classList.remove('loading');
+                }
+            }
+        };
+
         /* ④ auth 상태 이벤트 → 헤더 동기화 */
         document.addEventListener('authStateChanged', function(e) {
-            console.log('🔍 Layout에서 authStateChanged 이벤트 수신:', e.detail.isLoggedIn);
             if (e.detail.isLoggedIn) {
                 window.fetchUserInfo();
             } else {
@@ -448,14 +369,7 @@
         /* ⑤ 페이지 로드 시 헤더 동기화 - authStateChanged 이벤트에만 의존 */
         // auth-common.js에서 발생시키는 authStateChanged 이벤트에만 의존하도록 변경
         // 중복 초기화 방지
-    } else {
-        console.log('🔍 TEST 10-1: 헤더 UI 이미 초기화됨');
     }
-</script>
-
-<!-- 🔍 최종 테스트 -->
-<script>
-    console.log('🔍 TEST 14: Layout 스크립트 로드 완료');
 </script>
 
 </body>

@@ -4,18 +4,16 @@ $(document).ready(function() {
     const pageSize = 10;
     let isLoading = false;
     let isLastPage = false;
-    let activeType = "guest"; // 기본값은 게스트 모드
-    let activeStatus = "all"; // 기본값은 모든 상태
-    let isInitialized = false; // 초기화 중복 방지 플래그
+    let activeType = "guest";
+    let activeStatus = "all";
+    let isInitialized = false;
 
-    // 리뷰 모달 관련 변수
     let currentExchangeId = null;
     let currentRating = 0;
 
     // 페이지 초기화 시 로딩 표시
     showInitialLoading();
     
-    // auth-common.js의 인증 상태 이벤트에만 의존
     waitForAuthAndInitialize();
 
     /**
@@ -34,45 +32,38 @@ $(document).ready(function() {
      * auth-common.js의 인증 상태를 기다리고 초기화
      */
     function waitForAuthAndInitialize() {
-        console.log('🔍 Exchange.js - 인증 상태 대기 중');
-        
+
         // authStateChanged 이벤트 리스너 등록
         document.addEventListener('authStateChanged', function(e) {
-            console.log('🔍 Exchange.js - authStateChanged 이벤트 수신:', e.detail.isLoggedIn);
             
             if (e.detail.isLoggedIn && !isInitialized) {
                 // 로그인 상태: 데이터 로드 및 이벤트 리스너 설정 (중복 방지)
-                console.log('🔍 Exchange.js - 이벤트로부터 초기화 시작');
                 isInitialized = true;
                 setupEventListeners();
                 loadSwapList(true);
             } else if (e.detail.isLoggedIn && isInitialized) {
-                console.log('🔍 Exchange.js - 이미 초기화됨, 이벤트 무시');
+                // 이미 초기화됨, 이벤트 무시
             } else if (!e.detail.isLoggedIn) {
                 // 로그아웃 상태: 로그인 페이지로 리디렉션
-                console.log('🔍 Exchange.js - 로그인이 필요하여 리디렉션');
                 window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
             }
         });
-        
-        // auth-common.js가 아직 초기화되지 않았을 경우를 대비한 체크
-        setTimeout(() => {
-            if (!isInitialized && typeof window.isLoggedIn === 'function' && window.isLoggedIn()) {
-                console.log('🔍 Exchange.js - setTimeout으로부터 초기화 시작');
-                isInitialized = true;
-                setupEventListeners();
-                loadSwapList(true);
-            } else if (isInitialized) {
-                console.log('🔍 Exchange.js - 이미 초기화됨, setTimeout 무시');
-            } else if (typeof window.auth !== 'undefined' && window.auth.isInitialized === false) {
-                // auth-common.js가 아직 초기화 중인 경우 잠시 더 대기
-                console.log('🔍 Exchange.js - auth-common.js 초기화 대기 중');
+
+        // 이벤트 리스너 등록 후 현재 인증 상태를 즉시 확인
+        if (typeof window.auth !== 'undefined' && window.auth.isInitialized) {
+            if (typeof window.isLoggedIn === 'function' && window.isLoggedIn()) {
+                if (!isInitialized) {
+                    isInitialized = true;
+                    setupEventListeners();
+                    loadSwapList(true);
+                }
             } else {
-                // 로그인되지 않은 상태
-                console.log('🔍 Exchange.js - 로그인되지 않은 상태');
-                window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
+                // 로그인되지 않은 상태이므로 로그인 페이지로 리디렉션
+                if (!isInitialized) {
+                    window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
+                }
             }
-        }, 300); // auth-common.js 초기화 완료 대기
+        }
     }
 
     /**
@@ -81,11 +72,9 @@ $(document).ready(function() {
     function setupEventListeners() {
         // 중복 등록 방지
         if (window.exchangeEventListenersAdded) {
-            console.log('🔍 Exchange.js - 이벤트 리스너 이미 등록됨');
             return;
         }
         window.exchangeEventListenersAdded = true;
-        console.log('🔍 Exchange.js - 이벤트 리스너 등록 시작');
         
     // 예약 유형 탭 기능
         $(".booking-type-tab").on("click", function() {
@@ -133,10 +122,7 @@ $(document).ready(function() {
      * 교환/숙박 목록 로드
      */
     function loadSwapList(resetList) {
-        console.log('🔍 Exchange.js - loadSwapList 호출됨, resetList:', resetList, 'currentPage:', currentPage);
-        
         if (isLoading) {
-            console.log('🔍 Exchange.js - 이미 로딩 중이라 건너뜀');
             return;
         }
 
@@ -167,22 +153,7 @@ $(document).ready(function() {
         const fullUrl = `${apiUrl}?${queryString}`;
 
         // fetchWithAuth 함수를 사용하여 인증된 API 호출
-        let apiCall;
-        
-        // auth-common.js의 fetchWithAuth 함수 사용 (인증 처리 포함)
-        if (typeof window.fetchWithAuth === 'function') {
-            apiCall = window.fetchWithAuth(fullUrl);
-        } else {
-            // fetchWithAuth가 없는 경우 일반 fetch 사용 (fallback)
-            console.warn('fetchWithAuth 함수가 없어서 일반 fetch 사용');
-            apiCall = fetch(fullUrl, {
-                headers: {
-                    'Authorization': `Bearer ${window.auth?.accessToken || ''}`,
-                    'Content-Type': 'application/json'
-                },
-                credentials: 'include'
-            });
-        }
+        let apiCall = window.fetchWithAuth(fullUrl);
         
         apiCall
             .then(response => {
@@ -234,8 +205,6 @@ $(document).ready(function() {
      * 에러 응답 처리
      */
     function handleErrorResponse(error) {
-        console.error("API 오류:", error);
-
         let errorMessage = "서버와 통신 중 오류가 발생했습니다.";
         
         // 에러 객체에서 메시지 추출 시도
@@ -409,7 +378,6 @@ $(document).ready(function() {
      */
     function cancelSwapRequest(swapId) {
         if (typeof window.fetchWithAuth !== 'function') {
-            console.error('fetchWithAuth 함수가 없습니다.');
             alert('인증 처리 중 오류가 발생했습니다.');
             return;
         }
@@ -431,7 +399,6 @@ $(document).ready(function() {
             resetSearch();
         })
         .catch(error => {
-            console.error("취소 요청 중 오류:", error);
             alert(error.message || "요청 취소 중 오류가 발생했습니다.");
         });
     }
@@ -441,7 +408,6 @@ $(document).ready(function() {
      */
     function acceptSwapRequest(swapId) {
         if (typeof window.fetchWithAuth !== 'function') {
-            console.error('fetchWithAuth 함수가 없습니다.');
             alert('인증 처리 중 오류가 발생했습니다.');
             return;
         }
@@ -463,7 +429,6 @@ $(document).ready(function() {
             resetSearch();
         })
         .catch(error => {
-            console.error("수락 요청 중 오류:", error);
             alert(error.message || "요청 수락 중 오류가 발생했습니다.");
         });
     }
@@ -473,7 +438,6 @@ $(document).ready(function() {
      */
     function rejectSwapRequest(swapId) {
         if (typeof window.fetchWithAuth !== 'function') {
-            console.error('fetchWithAuth 함수가 없습니다.');
             alert('인증 처리 중 오류가 발생했습니다.');
             return;
         }
@@ -495,7 +459,6 @@ $(document).ready(function() {
             resetSearch();
         })
         .catch(error => {
-            console.error("거절 요청 중 오류:", error);
             alert(error.message || "요청 거절 중 오류가 발생했습니다.");
         });
     }

@@ -297,19 +297,9 @@
         fetchSubscriptionInfo();
 
         // DOM 로드 후 헤더 드롭다운 재초기화 (알림 버튼 작동을 위해)
-        console.log('🔍 Subscription.html - 드롭다운 재초기화 시도');
         if (typeof window.reinitializeDropdowns === 'function') {
             setTimeout(() => {
-                console.log('🔍 Subscription.html - reinitializeDropdowns 호출');
                 window.reinitializeDropdowns();
-                
-                // 재초기화 후 알림 버튼 상태 확인
-                const notificationToggle = document.getElementById('notification-dropdown-toggle');
-                console.log('🔍 Subscription.html - 재초기화 후 알림 버튼 상태:', {
-                    exists: !!notificationToggle,
-                    hasClickListener: notificationToggle?.onclick !== null,
-                    dataset: notificationToggle?.dataset
-                });
             }, 200);
         } else {
             console.error('🔍 Subscription.html - reinitializeDropdowns 함수가 없음');
@@ -362,7 +352,7 @@
         //     .then(response => response.json())
         //     .then(data => updateSubscriptionUI(data))
         //     .catch(error => {
-        //         console.error('Error:', error);
+        //         // Error handling
         //     });
 
         // 테스트용 더미 데이터
@@ -431,7 +421,7 @@
         //         }
         //     })
         //     .catch(error => {
-        //         console.error('Error:', error);
+        //         // Error handling
         //         alert('구독 신청 중 오류가 발생했습니다.');
         //     });
 

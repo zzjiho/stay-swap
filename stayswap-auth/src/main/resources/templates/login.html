@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>StaySwap 로그인</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; background-color: #f7f7f7; }
+        .login-box { text-align: center; padding: 40px; background-color: white; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 30px; }
+        .kakao-btn { display: inline-block; text-decoration: none; background-color: #FEE500; color: #3C1E1E; padding: 12px 25px; border-radius: 5px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h1>StaySwap 인증</h1>
+        <p>로그인하여 계속하세요.</p>
+        <a class="kakao-btn" href="/oauth2/authorization/kakao">카카오로 로그인</a>
+    </div>
+</body>
+</html>

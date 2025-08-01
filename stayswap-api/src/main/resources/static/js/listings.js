@@ -29,7 +29,6 @@ $(document).ready(function() {
                 }
             },
             error: function(xhr, status, error) {
-                console.error('국가 목록 로드 실패:', error);
                 // 에러가 발생해도 기본 기능은 동작하도록 함
             }
         });
@@ -169,8 +168,6 @@ $(document).ready(function() {
      * 에러 응답 처리
      */
     function handleErrorResponse(xhr, status, error) {
-        console.error('API 오류:', xhr, status, error);
-
         let errorMessage = '서버와 통신 중 오류가 발생했습니다.';
 
         if (xhr.responseJSON && xhr.responseJSON.message) {

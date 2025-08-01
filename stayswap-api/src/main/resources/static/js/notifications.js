@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function init() {
         // 로그인 상태 확인
-        if (!window.auth?.accessToken) {
+        if (!window.isLoggedIn()) {
             showEmptyState('로그인이 필요합니다.');
             return;
         }
@@ -86,7 +86,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             const response = await fetch(`/api/notifications?${params}`, {
                 headers: {
-                    'Authorization': `Bearer ${window.auth.accessToken}`,
                     'Content-Type': 'application/json'
                 },
                 credentials: 'include'
@@ -233,7 +232,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(`/api/notifications/${notificationId}/read`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${window.auth.accessToken}`,
                     'Content-Type': 'application/json'
                 },
                 credentials: 'include'
@@ -262,7 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch('/api/notifications/clear-all', {
                 method: 'DELETE',
                 headers: {
-                    'Authorization': `Bearer ${window.auth.accessToken}`,
                     'Content-Type': 'application/json'
                 },
                 credentials: 'include'
@@ -309,7 +306,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showError(message) {
-        console.error(message);
         // 여기에 토스트 메시지나 알림 표시 로직 추가
     }
 

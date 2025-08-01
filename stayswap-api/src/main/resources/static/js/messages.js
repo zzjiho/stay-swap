@@ -2,6 +2,9 @@ document.addEventListener('DOMContentLoaded', function () {
     let stompClient = null;
     let currentChatroomId = null;
     let currentUserId = null;
+    let currentPage = 0;
+    let hasMoreMessages = true;
+    let isLoadingMessages = false;
 
     // DOM 요소
     const chatListContainer = document.getElementById('chat-list-container');
@@ -12,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // 초기화 함수
     function initializeMessages() {
-        if (!window.auth || !window.auth.accessToken) {
+        if (!window.isLoggedIn()) {
             chatListContainer.innerHTML = '<p>로그인이 필요합니다.</p>';
             return;
         }
@@ -26,24 +29,28 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 웹소켓 연결
-    function connectWebSocket() {
+    async function connectWebSocket() {
         const socket = new SockJS('/stomp/chats');
         stompClient = Stomp.over(socket);
         
-        // JWT 토큰을 헤더에 포함하여 연결
-        const headers = {
-            'Authorization': 'Bearer ' + window.auth.accessToken
-        };
-        
-        stompClient.connect(headers, function (frame) {
-            console.log('WebSocket 연결 성공:', frame);
-            // 전체 채팅방 목록 실시간 갱신 필요시 /sub/chats/updates 구독
-            stompClient.subscribe('/sub/chats/updates', function (message) {
-                loadChatRooms();
+        // 먼저 사용자 정보를 가져와서 WebSocket 연결 시 사용할 수 있도록 준비
+        try {
+            const userResponse = await fetchWithAuth('/api/user/me');
+            const userResult = await userResponse.json();
+            currentUserId = userResult.data.id;
+            
+            // WebSocket 연결 (HttpOnly 쿠키는 자동으로 포함됨)
+            stompClient.connect({}, function (frame) {
+                // 전체 채팅방 목록 실시간 갱신 (메시지 전송 시마다 호출되지 않도록 주석 처리)
+                // stompClient.subscribe('/sub/chats/updates', function (message) {
+                //     loadChatRooms();
+                // });
+            }, function(error) {
+                console.error('WebSocket 연결 실패:', error);
             });
-        }, function(error) {
-            console.error('WebSocket 연결 실패:', error);
-        });
+        } catch (error) {
+            console.error('사용자 정보 조회 실패:', error);
+        }
     }
 
     // 채팅방 목록 로드
@@ -101,6 +108,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function selectChatRoom(chatroomId) {
         if (currentChatroomId === chatroomId) return;
         currentChatroomId = chatroomId;
+        currentPage = 0; // 채팅방 변경 시 페이지 초기화
+        hasMoreMessages = true; // 채팅방 변경 시 메시지 더 있음으로 초기화
         document.querySelectorAll('.chat-list-item').forEach(item => {
             item.classList.remove('active');
             if (item.dataset.chatroomId == currentChatroomId) {
@@ -108,39 +117,83 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         messageList.innerHTML = '<div class="loader-container"><div class="loading-spinner"></div></div>';
-        loadMessages(chatroomId);
+        loadMessages(chatroomId); // 첫 페이지 로드
         subscribeToChatRoom(chatroomId);
     }
 
     // 메시지 목록 로드
-    function loadMessages(chatroomId) {
-        fetchWithAuth(`/api/chats/${chatroomId}/messages`)
+    function loadMessages(chatroomId, page = 0, size = 20, append = false) {
+        if (isLoadingMessages) return;
+        isLoadingMessages = true;
+        if (!append) {
+            messageList.innerHTML = '<div class="loader-container"><div class="loading-spinner"></div></div>';
+        }
+
+        fetchWithAuth(`/api/chats/${chatroomId}/messages?page=${page}&size=${size}`)
             .then(response => response.json())
             .then(result => {
-                if (result.httpStatus === 'OK') {
-                    renderMessages(result.data.content);
+                if (result.httpStatus === 'OK' && result.data && Array.isArray(result.data.content)) {
+                    let messagesToRender = result.data.content; // 백엔드에서 최신 순서로 준다 (DESC)
+                    // 항상 reverse해서 오래된 메시지가 위에 오도록
+                    messagesToRender = messagesToRender.reverse();
+                    hasMoreMessages = !result.data.last;
+                    currentPage = result.data.number;
+                    renderMessages(messagesToRender, append);
                 } else {
-                    messageList.innerHTML = '<p>메시지를 불러오지 못했습니다.</p>';
+                    if (!append) {
+                        messageList.innerHTML = '<p>메시지를 불러오지 못했습니다.</p>';
+                    }
+                    console.error('메시지 로드 실패: 유효하지 않은 응답 데이터', result);
                 }
             })
             .catch(error => {
-                messageList.innerHTML = '<p>메시지를 불러오지 못했습니다.</p>';
+                console.error('메시지 로드 실패:', error.name, error.message, error.stack);
+                if (!append) {
+                    messageList.innerHTML = '<p>메시지를 불러오지 못했습니다.</p>';
+                }
+            })
+            .finally(() => {
+                isLoadingMessages = false;
             });
     }
 
     // 메시지 렌더링
-    function renderMessages(messages) {
-        messageList.innerHTML = '';
-        if (!messages || messages.length === 0) {
-            messageList.innerHTML = '<p>메시지가 없습니다.</p>';
+    function renderMessages(messages, append = false) {
+        if (!append) {
+            messageList.innerHTML = '';
+        }
+        if (!Array.isArray(messages) || messages.length === 0) {
+            if (!append) {
+                messageList.innerHTML = '<p>메시지가 없습니다.</p>';
+            }
             return;
         }
-        messages.forEach(msg => appendMessage(msg));
-        messageList.scrollTop = messageList.scrollHeight;
+
+        const fragment = document.createDocumentFragment();
+        messages.forEach(msg => {
+            const messageElement = createMessageElement(msg);
+            fragment.appendChild(messageElement);
+        });
+
+        if (append) {
+            // 기존 메시지들 앞에 새로운 메시지들을 삽입 (시간순 유지)
+            const firstChild = messageList.firstChild;
+            if (firstChild) {
+                messageList.insertBefore(fragment, firstChild);
+            } else {
+                messageList.appendChild(fragment);
+            }
+            // 스크롤 위치는 그대로 유지하지 않고 새로 추가된 메시지로 이동
+        } else {
+            messageList.appendChild(fragment);
+            requestAnimationFrame(() => {
+                messageList.scrollTop = messageList.scrollHeight;
+            });
+        }
     }
 
-    // 개별 메시지 추가
-    function appendMessage(message) {
+    // 개별 메시지 요소 생성
+    function createMessageElement(message) {
         const isMine = message.senderId === currentUserId;
         const messageElement = document.createElement('div');
         messageElement.classList.add('message-bubble');
@@ -149,7 +202,16 @@ document.addEventListener('DOMContentLoaded', function () {
             <div class="message-content">${escapeHtml(message.message || message.text)}</div>
             <div class="message-meta">${formatTime(message.createdAt || message.timestamp)}</div>
         `;
+        return messageElement;
+    }
+
+    // 개별 메시지 추가 (새 메시지 수신 시)
+    function appendMessage(message) {
+        const messageElement = createMessageElement(message);
         messageList.appendChild(messageElement);
+        requestAnimationFrame(() => {
+            messageList.scrollTop = messageList.scrollHeight;
+        });
     }
 
     // 채팅방 구독
@@ -165,15 +227,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // 메시지 전송
-    function sendMessage() {
+    async function sendMessage() {
         const text = messageInput.value.trim();
         if (text && currentChatroomId && stompClient) {
-            stompClient.send(
-                `/pub/chats/${currentChatroomId}`,
-                { 'Authorization': 'Bearer ' + window.auth.accessToken },
-                JSON.stringify({ message: text })
-            );
-            messageInput.value = '';
+            try {
+                // 서버에서 accessToken 가져오기
+                const tokenResponse = await fetchWithAuth('/api/auth/token');
+                const tokenData = await tokenResponse.json();
+                
+                if (tokenData.accessToken) {
+                    stompClient.send(
+                        `/pub/chats/${currentChatroomId}`,
+                        { 'Authorization': `Bearer ${tokenData.accessToken}` },
+                        JSON.stringify({ message: text })
+                    );
+                    messageInput.value = '';
+                } else {
+                    console.error('서버에서 토큰을 가져올 수 없습니다.');
+                    alert('인증 토큰이 없습니다. 다시 로그인해주세요.');
+                }
+            } catch (error) {
+                console.error('토큰 가져오기 실패:', error);
+                alert('인증 오류가 발생했습니다. 다시 로그인해주세요.');
+            }
         }
     }
 
@@ -183,6 +259,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             sendMessage();
+        }
+    });
+
+    // 무한 스크롤 이벤트 리스너
+    messageList.addEventListener('scroll', function() {
+        // 스크롤이 맨 위로 도달했는지 확인 (오차 범위 1px)
+        if (messageList.scrollTop <= 1 && hasMoreMessages && !isLoadingMessages) {
+            loadMessages(currentChatroomId, currentPage + 1, 20, true);
         }
     });
 
@@ -197,7 +281,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // HTML 이스케이프
     function escapeHtml(text) {
         if (!text) return '';
-        return text.replace(/[&<>"']/g, function (c) {
+        return text.replace(/[&<>"]/g, function (c) {
             return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c];
         });
     }

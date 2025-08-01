@@ -1,678 +1,766 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // 현재 URL에서 숙소 ID 추출
-    const pathParts = window.location.pathname.split('/');
-    const houseId = pathParts[pathParts.length - 1];
     
-    // 사용자 정보 가져오기
-    const userId = getUserIdFromCookie();
+    // 현재 숙소 ID (URL에서 추출)
+    const currentPath = window.location.pathname;
     
-    // 폼 요소
+    // URL 패턴: /page/host/listings/{houseId}/edit
+    const pathParts = currentPath.split('/');
+    
+    // pathParts = ['', 'page', 'host', 'listings', 'houseId', 'edit']
+    const houseId = pathParts[pathParts.length - 2]; // edit 바로 앞의 ID
+    
+    if (!houseId || houseId === 'listings' || isNaN(houseId)) {
+        alert('잘못된 숙소 ID입니다.');
+        window.location.href = '/page/profile';
+        return;
+    }
+    
+    // 단계 이동 관련 변수
     const form = document.getElementById('listing-form');
+    const steps = document.querySelectorAll('.form-step');
     const progressFill = document.getElementById('progress-fill');
     const progressSteps = document.querySelectorAll('.progress-step');
-    const formSteps = document.querySelectorAll('.form-step');
     const nextButtons = document.querySelectorAll('.next-step');
     const prevButtons = document.querySelectorAll('.prev-step');
     const submitButton = document.getElementById('submit-listing');
-    
-    // 이미지 관련 요소
-    const imageUploadArea = document.getElementById('image-upload-area');
-    const imageInput = document.getElementById('image-upload');
-    const imagePreviewContainer = document.getElementById('image-preview-container');
-    const currentImagesContainer = document.getElementById('current-images');
-    
-    // 삭제할 이미지 ID 목록
-    let deleteImageIds = [];
-    
-    // 새로 업로드할 이미지 파일 목록
-    let newImageFiles = [];
-    
-    // 현재 단계
+
     let currentStep = 1;
-    
-    // 기존 숙소 정보 로드
+    const totalSteps = steps.length;
+
+    // 업로드된 이미지 파일들을 저장할 배열
+    let uploadedImages = [];
+    // 삭제할 기존 이미지 ID들을 저장할 배열
+    let imagesToDelete = [];
+    // 현재 숙소 데이터
+    let currentHouseData = null;
+
+    // 페이지 로드 시 숙소 데이터 불러오기
+    // 임시로 인증 체크 우회하고 바로 데이터 로드 시도
     loadHouseData();
-    
-    // 이벤트 리스너 설정
-    setupEventListeners();
-    
-    /**
-     * 기존 숙소 정보를 API에서 가져와 폼에 채우는 함수
-     */
+
+    // 숙소 데이터 로드 함수
     function loadHouseData() {
-        fetch(`/api/houses/${houseId}`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('숙소 정보를 불러오는 데 실패했습니다.');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.code === 'SUCCESS') {
-                    fillFormWithData(data.data);
-                    loadHouseImages();
-                } else {
-                    showError('숙소 정보를 불러오는 데 실패했습니다.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showError('숙소 정보를 불러오는 데 실패했습니다.');
-            });
-    }
-    
-    /**
-     * 숙소 이미지를 API에서 가져와 표시하는 함수
-     */
-    function loadHouseImages() {
-        fetch(`/api/houses/${houseId}/images`)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('숙소 이미지를 불러오는 데 실패했습니다.');
-                }
-                return response.json();
-            })
-            .then(data => {
-                if (data.code === 'SUCCESS') {
-                    displayCurrentImages(data.data);
-                } else {
-                    showError('숙소 이미지를 불러오는 데 실패했습니다.');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showError('숙소 이미지를 불러오는 데 실패했습니다.');
-            });
-    }
-    
-    /**
-     * API에서 가져온 데이터로 폼을 채우는 함수
-     */
-    function fillFormWithData(house) {
-        // 기본 정보 채우기
-        document.getElementById('listing-title').value = house.title || '';
-        
-        // 숙소 유형 선택
-        const propertyTypeRadios = document.querySelectorAll('input[name="property-type"]');
-        propertyTypeRadios.forEach(radio => {
-            if (mapHouseTypeToRadioValue(house.houseType) === radio.value) {
-                radio.checked = true;
-            }
-        });
-        
-        document.getElementById('listing-size').value = house.size || '';
-        document.getElementById('listing-bedrooms').value = house.bedrooms || '';
-        document.getElementById('listing-beds').value = house.bed || '';
-        document.getElementById('listing-bathrooms').value = house.bathrooms || '';
-        document.getElementById('listing-guests').value = house.maxGuests || '';
-        
-        // 위치 정보 채우기
-        document.getElementById('listing-address').value = house.address || '';
-        document.getElementById('listing-city').value = house.city || '';
-        document.getElementById('listing-district').value = house.district || '';
-        
-        // 편의시설 체크
-        if (house.options) {
-            const options = house.options;
-            
-            // 편의시설
-            document.getElementById('amenity-wifi').checked = options.hasFreeWifi || false;
-            document.getElementById('amenity-aircon').checked = options.hasAirConditioner || false;
-            document.getElementById('amenity-tv').checked = options.hasTV || false;
-            document.getElementById('amenity-washer').checked = options.hasWashingMachine || false;
-            document.getElementById('amenity-kitchen').checked = options.hasKitchen || false;
-            document.getElementById('amenity-hairdryer').checked = options.hasDryer || false;
-            document.getElementById('amenity-iron').checked = options.hasIron || false;
-            document.getElementById('amenity-fridge').checked = options.hasRefrigerator || false;
-            document.getElementById('amenity-microwave').checked = options.hasMicrowave || false;
-            
-            // 특징
-            document.getElementById('feature-parking').checked = options.hasFreeParking || false;
-            document.getElementById('feature-balcony').checked = options.hasBalconyTerrace || false;
-            document.getElementById('feature-pets').checked = options.hasPetsAllowed || false;
-            document.getElementById('feature-smoking').checked = options.hasSmokingAllowed || false;
-            document.getElementById('feature-elevator').checked = options.hasElevator || false;
-        }
-        
-        // 설명 및 규칙 채우기
-        document.getElementById('listing-description').value = house.description || '';
-        document.getElementById('listing-rules').value = house.rule || '';
-        
-        // 검토 단계 정보 업데이트
-        updateReviewSection();
-    }
-    
-    /**
-     * 현재 등록된 이미지를 화면에 표시하는 함수
-     */
-    function displayCurrentImages(images) {
-        currentImagesContainer.innerHTML = '';
-        
-        if (!images || images.length === 0) {
-            const noImagesMessage = document.createElement('p');
-            noImagesMessage.textContent = '등록된 이미지가 없습니다.';
-            currentImagesContainer.appendChild(noImagesMessage);
-            return;
-        }
-        
-        images.forEach(image => {
-            const imageContainer = document.createElement('div');
-            imageContainer.className = 'image-item';
-            imageContainer.dataset.imageId = image.imageId;
-            
-            const img = document.createElement('img');
-            img.src = image.imageUrl;
-            img.alt = '숙소 이미지';
-            
-            const deleteButton = document.createElement('button');
-            deleteButton.className = 'delete-image';
-            deleteButton.innerHTML = '<i class="fas fa-times"></i>';
-            deleteButton.addEventListener('click', function() {
-                // 삭제할 이미지 ID 목록에 추가
-                deleteImageIds.push(image.imageId);
-                imageContainer.remove();
-            });
-            
-            imageContainer.appendChild(img);
-            imageContainer.appendChild(deleteButton);
-            currentImagesContainer.appendChild(imageContainer);
-        });
-    }
-    
-    /**
-     * 이벤트 리스너 설정 함수
-     */
-    function setupEventListeners() {
-        // 다음 단계 버튼
-        nextButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (validateCurrentStep()) {
-                    goToNextStep();
-                }
-            });
-        });
-        
-        // 이전 단계 버튼
-        prevButtons.forEach(button => {
-            button.addEventListener('click', goToPrevStep);
-        });
-        
-        // 진행 단계 클릭
-        progressSteps.forEach(step => {
-            step.addEventListener('click', () => {
-                const stepNumber = parseInt(step.dataset.step);
-                if (stepNumber < currentStep || validateCurrentStep()) {
-                    goToStep(stepNumber);
-                }
-            });
-        });
-        
-        // 이미지 업로드 영역 클릭
-        imageUploadArea.addEventListener('click', () => {
-            imageInput.click();
-        });
-        
-        // 이미지 드래그 앤 드롭
-        imageUploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            imageUploadArea.classList.add('dragover');
-        });
-        
-        imageUploadArea.addEventListener('dragleave', () => {
-            imageUploadArea.classList.remove('dragover');
-        });
-        
-        imageUploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            imageUploadArea.classList.remove('dragover');
-            handleImageFiles(e.dataTransfer.files);
-        });
-        
-        // 이미지 파일 선택
-        imageInput.addEventListener('change', () => {
-            handleImageFiles(imageInput.files);
-        });
-        
-        // 폼 제출
-        form.addEventListener('submit', handleFormSubmit);
-    }
-    
-    /**
-     * 현재 단계 유효성 검증
-     */
-    function validateCurrentStep() {
-        switch (currentStep) {
-            case 1: // 기본 정보
-                return validateBasicInfo();
-            case 2: // 위치 및 특징
-                return validateLocationFeatures();
-            case 3: // 사진 및 설명
-                return validatePhotosDescription();
-            case 4: // 검토 및 제출
-                return validateFinalStep();
-            default:
-                return true;
-        }
-    }
-    
-    /**
-     * 기본 정보 유효성 검증
-     */
-    function validateBasicInfo() {
-        const title = document.getElementById('listing-title').value;
-        const size = document.getElementById('listing-size').value;
-        const bedrooms = document.getElementById('listing-bedrooms').value;
-        const beds = document.getElementById('listing-beds').value;
-        const bathrooms = document.getElementById('listing-bathrooms').value;
-        const guests = document.getElementById('listing-guests').value;
-        
-        if (!title || !size || bedrooms === '' || !beds || !bathrooms || !guests) {
-            showError('모든 필수 정보를 입력해주세요.');
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * 위치 및 특징 유효성 검증
-     */
-    function validateLocationFeatures() {
-        const address = document.getElementById('listing-address').value;
-        const city = document.getElementById('listing-city').value;
-        const district = document.getElementById('listing-district').value;
-        
-        if (!address || !city || !district) {
-            showError('주소 정보를 모두 입력해주세요.');
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * 사진 및 설명 유효성 검증
-     */
-    function validatePhotosDescription() {
-        const description = document.getElementById('listing-description').value;
-        
-        if (!description || description.length < 100) {
-            showError('숙소 설명은 최소 100자 이상 작성해주세요.');
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * 최종 단계 유효성 검증
-     */
-    function validateFinalStep() {
-        const termsAgree = document.getElementById('terms-agree').checked;
-        
-        if (!termsAgree) {
-            showError('이용약관 및 개인정보 처리방침에 동의해주세요.');
-            return false;
-        }
-        
-        return true;
-    }
-    
-    /**
-     * 다음 단계로 이동
-     */
-    function goToNextStep() {
-        if (currentStep < 4) {
-            goToStep(currentStep + 1);
-        }
-    }
-    
-    /**
-     * 이전 단계로 이동
-     */
-    function goToPrevStep() {
-        if (currentStep > 1) {
-            goToStep(currentStep - 1);
-        }
-    }
-    
-    /**
-     * 특정 단계로 이동
-     */
-    function goToStep(step) {
-        // 현재 단계 비활성화
-        formSteps.forEach(formStep => {
-            formStep.classList.remove('active');
-        });
-        progressSteps.forEach(progressStep => {
-            progressStep.classList.remove('active');
-        });
-        
-        // 새 단계 활성화
-        formSteps[step - 1].classList.add('active');
-        for (let i = 0; i < step; i++) {
-            progressSteps[i].classList.add('active');
-        }
-        
-        // 진행 바 업데이트
-        progressFill.style.width = ((step - 1) / 3 * 100) + '%';
-        
-        // 현재 단계 업데이트
-        currentStep = step;
-        
-        // 검토 단계인 경우 정보 업데이트
-        if (step === 4) {
-            updateReviewSection();
-        }
-    }
-    
-    /**
-     * 검토 단계 정보 업데이트
-     */
-    function updateReviewSection() {
-        // 기본 정보
-        const basicInfoSection = document.getElementById('review-basic-info');
-        basicInfoSection.innerHTML = `
-            <p><strong>숙소 이름:</strong> ${document.getElementById('listing-title').value}</p>
-            <p><strong>숙소 유형:</strong> ${getSelectedPropertyType()}</p>
-            <p><strong>숙소 크기:</strong> ${document.getElementById('listing-size').value}평</p>
-            <p><strong>침실 수:</strong> ${document.getElementById('listing-bedrooms').value}</p>
-            <p><strong>침대 수:</strong> ${document.getElementById('listing-beds').value}</p>
-            <p><strong>욕실 수:</strong> ${document.getElementById('listing-bathrooms').value}</p>
-            <p><strong>최대 수용 인원:</strong> ${document.getElementById('listing-guests').value}명</p>
-        `;
-        
-        // 위치 및 특징
-        const locationFeaturesSection = document.getElementById('review-location-features');
-        locationFeaturesSection.innerHTML = `
-            <p><strong>주소:</strong> ${document.getElementById('listing-address').value}</p>
-            <p><strong>도시:</strong> ${document.getElementById('listing-city').value}</p>
-            <p><strong>지역구:</strong> ${document.getElementById('listing-district').value}</p>
-            <p><strong>편의시설:</strong> ${getSelectedAmenities()}</p>
-            <p><strong>특징:</strong> ${getSelectedFeatures()}</p>
-        `;
-        
-        // 사진 및 설명
-        const photosDescriptionSection = document.getElementById('review-photos-description');
-        photosDescriptionSection.innerHTML = `
-            <p><strong>설명:</strong> ${document.getElementById('listing-description').value}</p>
-            <p><strong>이용 규칙:</strong> ${document.getElementById('listing-rules').value || '없음'}</p>
-            <p><strong>이미지:</strong> 현재 ${document.querySelectorAll('#current-images .image-item').length}장, 
-                                    새로 추가 ${newImageFiles.length}장, 
-                                    삭제 예정 ${deleteImageIds.length}장</p>
-        `;
-    }
-    
-    /**
-     * 선택된 숙소 유형 텍스트 반환
-     */
-    function getSelectedPropertyType() {
-        const selectedRadio = document.querySelector('input[name="property-type"]:checked');
-        if (selectedRadio) {
-            const label = document.querySelector(`label[for="${selectedRadio.id}"]`);
-            return label ? label.textContent : '선택 안됨';
-        }
-        return '선택 안됨';
-    }
-    
-    /**
-     * 선택된 편의시설 텍스트 반환
-     */
-    function getSelectedAmenities() {
-        const selectedAmenities = [];
-        document.querySelectorAll('input[name="amenities"]:checked').forEach(checkbox => {
-            const label = document.querySelector(`label[for="${checkbox.id}"]`);
-            if (label) {
-                selectedAmenities.push(label.textContent);
-            }
-        });
-        
-        return selectedAmenities.length > 0 ? selectedAmenities.join(', ') : '없음';
-    }
-    
-    /**
-     * 선택된 특징 텍스트 반환
-     */
-    function getSelectedFeatures() {
-        const selectedFeatures = [];
-        document.querySelectorAll('input[name="features"]:checked').forEach(checkbox => {
-            const label = document.querySelector(`label[for="${checkbox.id}"]`);
-            if (label) {
-                selectedFeatures.push(label.textContent);
-            }
-        });
-        
-        return selectedFeatures.length > 0 ? selectedFeatures.join(', ') : '없음';
-    }
-    
-    /**
-     * 이미지 파일 처리
-     */
-    function handleImageFiles(files) {
-        if (!files || files.length === 0) return;
-        
-        // 최대 10개 이미지 제한 확인 (현재 이미지 + 새 이미지 - 삭제 예정 이미지)
-        const currentImagesCount = document.querySelectorAll('#current-images .image-item').length;
-        const totalImagesAfterUpdate = currentImagesCount + newImageFiles.length + files.length - deleteImageIds.length;
-        
-        if (totalImagesAfterUpdate > 10) {
-            showError('이미지는 최대 10개까지만 업로드할 수 있습니다.');
-            return;
-        }
-        
-        // 파일 유효성 검사 및 미리보기 추가
-        Array.from(files).forEach(file => {
-            if (!file.type.match('image.*')) {
-                showError('이미지 파일만 업로드할 수 있습니다.');
-                return;
-            }
-            
-            if (file.size > 5 * 1024 * 1024) { // 5MB 제한
-                showError('이미지 크기는 5MB를 초과할 수 없습니다.');
-                return;
-            }
-            
-            // 새 이미지 파일 목록에 추가
-            newImageFiles.push(file);
-            
-            // 미리보기 생성
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const imageContainer = document.createElement('div');
-                imageContainer.className = 'image-item new-image';
+
+        // 로딩 상태 표시
+        showLoadingMessage('숙소 정보를 불러오는 중...');
+
+        $.ajax({
+            url: `/api/house/${houseId}`,
+            type: 'GET',
+            success: function(response) {
+                currentHouseData = response.data;
                 
-                const img = document.createElement('img');
-                img.src = e.target.result;
-                img.alt = '새 이미지';
+                populateFormData(currentHouseData);
                 
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'delete-image';
-                deleteButton.innerHTML = '<i class="fas fa-times"></i>';
-                deleteButton.addEventListener('click', function() {
-                    // 새 이미지 파일 목록에서 제거
-                    const index = newImageFiles.indexOf(file);
-                    if (index !== -1) {
-                        newImageFiles.splice(index, 1);
-                    }
-                    imageContainer.remove();
-                });
+                // 이미지 정보는 별도 API로 가져오기
+                loadHouseImages(houseId);
                 
-                imageContainer.appendChild(img);
-                imageContainer.appendChild(deleteButton);
-                imagePreviewContainer.appendChild(imageContainer);
-            };
-            reader.readAsDataURL(file);
+                hideLoadingMessage();
+            },
+            error: function(xhr, status, error) {
+                hideLoadingMessage();
+                
+                let errorMessage = '숙소 정보를 불러오는 중 오류가 발생했습니다.';
+                if (xhr.status === 404) {
+                    errorMessage = '존재하지 않는 숙소입니다.';
+                } else if (xhr.status === 403) {
+                    errorMessage = '수정 권한이 없습니다.';
+                }
+                
+                alert(errorMessage);
+                window.location.href = '/page/profile';
+            }
         });
     }
-    
-    /**
-     * 폼 제출 처리
-     */
-    function handleFormSubmit(e) {
-        e.preventDefault();
+
+    // 숙소 이미지 데이터 로드 함수
+    function loadHouseImages(houseId) {
         
-        if (!validateFinalStep()) {
-            return;
-        }
-        
-        // 폼 데이터 생성
-        const formData = new FormData();
-        
-        // 요청 객체 생성
-        const requestData = {
-            title: document.getElementById('listing-title').value,
-            description: document.getElementById('listing-description').value,
-            rule: document.getElementById('listing-rules').value,
-            houseType: mapRadioValueToHouseType(document.querySelector('input[name="property-type"]:checked').value),
-            size: parseFloat(document.getElementById('listing-size').value),
-            bedrooms: parseInt(document.getElementById('listing-bedrooms').value),
-            bed: parseInt(document.getElementById('listing-beds').value),
-            bathrooms: parseFloat(document.getElementById('listing-bathrooms').value),
-            maxGuests: parseInt(document.getElementById('listing-guests').value),
-            address: document.getElementById('listing-address').value,
-            city: document.getElementById('listing-city').value,
-            district: document.getElementById('listing-district').value,
-            petsAllowed: document.getElementById('feature-pets').checked,
-            deleteImageIds: deleteImageIds.length > 0 ? deleteImageIds : null,
-            options: {
-                hasFreeWifi: document.getElementById('amenity-wifi').checked,
-                hasAirConditioner: document.getElementById('amenity-aircon').checked,
-                hasTV: document.getElementById('amenity-tv').checked,
-                hasWashingMachine: document.getElementById('amenity-washer').checked,
-                hasKitchen: document.getElementById('amenity-kitchen').checked,
-                hasDryer: document.getElementById('amenity-hairdryer').checked,
-                hasIron: document.getElementById('amenity-iron').checked,
-                hasRefrigerator: document.getElementById('amenity-fridge').checked,
-                hasMicrowave: document.getElementById('amenity-microwave').checked,
-                hasFreeParking: document.getElementById('feature-parking').checked,
-                hasBalconyTerrace: document.getElementById('feature-balcony').checked,
-                hasPetsAllowed: document.getElementById('feature-pets').checked,
-                hasSmokingAllowed: document.getElementById('feature-smoking').checked,
-                hasElevator: document.getElementById('feature-elevator').checked
+        $.ajax({
+            url: `/api/house/${houseId}/images`,
+            type: 'GET',
+            success: function(response) {
+                if (response.data && response.data.length > 0) {
+                    loadCurrentImages(response.data);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('숙소 이미지 로드 실패:', xhr.responseText);
             }
-        };
-        
-        // 요청 데이터를 JSON 문자열로 변환하여 FormData에 추가
-        formData.append('request', new Blob([JSON.stringify(requestData)], { type: 'application/json' }));
-        
-        // 새 이미지 파일 추가
-        if (newImageFiles.length > 0) {
-            newImageFiles.forEach(file => {
-                formData.append('images', file);
-            });
-        }
-        
-        // API 호출
-        submitButton.disabled = true;
-        submitButton.textContent = '처리 중...';
-        
-        fetch(`/api/houses/${houseId}?userId=${userId}`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('숙소 수정에 실패했습니다.');
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.code === 'SUCCESS') {
-                showSuccess('숙소가 성공적으로 수정되었습니다.');
-                // 내 숙소 목록 페이지로 리다이렉트
-                setTimeout(() => {
-                    window.location.href = '/my/houses';
-                }, 1500);
-            } else {
-                showError(data.message || '숙소 수정에 실패했습니다.');
-                submitButton.disabled = false;
-                submitButton.textContent = '숙소 수정하기';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showError('숙소 수정에 실패했습니다.');
-            submitButton.disabled = false;
-            submitButton.textContent = '숙소 수정하기';
         });
     }
-    
-    /**
-     * 에러 메시지 표시
-     */
-    function showError(message) {
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'alert alert-danger';
-        errorDiv.textContent = message;
-        
-        // 이전 알림 제거
-        const existingAlerts = document.querySelectorAll('.alert');
-        existingAlerts.forEach(alert => alert.remove());
-        
-        // 새 알림 추가
-        form.parentNode.insertBefore(errorDiv, form);
-        
-        // 3초 후 자동 제거
-        setTimeout(() => {
-            errorDiv.remove();
-        }, 3000);
-    }
-    
-    /**
-     * 성공 메시지 표시
-     */
-    function showSuccess(message) {
-        const successDiv = document.createElement('div');
-        successDiv.className = 'alert alert-success';
-        successDiv.textContent = message;
-        
-        // 이전 알림 제거
-        const existingAlerts = document.querySelectorAll('.alert');
-        existingAlerts.forEach(alert => alert.remove());
-        
-        // 새 알림 추가
-        form.parentNode.insertBefore(successDiv, form);
-    }
-    
-    /**
-     * 쿠키에서 사용자 ID 가져오기
-     */
-    function getUserIdFromCookie() {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.startsWith('userId=')) {
-                return cookie.substring('userId='.length, cookie.length);
+
+    // 폼에 데이터 입력하는 함수
+    function populateFormData(data) {
+        // 1단계: 기본 정보
+        document.getElementById('listing-title').value = data.title || '';
+        document.getElementById('listing-size').value = data.size || '';
+        document.getElementById('listing-bedrooms').value = data.bedrooms || '';
+        document.getElementById('listing-beds').value = data.bed || '';
+        document.getElementById('listing-bathrooms').value = data.bathrooms || '';
+        document.getElementById('listing-guests').value = data.maxGuests || '';
+
+        // 숙소 유형 설정
+        if (data.houseType) {
+            const houseTypeValue = getPropertyTypeFromAPI(data.houseType);
+            const typeRadio = document.querySelector(`input[name="property-type"][value="${houseTypeValue}"]`);
+            if (typeRadio) {
+                typeRadio.checked = true;
             }
         }
-        return null;
+
+        // 2단계: 위치 정보 (읽기 전용)
+        if (data.addressKo) {
+            document.getElementById('readonly-address').textContent = data.addressKo;
+        }
+        if (data.cityKo && data.districtKo) {
+            document.getElementById('readonly-city-district').textContent = `${data.cityKo} ${data.districtKo}`;
+        }
+
+        // 편의시설 설정
+        if (data.amenities) {
+            
+            setCheckboxValue('wifi', data.amenities.hasFreeWifi);
+            setCheckboxValue('aircon', data.amenities.hasAirConditioner);
+            setCheckboxValue('washer', data.amenities.hasWashingMachine);
+            setCheckboxValue('kitchen', data.amenities.hasKitchen);
+            setCheckboxValue('hairdryer', data.amenities.hasDryer);
+            setCheckboxValue('iron', data.amenities.hasIron);
+            setCheckboxValue('fridge', data.amenities.hasRefrigerator);
+            setCheckboxValue('microwave', data.amenities.hasMicrowave);
+            setCheckboxValue('tv', data.amenities.hasTV);
+
+            // 특징 설정
+            setCheckboxValue('parking', data.amenities.hasFreeParking, 'features');
+            setCheckboxValue('pets', data.amenities.hasPetsAllowed, 'features');
+            setCheckboxValue('smoking', data.amenities.hasSmokingAllowed, 'features');
+            setCheckboxValue('elevator', data.amenities.hasElevator, 'features');
+            setCheckboxValue('balcony', data.amenities.hasBalconyTerrace, 'features');
+        }
+
+        // 3단계: 설명 및 규칙
+        document.getElementById('listing-description').value = data.description || '';
+        document.getElementById('listing-rules').value = data.rule || '';
+
+        // 이미지는 별도 API로 로드됨 (loadHouseImages 함수에서 처리)
     }
-    
-    /**
-     * 라디오 값을 HouseType으로 변환
-     */
-    function mapRadioValueToHouseType(radioValue) {
-        const mapping = {
-            'apartment': 'APT',
-            'house': 'HOUSE',
-            'villa': 'VILLA',
-            'op': 'OFFICETEL',
-            'other': 'OTHER'
-        };
-        return mapping[radioValue] || 'OTHER';
-    }
-    
-    /**
-     * HouseType을 라디오 값으로 변환
-     */
-    function mapHouseTypeToRadioValue(houseType) {
-        const mapping = {
+
+    // API 숙소 유형을 폼 값으로 변환
+    function getPropertyTypeFromAPI(apiType) {
+        const typeMap = {
             'APT': 'apartment',
             'HOUSE': 'house',
             'VILLA': 'villa',
-            'OFFICETEL': 'op',
+            'OP': 'op',
             'OTHER': 'other'
         };
-        return mapping[houseType] || 'other';
+        return typeMap[apiType] || 'other';
     }
+
+    // 체크박스 값 설정 함수
+    function setCheckboxValue(value, isChecked, groupName = 'amenities') {
+        const checkbox = document.querySelector(`input[name="${groupName}"][value="${value}"]`);
+        
+        if (checkbox) {
+            checkbox.checked = isChecked || false;
+        } else {
+            console.error(`체크박스를 찾을 수 없음: ${groupName}.${value}`);
+        }
+    }
+
+    // 기존 이미지 로드 함수
+    function loadCurrentImages(images) {
+        const container = document.getElementById('current-images-container');
+        
+        if (!container) {
+            console.error('current-images-container 요소를 찾을 수 없습니다.');
+            return;
+        }
+        
+        container.innerHTML = '';
+
+        images.forEach((image, index) => {
+            const imageDiv = document.createElement('div');
+            imageDiv.className = 'current-image-item';
+            imageDiv.setAttribute('data-image-id', image.imageId); // imageId로 수정
+
+            const img = document.createElement('img');
+            img.src = image.imageUrl; // imageUrl로 수정
+            img.alt = `숙소 이미지 ${index + 1}`;
+            img.className = 'current-image';
+
+            const deleteButton = document.createElement('div');
+            deleteButton.className = 'current-image-delete';
+            deleteButton.innerHTML = '<i class="fas fa-times"></i>';
+            deleteButton.addEventListener('click', function() {
+                // 삭제할 이미지 ID 추가
+                imagesToDelete.push(image.imageId); // imageId로 수정
+                // DOM에서 제거
+                imageDiv.remove();
+            });
+
+            imageDiv.appendChild(img);
+            imageDiv.appendChild(deleteButton);
+            container.appendChild(imageDiv);
+        });
+    }
+
+    // 로딩 메시지 표시/숨김 함수
+    function showLoadingMessage(message) {
+        // 간단한 로딩 표시 (실제로는 더 나은 UI를 사용할 수 있음)
+        const loadingDiv = document.createElement('div');
+        loadingDiv.id = 'loading-message';
+        loadingDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 9999;
+        `;
+        loadingDiv.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${message}`;
+        document.body.appendChild(loadingDiv);
+    }
+
+    function hideLoadingMessage() {
+        const loadingDiv = document.getElementById('loading-message');
+        if (loadingDiv) {
+            loadingDiv.remove();
+        }
+    }
+
+    // 단계 이동 함수
+    function goToStep(step) {
+        // 현재 단계 숨기기
+        steps.forEach(s => s.classList.remove('active'));
+
+        // 새 단계 표시
+        steps[step - 1].classList.add('active');
+
+        // 진행 상태 업데이트
+        progressFill.style.width = ((step - 1) / (totalSteps - 1) * 100) + '%';
+
+        // 단계 표시기 업데이트
+        progressSteps.forEach((s, i) => {
+            if (i + 1 < step) {
+                s.classList.add('completed');
+                s.classList.remove('active');
+            } else if (i + 1 === step) {
+                s.classList.add('active');
+                s.classList.remove('completed');
+            } else {
+                s.classList.remove('active', 'completed');
+            }
+        });
+
+        // 현재 단계 업데이트
+        currentStep = step;
+
+        // 페이지 상단으로 스크롤
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // 다음 단계 버튼 이벤트 리스너
+    nextButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // 현재 단계 유효성 검사
+            if (validateStep(currentStep)) {
+                // 다음 단계로 이동
+                if (currentStep < totalSteps) {
+                    goToStep(currentStep + 1);
+
+                    // 마지막 단계로 이동하는 경우 검토 내용 업데이트
+                    if (currentStep === totalSteps) {
+                        updateReviewContent();
+                    }
+                }
+            }
+        });
+    });
+
+    // 이전 단계 버튼 이벤트 리스너
+    prevButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        });
+    });
+
+    // 단계별 유효성 검사
+    function validateStep(step) {
+        let isValid = true;
+
+        switch(step) {
+            case 1:
+                // 1단계: 기본 정보 검사
+                const title = document.getElementById('listing-title').value;
+                const size = document.getElementById('listing-size').value;
+                const bedrooms = document.getElementById('listing-bedrooms').value;
+                const beds = document.getElementById('listing-beds').value;
+                const bathrooms = document.getElementById('listing-bathrooms').value;
+                const guests = document.getElementById('listing-guests').value;
+
+                if (!title || !size || !bedrooms || !beds || !bathrooms || !guests) {
+                    alert('모든 필수 항목을 입력해주세요.');
+                    isValid = false;
+                }
+                break;
+
+            case 2:
+                // 2단계: 편의시설 및 특징 (선택사항이므로 검증 생략)
+                break;
+
+            case 3:
+                // 3단계: 사진 및 설명 검사
+                const description = document.getElementById('listing-description').value;
+
+                if (!description || description.length < 100) {
+                    alert('숙소 설명은 최소 100자 이상 작성해주세요.');
+                    isValid = false;
+                }
+                break;
+
+            case 4:
+                // 4단계: 최종 검토 (별도 검증 없음)
+                break;
+        }
+
+        return isValid;
+    }
+
+    // 검토 내용 업데이트
+    function updateReviewContent() {
+        // 기본 정보 검토
+        const reviewBasicInfo = document.getElementById('review-basic-info');
+        const propertyTypeValue = document.querySelector('input[name="property-type"]:checked')?.value || 'apartment';
+        const propertyTypeText = getPropertyTypeText(propertyTypeValue);
+
+        reviewBasicInfo.innerHTML = `
+            <div class="review-item">
+                <span class="review-label">숙소 이름:</span>
+                <span class="review-value">${document.getElementById('listing-title').value}</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">숙소 유형:</span>
+                <span class="review-value">${propertyTypeText}</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">숙소 크기:</span>
+                <span class="review-value">${document.getElementById('listing-size').value} 평</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">침실 수:</span>
+                <span class="review-value">${document.getElementById('listing-bedrooms').value}개</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">침대 수:</span>
+                <span class="review-value">${document.getElementById('listing-beds').value}개</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">욕실 수:</span>
+                <span class="review-value">${document.getElementById('listing-bathrooms').value}개</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">최대 수용 인원:</span>
+                <span class="review-value">${document.getElementById('listing-guests').value}명</span>
+            </div>
+        `;
+
+        // 위치 및 특징 검토
+        const reviewLocationFeatures = document.getElementById('review-location-features');
+        reviewLocationFeatures.innerHTML = `
+            <div class="review-item">
+                <span class="review-label">주소:</span>
+                <span class="review-value">${document.getElementById('readonly-address').textContent}</span>
+            </div>
+            <div class="review-item">
+                <span class="review-label">도시/지역:</span>
+                <span class="review-value">${document.getElementById('readonly-city-district').textContent}</span>
+            </div>
+        `;
+
+        // 편의시설 추가
+        const amenities = [];
+        document.querySelectorAll('input[name="amenities"]:checked').forEach(input => {
+            amenities.push(input.nextElementSibling.textContent.trim());
+        });
+
+        if (amenities.length > 0) {
+            reviewLocationFeatures.innerHTML += `
+                <div class="review-item">
+                    <span class="review-label">편의시설:</span>
+                    <span class="review-value">${amenities.join(', ')}</span>
+                </div>
+            `;
+        }
+
+        // 특징 추가
+        const features = [];
+        document.querySelectorAll('input[name="features"]:checked').forEach(input => {
+            features.push(input.nextElementSibling.textContent.trim());
+        });
+
+        if (features.length > 0) {
+            reviewLocationFeatures.innerHTML += `
+                <div class="review-item">
+                    <span class="review-label">특징:</span>
+                    <span class="review-value">${features.join(', ')}</span>
+                </div>
+            `;
+        }
+
+        // 사진 및 설명 검토
+        const reviewPhotosDescription = document.getElementById('review-photos-description');
+        reviewPhotosDescription.innerHTML = `
+            <div class="review-item">
+                <span class="review-label">숙소 설명:</span>
+                <span class="review-value">${document.getElementById('listing-description').value}</span>
+            </div>
+        `;
+
+        // 이용 규칙 추가
+        const rules = document.getElementById('listing-rules').value;
+        if (rules) {
+            reviewPhotosDescription.innerHTML += `
+                <div class="review-item">
+                    <span class="review-label">숙소 이용 규칙:</span>
+                    <span class="review-value">${rules}</span>
+                </div>
+            `;
+        }
+
+        // 이미지 변경사항 표시
+        let imageChangeText = '';
+        if (uploadedImages.length > 0) {
+            imageChangeText += `새로 추가할 이미지: ${uploadedImages.length}장`;
+        }
+        if (imagesToDelete.length > 0) {
+            if (imageChangeText) imageChangeText += ', ';
+            imageChangeText += `삭제할 이미지: ${imagesToDelete.length}장`;
+        }
+        if (imageChangeText) {
+            reviewPhotosDescription.innerHTML += `
+                <div class="review-item">
+                    <span class="review-label">이미지 변경사항:</span>
+                    <span class="review-value">${imageChangeText}</span>
+                </div>
+            `;
+        }
+    }
+
+    // 숙소 유형 텍스트 변환 함수
+    function getPropertyTypeText(value) {
+        const typeMap = {
+            'apartment': '아파트',
+            'house': '주택',
+            'villa': '빌라',
+            'op': '오피스텔',
+            'other': '기타'
+        };
+        return typeMap[value] || value;
+    }
+
+    // 숙소 유형을 API 형식으로 변환
+    function getHouseTypeForAPI(value) {
+        const typeMap = {
+            'apartment': 'APT',
+            'house': 'HOUSE',
+            'villa': 'VILLA',
+            'op': 'OP',
+            'other': 'OTHER'
+        };
+        return typeMap[value] || 'OTHER';
+    }
+
+    // 이미지 업로드 관련 기능
+    const imageUploadArea = document.getElementById('image-upload-area');
+    const imageUploadInput = document.getElementById('image-upload');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+
+    // 이미지 업로드 영역 클릭 시 파일 선택 창 열기
+    imageUploadArea.addEventListener('click', function() {
+        imageUploadInput.click();
+    });
+
+    // 드래그 앤 드롭 이벤트
+    imageUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        imageUploadArea.classList.add('dragover');
+    });
+
+    imageUploadArea.addEventListener('dragleave', function() {
+        imageUploadArea.classList.remove('dragover');
+    });
+
+    imageUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        imageUploadArea.classList.remove('dragover');
+
+        if (e.dataTransfer.files.length > 0) {
+            handleFiles(e.dataTransfer.files);
+        }
+    });
+
+    // 파일 선택 시 이벤트
+    imageUploadInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            handleFiles(this.files);
+        }
+    });
+
+    // 파일 처리 함수
+    function handleFiles(files) {
+        // 최대 10개 파일 제한
+        if (uploadedImages.length + files.length > 10) {
+            alert('최대 10장까지만 업로드할 수 있습니다.');
+            return;
+        }
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+
+            // 이미지 파일 확인
+            if (!file.type.match('image.*')) {
+                alert('이미지 파일만 업로드할 수 있습니다.');
+                continue;
+            }
+
+            // 파일 크기 확인 (5MB 제한)
+            if (file.size > 5 * 1024 * 1024) {
+                alert('파일 크기는 5MB 이하여야 합니다.');
+                continue;
+            }
+
+            // 파일을 업로드 배열에 추가
+            uploadedImages.push(file);
+
+            // 이미지 미리보기 생성
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const previewDiv = document.createElement('div');
+                previewDiv.className = 'image-preview';
+                previewDiv.setAttribute('data-file-index', uploadedImages.length - 1);
+
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = '숙소 이미지';
+
+                const removeButton = document.createElement('div');
+                removeButton.className = 'image-preview-remove';
+                removeButton.innerHTML = '<i class="fas fa-times"></i>';
+
+                // 이미지 삭제 버튼 이벤트
+                removeButton.addEventListener('click', function() {
+                    const fileIndex = parseInt(previewDiv.getAttribute('data-file-index'));
+                    // 업로드 배열에서 파일 제거
+                    uploadedImages.splice(fileIndex, 1);
+                    // 미리보기 제거
+                    previewDiv.remove();
+                    // 인덱스 재정렬
+                    updateFileIndices();
+                });
+
+                previewDiv.appendChild(img);
+                previewDiv.appendChild(removeButton);
+                imagePreviewContainer.appendChild(previewDiv);
+            };
+
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // 파일 인덱스 업데이트 함수
+    function updateFileIndices() {
+        const previews = imagePreviewContainer.querySelectorAll('.image-preview');
+        previews.forEach((preview, index) => {
+            preview.setAttribute('data-file-index', index);
+        });
+    }
+
+    // 폼 데이터 생성 함수
+    function createFormData() {
+        const formData = new FormData();
+
+        // 숙소 정보 객체 생성
+        const updateRequest = {
+            title: document.getElementById('listing-title').value,
+            description: document.getElementById('listing-description').value,
+            rule: document.getElementById('listing-rules').value || null,
+            houseType: getHouseTypeForAPI(document.querySelector('input[name="property-type"]:checked').value),
+            size: parseFloat(document.getElementById('listing-size').value),
+            bedrooms: parseInt(document.getElementById('listing-bedrooms').value),
+            bed: parseInt(document.getElementById('listing-beds').value),
+            bathrooms: parseInt(document.getElementById('listing-bathrooms').value),
+            maxGuests: parseInt(document.getElementById('listing-guests').value),
+            petsAllowed: document.querySelector('input[name="features"][value="pets"]')?.checked || false,
+            options: {
+                hasFreeWifi: document.querySelector('input[name="amenities"][value="wifi"]')?.checked || false,
+                hasAirConditioner: document.querySelector('input[name="amenities"][value="aircon"]')?.checked || false,
+                hasTV: document.querySelector('input[name="amenities"][value="tv"]')?.checked || false,
+                hasWashingMachine: document.querySelector('input[name="amenities"][value="washer"]')?.checked || false,
+                hasKitchen: document.querySelector('input[name="amenities"][value="kitchen"]')?.checked || false,
+                hasDryer: document.querySelector('input[name="amenities"][value="hairdryer"]')?.checked || false,
+                hasIron: document.querySelector('input[name="amenities"][value="iron"]')?.checked || false,
+                hasRefrigerator: document.querySelector('input[name="amenities"][value="fridge"]')?.checked || false,
+                hasMicrowave: document.querySelector('input[name="amenities"][value="microwave"]')?.checked || false,
+                otherAmenities: null,
+                hasFreeParking: document.querySelector('input[name="features"][value="parking"]')?.checked || false,
+                hasBalconyTerrace: document.querySelector('input[name="features"][value="balcony"]')?.checked || false,
+                hasPetsAllowed: document.querySelector('input[name="features"][value="pets"]')?.checked || false,
+                hasSmokingAllowed: document.querySelector('input[name="features"][value="smoking"]')?.checked || false,
+                hasElevator: document.querySelector('input[name="features"][value="elevator"]')?.checked || false,
+                otherFeatures: null
+            },
+            deleteImageIds: imagesToDelete // 삭제할 이미지 ID 목록
+        };
+
+        // JSON 데이터를 Blob으로 변환하여 추가
+        const requestBlob = new Blob([JSON.stringify(updateRequest)], {
+            type: 'application/json'
+        });
+        formData.append('request', requestBlob);
+
+        // 새로 업로드할 이미지 파일들 추가
+        uploadedImages.forEach((file, index) => {
+            formData.append('images', file);
+        });
+
+        return formData;
+    }
+
+    // 로딩 상태 관리 함수
+    function setLoading(isLoading) {
+        if (isLoading) {
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 수정 중...';
+        } else {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '숙소 수정하기';
+        }
+    }
+
+    // 폼 제출 이벤트
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+
+        // 인증 토큰 체크
+        if (!window.isLoggedIn()) {
+            alert('로그인이 필요한 서비스입니다.');
+            window.location.href = '/page/auth?redirect=' + encodeURIComponent(window.location.href);
+            return;
+        }
+
+        // 마지막 단계 유효성 검사
+        if (!validateStep(3)) { // 설명 검사
+            return;
+        }
+
+        // 로딩 상태 시작
+        setLoading(true);
+
+        try {
+            // 현재 사용자 ID를 API를 통해 가져오기
+            const userId = await getCurrentUserId();
+            
+            if (!userId) {
+                alert('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+                window.location.href = '/page/auth?redirect=' + encodeURIComponent(window.location.href);
+                return;
+            }
+
+            // 폼 데이터 생성
+            const formData = createFormData();
+
+            // jQuery AJAX 요청
+            $.ajax({
+                url: `/api/house/${houseId}?userId=${userId}`,
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    alert('숙소가 성공적으로 수정되었습니다.');
+
+                    // 성공 시 리다이렉트
+                    window.location.href = '/page/profile';
+                },
+                error: function(xhr, status, error) {
+                    let errorMessage = '숙소 수정 중 오류가 발생했습니다.';
+
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        if (errorResponse.message) {
+                            errorMessage = errorResponse.message;
+                        } else if (errorResponse.errors && errorResponse.errors.length > 0) {
+                            errorMessage = errorResponse.errors[0].message;
+                        }
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                    }
+
+                    alert(errorMessage);
+                },
+                complete: function() {
+                    // 로딩 상태 종료
+                    setLoading(false);
+                }
+            });
+        } catch (error) {
+            console.error('사용자 정보 가져오기 실패:', error);
+            alert('사용자 정보를 가져올 수 없습니다. 다시 로그인해주세요.');
+            setLoading(false);
+        }
+    });
+
+    // 현재 사용자 ID 가져오기 함수 (API를 통해 실시간으로 가져오기)
+    async function getCurrentUserId() {
+        
+        try {
+            // fetchWithAuth를 사용하여 현재 사용자 정보 가져오기
+            const response = await window.fetchWithAuth('/api/user/me');
+            
+            if (!response || !response.ok) {
+                throw new Error('사용자 정보 API 호출 실패');
+            }
+            
+            const result = await response.json();
+            
+            // 여러 가능한 필드명 시도
+            const userData = result.data;
+            const possibleIds = [
+                userData?.userId, 
+                userData?.id, 
+                userData?.user_id,
+                userData?.memberId,
+                userData?.member_id
+            ];
+            
+            const userId = possibleIds.find(id => id !== null && id !== undefined);
+            
+            if (userId) {
+                return userId;
+            } else {
+                console.error('사용자 정보에서 ID를 찾을 수 없음:', result);
+                return null;
+            }
+        } catch (error) {
+            console.error('사용자 정보 가져오기 실패:', error);
+            return null;
+        }
+    }
+
+    // 디버깅을 위한 콘솔 로그 함수
+    function debugFormData() {
+        const formData = createFormData();
+        // Form Data 내용은 개발자 도구에서 확인 가능
+    }
+
+    // 개발자 도구에서 디버깅할 수 있도록 전역 함수로 노출
+    window.debugFormData = debugFormData;
+    window.loadHouseData = loadHouseData;
 });

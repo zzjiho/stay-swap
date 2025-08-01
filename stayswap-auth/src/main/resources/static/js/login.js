@@ -11,8 +11,16 @@ function handleLogin(event) {
     contentType: 'application/json',
     data: JSON.stringify({ email, password }),
     success: function(data) {
+      // 토큰 정보 확인
+      if (!data.accessToken) {
+        console.error('❌ 응답에 액세스 토큰이 없습니다:', data);
+      }
       
-      // 토큰 정보는 HttpOnly 쿠키로 전달되므로, 클라이언트에서 직접 다루지 않음
+      // 로그인 성공 처리
+      localStorage.setItem('accessToken', data.accessToken);
+      localStorage.setItem('refreshToken', data.refreshToken);
+      localStorage.setItem('userId', data.userId);
+      localStorage.setItem('auth_token', data.accessToken);  // fcm-token.js에서 사용하는 키
       
       // FCM 토큰 등록
       if (typeof initFCMAfterLogin === 'function') {
@@ -20,7 +28,6 @@ function handleLogin(event) {
         setTimeout(function() {
           initFCMAfterLogin()
             .then(function(success) {
-              
               // 로그인 성공 후 메인 페이지로 이동
               window.location.href = '/main';
             })
@@ -54,7 +61,6 @@ function handleLogin(event) {
 
 // 페이지 로드 시 이벤트 리스너 등록
 $(document).ready(function() {
-  
   const loginForm = $('#loginForm');
   if (loginForm.length) {
     loginForm.on('submit', handleLogin);
@@ -62,8 +68,5 @@ $(document).ready(function() {
     console.error('❌ 로그인 폼을 찾을 수 없습니다.');
   }
   
-  // FCM 디버깅 정보 확인
-  window.debugFCM = function() {
-    // FCM 디버깅 정보는 개발자 도구에서 확인 가능
-  };
+  
 }); 

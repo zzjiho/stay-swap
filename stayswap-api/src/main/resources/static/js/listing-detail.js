@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     // 전역에서 접근 가능한 인증 체크 함수
     function checkAuthToken() {
-        if (!window.auth?.accessToken) {
+        if (!window.isLoggedIn()) {
             alert('로그인이 필요한 서비스예요 ✨');
             window.location.href = '/page/auth';
             return false;
@@ -12,26 +12,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     const houseId = urlParams.get('id');
 
-    console.log('listing-detail.js 로드됨');
-    
     // 중복 초기화 방지 플래그
     let isInitialized = false;
     
     // 메인 초기화 함수
     function initializeListingDetail() {
         if (isInitialized) {
-            console.log('이미 초기화됨, 중복 실행 방지');
             return;
         }
         isInitialized = true;
-        
-        console.log('숙소 상세 페이지 초기화 시작');
-        console.log('window.auth 상태:', window.auth);
     
     // Google Maps API 로딩 상태 확인
     function checkGoogleMapsAPI() {
-        console.log('🔍 Google Maps API 상태 확인 중...');
-        
         if (typeof google === 'undefined') {
             console.error('❌ Google Maps API가 로드되지 않았습니다.');
             return false;
@@ -47,7 +39,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
         
-        console.log('✅ Google Maps API 로딩 완료!');
         return true;
     }
     
@@ -57,11 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const checkInterval = setInterval(() => {
             attempts++;
-            console.log(`🔄 Google Maps API 로딩 확인 시도 ${attempts}/${maxAttempts}`);
             
             if (checkGoogleMapsAPI()) {
                 clearInterval(checkInterval);
-                console.log('🎉 Google Maps API 로딩 완료! 콜백 실행');
                 callback();
             } else if (attempts >= maxAttempts) {
                 clearInterval(checkInterval);
@@ -101,13 +90,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 대기 중인 지도 데이터 저장용
     window.pendingMapData = null;
-    
-    console.log('URL 파라미터:', window.location.search);
-    console.log('추출된 houseId:', houseId);
 
     // houseId가 있으면 API 호출
     if (houseId) {
-        console.log('유효한 houseId가 있어 API 호출 시작');
         Promise.all([
             fetchHouseDetail(houseId),
             fetchHouseImages(houseId),
@@ -134,7 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 탭 전환 기능
     $('.booking-tab').on('click', function() {
         const tabIndex = $(this).index();
-        console.log('탭 클릭됨:', tabIndex);
 
         // 탭 활성화
         $('.booking-tab').removeClass('active');
@@ -251,9 +235,6 @@ document.addEventListener('DOMContentLoaded', function() {
         return $.ajax({
             url: `/api/house/${houseId}/like`,
             type: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + window.auth.accessToken
-            },
             dataType: 'json'
         });
     }
@@ -263,18 +244,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return $.ajax({
             url: `/api/house/${houseId}/like`,
             type: 'DELETE',
-            headers: {
-                'Authorization': 'Bearer ' + window.auth.accessToken
-            },
             dataType: 'json'
         });
     }
 
     // 좋아요 버튼 상태 업데이트
     function updateLikeButton(isLiked) {
-        console.log('updateLikeButton 호출됨, isLiked:', isLiked);
         const $button = $('.save-btn');
-        console.log('save-btn 요소 찾음:', $button.length);
         
         if ($button.length === 0) {
             console.error('save-btn 요소를 찾을 수 없습니다!');
@@ -282,19 +258,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         const $icon = $button.find('i');
-        console.log('아이콘 요소 찾음:', $icon.length);
 
         if (isLiked) {
-            console.log('좋아요 상태로 업데이트 (빨간색 하트)');
             $button.html('<i class="fas fa-heart"></i> 저장됨');
         } else {
-            console.log('좋아요 안함 상태로 업데이트 (회색 하트)');
             $button.html('<i class="far fa-heart"></i> 저장');
         }
         
         // 업데이트 후 상태 확인
         const updatedIcon = $button.find('i');
-        console.log('업데이트 후 아이콘 클래스:', updatedIcon.attr('class'));
     }
 
 
@@ -338,18 +310,11 @@ document.addEventListener('DOMContentLoaded', function() {
     function fetchMyListings() {
         if (!checkAuthToken()) return Promise.reject('No token');
 
-        console.log('현재 window.auth 상태:', window.auth);
-        console.log('사용할 accessToken:', window.auth.accessToken);
-
         return $.ajax({
             url: '/api/house/my',
             type: 'GET',
             dataType: 'json',
-            headers: {
-                'Authorization': 'Bearer ' + window.auth.accessToken
-            },
             success: function(response) {
-                console.log('내 숙소 목록 API 응답:', response);
                 if (response.httpStatus === 'OK' && response.data) {
                     const myListings = response.data.content; // Page 객체에서 content 추출
                     renderMyListings(myListings);
@@ -371,7 +336,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 내 숙소 목록 렌더링
     function renderMyListings(myListings) {
-        console.log('렌더링할 숙소 목록:', myListings);
         const container = $('.my-listings-container');
         container.empty();
 
@@ -381,7 +345,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         myListings.forEach(listing => {
-            console.log('숙소 데이터:', listing);
             const item = $('<div>').addClass('my-listing-item').attr('data-id', listing.id);
             item.html(`
                 <div class="my-listing-image">
@@ -420,10 +383,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 교환 요청 버튼 클릭 이벤트
     $('#exchange-request-btn').on('click', function() {
-        console.log('교환 요청 버튼 클릭됨');
         
         if (!checkAuthToken()) {
-            console.log('인증 토큰 없음');
             return;
         }
 
@@ -431,8 +392,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const checkinDate = $('#checkin-date').val();
         const checkoutDate = $('#checkout-date').val();
         const guestCount = $('#guest-count').val();
-
-        console.log('날짜 정보:', { checkinDate, checkoutDate, guestCount });
 
         if (!checkinDate || !checkoutDate) {
             alert('체크인/체크아웃 날짜를 선택해주세요 ✨');
@@ -450,10 +409,8 @@ document.addEventListener('DOMContentLoaded', function() {
         $('#popup-checkout').text(formatDate(checkoutDate));
         $('#popup-guests').text(guestCount);
 
-        console.log('내 숙소 목록 가져오기 시작');
         // 내 숙소 목록 렌더링
         fetchMyListings().then(function() {
-            console.log('내 숙소 목록 가져오기 완료');
             // 팝업 열기
             openPopup('exchange-popup');
         }).fail(function(error) {
@@ -532,9 +489,6 @@ document.addEventListener('DOMContentLoaded', function() {
             url: '/api/house/swap',
             type: 'POST',
             contentType: 'application/json',
-            headers: {
-                'Authorization': 'Bearer ' + window.auth.accessToken
-            },
             data: JSON.stringify({
                 requesterHouseId: listingId,
                 targetHouseId: houseId,
@@ -554,9 +508,6 @@ document.addEventListener('DOMContentLoaded', function() {
             url: '/api/house/stay',
             type: 'POST',
             contentType: 'application/json',
-            headers: {
-                'Authorization': 'Bearer ' + window.auth.accessToken
-            },
             data: JSON.stringify({
                 targetHouseId: houseId,
                 startDate: checkinDate,
@@ -671,19 +622,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // API로 숙소 상세 정보 가져오기
     function fetchHouseDetail(houseId) {
-        console.log('API 호출 시작: houseId =', houseId);
         
-        // Authorization 헤더 설정 (로그인한 사용자만)
+        // Authorization 헤더는 브라우저가 자동으로 HttpOnly 쿠키에서 가져옴
         const headers = {
             'Content-Type': 'application/json'
         };
-        
-        if (window.auth && window.auth.accessToken) {
-            headers['Authorization'] = 'Bearer ' + window.auth.accessToken;
-            console.log('Authorization 헤더 포함하여 API 호출');
-        } else {
-            console.log('비로그인 사용자로 API 호출');
-        }
         
         return $.ajax({
             url: `/api/house/${houseId}`,
@@ -691,11 +634,8 @@ document.addEventListener('DOMContentLoaded', function() {
             dataType: 'json',
             headers: headers,
             success: function(response) {
-                console.log('API 응답 성공:', response);
                 
                 if (response.httpStatus === 'OK') {
-                    console.log('숙소 데이터:', response.data);
-                    console.log('좋아요 상태 (API 응답):', response.data.isLiked);
                     updateHouseDetailUI(response.data);
                     
                     // 호스트 정보 API 호출
@@ -735,21 +675,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 호스트 상세 정보 API 호출 함수
     function fetchHostDetail(houseId) {
-        console.log('호스트 정보 API 호출 시작: houseId =', houseId);
         
         $.ajax({
             url: `/api/house/${houseId}/host`,
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                console.log('호스트 API 응답 성공:', response);
                 
                 if (response.httpStatus === 'OK') {
-                    console.log('호스트 데이터:', response.data);
                     updateHostDetailUI(response.data);
                 } else {
                     console.error('호스트 API 요청 실패:', response.message);
-                    console.log('호스트 정보를 불러오는 데 실패했습니다.');
                 }
             },
             error: function(xhr, status, error) {
@@ -761,21 +697,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     // 서버에서 반환된 JSON 에러 메시지 파싱
                     const errorResponse = JSON.parse(xhr.responseText);
                     if (errorResponse && errorResponse.errorMessage) {
-                        console.log('호스트 정보 에러:', errorResponse.errorMessage);
                         return;
                     }
                 } catch (e) {
                     console.error('에러 응답 파싱 실패:', e);
                 }
-                
-                console.log('호스트 정보를 불러오는 데 실패했습니다.');
             }
         });
     }
 
     // 호스트 상세 정보 UI 업데이트 함수
     function updateHostDetailUI(hostData) {
-        console.log('호스트 UI 업데이트 시작:', hostData);
         try {
             // 호스트 이름 업데이트
             if (hostData.hostName) {
@@ -807,7 +739,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 hostInfoSection.append(`<span id="host-rating">총 평점: ${hostData.avgRating.toFixed(1)}</span>`);
             }
             
-            console.log('호스트 UI 업데이트 완료');
         } catch (e) {
             console.error('호스트 UI 업데이트 중 오류 발생:', e);
         }
@@ -815,11 +746,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 숙소 상세 정보로 UI 업데이트
     function updateHouseDetailUI(houseData) {
-        console.log('UI 업데이트 시작:', houseData);
         try {
             // 제목 및 기본 정보 업데이트
             if (houseData.title) {
-                console.log('제목 업데이트:', houseData.title);
                 $('#listing-title').text(houseData.title);
             }
             
@@ -834,7 +763,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // 평점 및 리뷰 업데이트
             if (houseData.avgRating !== undefined) {
                 const rating = houseData.avgRating.toFixed(1);
-                console.log('평점 업데이트:', rating);
                 $('#listing-rating, #sidebar-rating').text(rating);
             }
             
@@ -848,14 +776,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 편의시설 업데이트
             if (houseData.amenities) {
-                console.log('편의시설 업데이트');
                 updateAmenities(houseData.amenities);
             } else {
                 console.warn('편의시설 정보가 없습니다');
             }
 
             // 특징 배지 업데이트
-            console.log('특징 배지 업데이트');
             updateFeatureBadges(houseData);
 
             // 호스트 정보 업데이트 - 호스트 상세 정보는 별도 API 호출 필요할 수 있음
@@ -870,7 +796,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 지도 초기화 (Google Maps API 로딩 대기)
             if (houseData.latitude && houseData.longitude) {
-                console.log('위도/경도 정보 있음. Google Maps API 로딩 대기 후 지도 초기화:', houseData.latitude, houseData.longitude);
                 
                 // 지도 데이터 저장
                 window.pendingMapData = {
@@ -893,13 +818,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
             } else {
                 console.warn('위도/경도 정보가 없어 지도를 표시할 수 없습니다.');
-                console.log('🔍 houseData.latitude:', houseData.latitude);
-                console.log('🔍 houseData.longitude:', houseData.longitude);
-                console.log('🔍 전체 houseData:', houseData);
                 
                 // 위도/경도가 없어도 주소가 있으면 Geocoding API로 좌표를 찾아서 지도 표시
                 if (houseData.address && houseData.address.trim() !== '') {
-                    console.log('📍 주소 기반으로 지도 표시 시도:', houseData.address);
                     
                     // 지도 데이터 저장
                     window.pendingMapData = {
@@ -925,18 +846,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 좋아요 상태 업데이트 (API 응답에서 확인)
             if (houseData.isLiked !== undefined) {
-                console.log('=== 좋아요 상태 디버깅 ===');
-                console.log('houseData.isLiked 값:', houseData.isLiked);
-                console.log('houseData.isLiked 타입:', typeof houseData.isLiked);
-                console.log('window.auth 상태:', window.auth);
                 updateLikeButton(houseData.isLiked);
-                console.log('=== 좋아요 상태 디버깅 끝 ===');
             } else {
                 console.warn('houseData.isLiked가 undefined입니다. API 응답 확인 필요');
-                console.log('전체 houseData:', houseData);
             }
-
-            console.log('UI 업데이트 완료');
         } catch (e) {
             console.error('UI 업데이트 중 오류 발생:', e);
         }
@@ -945,7 +858,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 편의시설 UI 업데이트
     function updateAmenities(amenityInfo) {
         try {
-            console.log('편의시설 업데이트 시작:', amenityInfo);
             const amenitiesContainer = $('#amenities-container');
             
             if (!amenitiesContainer.length) {
@@ -991,7 +903,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     addedCount++;
                 }
             }
-            console.log(`기본 편의시설 ${addedCount}개 추가됨`);
 
             // 기타 편의시설이 있으면 추가
             if (amenityInfo.otherAmenities) {
@@ -1007,7 +918,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         amenitiesContainer.append(amenityElement);
                     }
                 });
-                console.log(`기타 편의시설 ${otherAmenities.length}개 추가됨`);
             }
 
             // 기타 특징이 있으면 추가
@@ -1024,10 +934,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         amenitiesContainer.append(featureElement);
                     }
                 });
-                console.log(`기타 특징 ${otherFeatures.length}개 추가됨`);
             }
-            
-            console.log('편의시설 업데이트 완료');
         } catch (e) {
             console.error('편의시설 업데이트 중 오류 발생:', e);
         }
@@ -1036,7 +943,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 특징 배지 업데이트
     function updateFeatureBadges(houseData) {
         try {
-            console.log('배지 업데이트 시작');
             const featuresContainer = $('#listing-features');
             if (!featuresContainer.length) {
                 console.warn('listing-features 요소를 찾을 수 없습니다');
@@ -1047,13 +953,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 반려동물 허용 여부에 따라 배지 추가
             if (houseData.petsAllowed) {
-                console.log('반려동물 동반 가능 배지 추가');
                 featuresContainer.append('<span class="badge badge-outline">반려동물 동반 가능</span>');
             }
 
             // 무료 주차 여부에 따라 배지 추가
             if (houseData.amenities && houseData.amenities.hasFreeParking) {
-                console.log('무료 주차 배지 추가');
                 featuresContainer.append('<span class="badge badge-outline">무료 주차</span>');
             }
 
@@ -1076,7 +980,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     houseTypeText = houseTypeMap[houseData.houseType];
                 }
 
-                console.log('숙소 유형 배지 추가:', houseTypeText);
                 featuresContainer.append(`<span class="badge badge-outline">${houseTypeText}</span>`);
             }
 
@@ -1101,8 +1004,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (houseData.size) {
                 featuresContainer.append(`<span class="badge badge-outline">${houseData.size}평</span>`);
             }
-            
-            console.log('배지 업데이트 완료');
         } catch (e) {
             console.error('배지 업데이트 중 오류 발생:', e);
         }
@@ -1110,21 +1011,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 숙소 이미지 API 호출 함수
     function fetchHouseImages(houseId) {
-        console.log('숙소 이미지 API 호출 시작: houseId =', houseId);
-        
         $.ajax({
             url: `/api/house/${houseId}/images`,
             type: 'GET',
             dataType: 'json',
             success: function(response) {
-                console.log('이미지 API 응답 성공:', response);
-                
                 if (response.httpStatus === 'OK' && response.data && response.data.length > 0) {
-                    console.log('이미지 데이터:', response.data);
-                    
                     // 이미지 URL 배열 추출
                     const apiImages = response.data.map(image => image.imageUrl);
-                    console.log('추출된 이미지 URL:', apiImages);
                     
                     if (apiImages.length > 0) {
                         // API에서 가져온 이미지로 갤러리 업데이트
@@ -1136,26 +1030,19 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // 도트 갱신
                         createGalleryDots();
-                        
-                        console.log('갤러리 이미지 업데이트 완료');
                     }
-                } else {
-                    console.log('이미지가 없거나 응답이 비어있습니다. 기본 이미지를 사용합니다.');
                 }
             },
             error: function(xhr, status, error) {
                 console.error('이미지 API 호출 오류:', error);
                 console.error('상태 코드:', xhr.status);
                 console.error('응답 텍스트:', xhr.responseText);
-                console.log('기본 이미지를 사용합니다.');
             }
         });
     }
 
     // 주소를 이용해서 지도 표시하는 함수
     function geocodeAndShowMap(address) {
-        console.log('🔍 주소로 지도 찾기 시작:', address);
-        
         // Google Maps API 상태 확인
         if (!checkGoogleMapsAPI()) {
             console.error('❌ Google Maps API를 사용할 수 없어 주소 기반 지도 표시를 중단합니다.');
@@ -1192,14 +1079,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 address: address,
                 componentRestrictions: { country: 'KR' } // 한국 내에서만 검색
             }, (results, status) => {
-                console.log('📡 주소 기반 Geocoding API 응답:', status, results);
-                
                 if (status === 'OK' && results[0] && results[0].geometry) {
                     const location = results[0].geometry.location;
                     const lat = location.lat();
                     const lng = location.lng();
-                    
-                    console.log('✅ 주소에서 좌표 추출 성공:', { lat, lng });
                     
                     // 추출된 좌표로 지도 표시
                     initializeMap(lat, lng, address, results[0].geometry.viewport);
@@ -1208,7 +1091,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.error('❌ 주소에서 좌표 추출 실패:', status);
                     
                     // Geocoding 실패 시 기본 지도 표시
-                    console.log('📍 기본 지도 표시 (서울 시청)');
                     const defaultLocation = { lat: 37.5665, lng: 126.9780 };
                     
                     map = new google.maps.Map(mapElement, {
@@ -1324,7 +1206,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 timestamp: Date.now()
             };
             sessionStorage.setItem(`mapCache_${key}`, JSON.stringify(cacheData));
-            console.log('💾 세션 스토리지에 지도 설정 저장:', key);
         } catch (e) {
             console.warn('세션 캐시 저장 실패:', e);
         }
@@ -1332,13 +1213,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 지도 초기화 함수
     function initializeMap(latitude, longitude, address, viewportData) {
-        console.log('🗺️ 지도 초기화 시작:', { latitude, longitude, address, viewportData });
-        
         // 악의적 새로고침 체크
         const refreshCheck = checkRefreshLimit();
         if (refreshCheck.blocked) {
             console.error('🚫 과도한 새로고침으로 인한 지도 로딩 차단');
-            console.log(`⏰ ${refreshCheck.remaining}초 후 다시 시도 가능`);
             
             // 차단 메시지 표시
             const mapElement = document.getElementById('listing-map');
@@ -1362,7 +1240,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 자동 재시도 (제한 시간 후)
             setTimeout(() => {
-                console.log('🔄 자동 재시도...');
                 initializeMap(latitude, longitude, address, viewportData);
             }, refreshCheck.remaining * 1000);
             
@@ -1381,10 +1258,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 세션 캐시 확인 (설정값만 캐시)
         const cachedData = getSessionCache(cacheKey);
-        if (cachedData) {
-            console.log('♻️ 세션 스토리지에서 지도 설정 재사용:', cacheKey);
-            console.log('⏰ 캐시 생성 시간:', new Date(cachedData.timestamp).toLocaleString());
-        }
         
         // 일단 주소 정보부터 표시
         if (address) {
@@ -1420,16 +1293,12 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        console.log('✅ 지도 DOM 요소 확인:', mapElement);
-        console.log('🎯 지도 요소 크기:', mapElement.offsetWidth, 'x', mapElement.offsetHeight);
-        
         // 지도 요소가 화면에 보이는지 확인
         if (mapElement.offsetWidth === 0 || mapElement.offsetHeight === 0) {
             console.warn('⚠️ 지도 요소가 화면에 보이지 않습니다. 잠시 후 다시 시도합니다.');
             
             // 100ms 후 다시 시도
             setTimeout(() => {
-                console.log('🔄 지도 초기화 재시도...');
                 initializeMap(latitude, longitude, address, viewportData);
             }, 100);
             return;
@@ -1441,7 +1310,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.error('❌ 유효하지 않은 위도/경도:', { latitude, longitude });
                 
                 // 기본 지도라도 표시
-                console.log('📍 기본 위치로 지도 표시 (서울 시청)');
                 const defaultLocation = { lat: 37.5665, lng: 126.9780 };
                 
                 map = new google.maps.Map(mapElement, {
@@ -1464,20 +1332,15 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 지도가 이미 있으면 제거
             if (map) {
-                console.log('🔄 기존 지도 제거 중...');
                 map = null;
                 marker = null;
                 rectangle = null;
             }
             
             const location = { lat: parseFloat(latitude), lng: parseFloat(longitude) };
-            console.log('📍 최종 위치 좌표:', location);
             
             // 캐시된 설정이 있으면 최적화된 설정으로 지도 생성
             const useCache = cachedData && cachedData.viewportData;
-            console.log(useCache ? 
-                '🗺️ 🚀 캐시된 설정으로 최적화된 지도 생성...' : 
-                '🗺️ ⚡ 새 지도 생성 중... (첫 방문)');
             
             map = new google.maps.Map(mapElement, {
                 center: location,
@@ -1493,20 +1356,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 ]
             });
             
-            console.log('✅ 지도 생성 완료!', map);
-            
             // 지도 로딩 완료 대기
             google.maps.event.addListenerOnce(map, 'idle', function() {
-                console.log('🎉 지도 렌더링 완료!');
-                
                 // viewport 정보가 있으면 빨간색 영역 표시
                 const useViewportData = viewportData || (cachedData && cachedData.viewportData);
                 
                 if (useViewportData && useViewportData.northeastLat && useViewportData.northeastLng && 
                     useViewportData.southwestLat && useViewportData.southwestLng) {
-                    
-                    console.log('🎯 Viewport 영역 표시:', useViewportData);
-                    console.log(cachedData ? '📦 (캐시된 설정 사용)' : '🆕 (새 설정)');
                     
                     // 기존 영역 제거
                     if (rectangle) {
@@ -1537,11 +1393,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const currentZoom = map.getZoom();
                     map.setZoom(currentZoom - 1);
                     
-                    console.log('🎨 영역 표시 완료! (Geocoding API 호출 없음)');
-                    
                 } else {
-                    console.log('⚠️ Viewport 정보 없음, 마커로 표시');
-                    
                     // viewport가 없으면 기존처럼 마커 표시
                     if (marker) {
                         marker.setMap(null);
@@ -1556,8 +1408,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     
                     map.setCenter(location);
                     map.setZoom(16);
-                    
-                    console.log('📍 마커 표시 완료!');
                 }
                 
                 // 세션 스토리지에 설정 저장 (첫 방문이거나 캐시가 없는 경우만)
@@ -1569,10 +1419,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         zoom: map.getZoom(),
                         center: map.getCenter().toJSON()
                     });
-                    
-                    console.log('💾 지도 설정 세션 스토리지 저장 완료:', cacheKey);
-                } else {
-                    console.log('♻️ 기존 캐시 재사용 - 저장 생략');
                 }
             });
             
@@ -1606,20 +1452,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 숙소 리뷰 API 호출 함수
     function fetchHouseReviews(houseId, size = 10, page = 0) {
-        console.log(`리뷰 API 호출: houseId=${houseId}, size=${size}, page=${page}`);
-        
         const headers = {};
-        if (window.auth && window.auth.accessToken) {
-            headers['Authorization'] = 'Bearer ' + window.auth.accessToken;
-        }
         return $.ajax({
             url: `/api/review/house/${houseId}?page=${page}&size=${size}`,
             type: 'GET',
             dataType: 'json',
             headers: headers,
             success: function(response) {
-                console.log('리뷰 API 응답 성공:', response);
-                
                 if (response.httpStatus === 'OK' && response.data) {
                     const reviewsData = response.data;
                     
@@ -1720,15 +1559,12 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 전체 리뷰 개수 확인
         const totalReviewCount = parseInt($('#reviews-count').text()) || 0;
-        console.log('모달 열림: 전체 리뷰 개수', totalReviewCount, '개, 현재 로드된 리뷰', allReviews.length, '개');
         
         // 모든 리뷰가 로드되지 않았다면 전체 로드
         if (allReviews.length < totalReviewCount) {
-            console.log('추가 리뷰 로드 필요');
             fetchHouseReviews(houseId, totalReviewCount, 0).then(() => {
                 // 모든 리뷰 로드 후 렌더링
                 renderModalReviews(allReviews);
-                console.log('모달 리뷰 로드 완료:', allReviews.length, '개');
             }).catch(error => {
                 console.error('모달 리뷰 로드 실패:', error);
                 // 실패해도 기존 리뷰는 표시
@@ -1736,7 +1572,6 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         } else {
             // 이미 모든 리뷰가 로드된 경우
-            console.log('모든 리뷰가 이미 로드됨');
             renderModalReviews(allReviews);
         }
     }
@@ -1809,7 +1644,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // 더 많은 리뷰 로드
     function loadMoreReviews() {
         if (!hasNextPage) {
-            console.log('더 이상 로드할 리뷰가 없습니다.');
             return;
         }
 
@@ -1848,14 +1682,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 인증 상태 변경 이벤트 리스너 등록
     document.addEventListener('authStateChanged', function(event) {
-        console.log('인증 상태 변경 이벤트 수신:', event.detail.isLoggedIn);
         // 인증 초기화가 완료되면 (로그인 여부와 관계없이) 메인 로직 실행
         initializeListingDetail();
     });
     
     // 이미 인증이 초기화된 경우 즉시 실행
     if (window.authInitialized) {
-        console.log('인증이 이미 초기화됨, 즉시 실행');
         initializeListingDetail();
     }
 
@@ -1870,13 +1702,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
         $.ajax({
             url: `/api/chats/house/${houseId}/inquiry`,
-            type: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + window.auth.accessToken
-            }
+            type: 'POST'
         }).done(function(response) {
-            console.log('response');
-            console.log(response.data); // 실제 응답 객체를 콘솔에 출력
             if (response.httpStatus === 'OK' && response.data && (response.data.chatroomId || response.data.chatRoomId)) {
                 const chatroomId = response.data.chatroomId || response.data.chatRoomId;
                 // 성공 시 채팅방으로 이동

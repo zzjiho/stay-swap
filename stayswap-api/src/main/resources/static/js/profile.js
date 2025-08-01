@@ -113,7 +113,7 @@ async function checkAuthAndInitialize() {
     }
 
     // 인증 상태 확인
-    if (!window.auth.accessToken || (typeof window.isTokenExpired === 'function' && window.isTokenExpired())) {
+    if (!window.isLoggedIn()) {
         // 인증 실패 시 로그인 페이지로 리디렉션
         window.location.href = "/page/auth?redirect=" + encodeURIComponent(window.location.pathname);
         return;
@@ -331,22 +331,10 @@ function renderProfileHTML(userData) {
     `;
     
     // DOM 수정 후 헤더 드롭다운 재초기화
-    console.log('🔍 Profile.js - DOM 수정 완료, 드롭다운 재초기화 시도');
     if (typeof window.reinitializeDropdowns === 'function') {
         setTimeout(() => {
-            console.log('🔍 Profile.js - reinitializeDropdowns 호출');
             window.reinitializeDropdowns();
-            
-            // 재초기화 후 알림 버튼 상태 확인
-            const notificationToggle = document.getElementById('notification-dropdown-toggle');
-            console.log('🔍 Profile.js - 재초기화 후 알림 버튼 상태:', {
-                exists: !!notificationToggle,
-                hasClickListener: notificationToggle?.onclick !== null,
-                dataset: notificationToggle?.dataset
-            });
         }, 100);
-    } else {
-        console.error('🔍 Profile.js - reinitializeDropdowns 함수가 없음');
     }
 }
 
@@ -523,7 +511,6 @@ function showError(message) {
 function updateUserInfo(userData) {
     // 이미 renderProfileHTML에서 대부분의 정보를 표시했으므로
     // 추가적인 업데이트가 필요한 경우에만 여기에 구현
-    console.log('사용자 정보 로드 완료:', userData);
     
     // 내 숙소 목록 로드
     loadMyHouses();
@@ -1242,8 +1229,6 @@ function loadPushNotificationSettings() {
                 if (pushToggle) {
                     pushToggle.checked = response.data.pushNotificationEnabled;
                 }
-                
-                console.log('푸시 알림 설정 로드 완료:', response.data);
             }
         })
         .catch(error => {
@@ -1295,8 +1280,6 @@ function togglePushNotification() {
             // 성공 메시지 표시
             const message = newStatus ? '푸시 알림이 활성화되었습니다!' : '푸시 알림이 비활성화되었습니다!';
             showNotificationMessage(message, 'success');
-            
-            console.log('푸시 알림 설정 변경 완료:', newStatus);
         }
     })
     .catch(error => {
@@ -1600,8 +1583,6 @@ function toggleLike(event, houseId) {
         return response.json();
     })
     .then(response => {
-        console.log(`찜 ${isCurrentlyLiked ? '해제' : '등록'} API 응답:`, response);
-        
         if (response && response.httpStatus === 'OK') {
             // 하트 상태 토글
             updateHeartState(houseId, !isCurrentlyLiked);

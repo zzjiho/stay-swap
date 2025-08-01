@@ -44,19 +44,16 @@
         
         // Firebase 설정 정보 가져오기
         $(document).ready(function() {
-            console.log('�� Firebase 설정 정보를 가져오는 중...');
             $.ajax({
                 url: '/api/config/firebase',
                 type: 'GET',
                 dataType: 'json',
                 success: function(config) {
-                    console.log('✅ Firebase 설정 정보 가져오기 성공:', config);
                     window.fcmDebug.configLoaded = true;
                     
                     // VAPID 키 전역 변수에 저장
                     window.vapidKey = config.vapidKey;
                     window.fcmDebug.vapidKeySet = true;
-                    console.log('✅ VAPID 키 설정 완료:', config.vapidKey);
                     
                     // Firebase 초기화
                     try {
@@ -71,7 +68,6 @@
                         });
                         
                         window.fcmDebug.firebaseInitialized = true;
-                        console.log('✅ Firebase가 성공적으로 초기화되었습니다.');
                     } catch (err) {
                         console.error('❌ Firebase 초기화 오류:', err);
                     }
