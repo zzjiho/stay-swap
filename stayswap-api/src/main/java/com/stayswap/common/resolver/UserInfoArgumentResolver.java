@@ -45,16 +45,7 @@ public class UserInfoArgumentResolver implements HandlerMethodArgumentResolver {
             try {
                 Jwt jwt = jwtAuth.getToken();
                 
-                Long userId = null;
-                Object userIdClaim = jwt.getClaim("userId");
-                if (userIdClaim instanceof Integer) {
-                    userId = Long.valueOf((Integer) userIdClaim);
-                } else if (userIdClaim instanceof Long) {
-                    userId = (Long) userIdClaim;
-                } else if (userIdClaim instanceof String) {
-                    userId = Long.parseLong((String) userIdClaim);
-                }
-                
+                Long userId = Long.parseLong(jwt.getSubject());
                 String role = jwt.getClaimAsString("role");
                 
                 if (userId != null) {

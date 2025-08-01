@@ -99,12 +99,13 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         refreshTokenCookie.setMaxAge((int) Duration.ofDays(14).toSeconds());
         response.addCookie(refreshTokenCookie);
 
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/auth")
+        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/")
                 .build().toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
+    // 최초 생성
     private String generateAccessToken(Long userId) {
         Instant now = Instant.now();
         long expiry = Duration.ofMinutes(30).toSeconds();

@@ -11,8 +11,6 @@ dependencies {
     // mongodb
     implementation("org.springframework.boot:spring-boot-starter-data-mongodb")
 
-    
-    
     // firebase
     implementation("com.google.firebase:firebase-admin:9.4.3")
 
@@ -22,6 +20,9 @@ dependencies {
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
 
+    // websocket
+    implementation ("org.springframework.boot:spring-boot-starter-websocket")
+
     // testContainers
     implementation("org.testcontainers:testcontainers:1.20.1")
 
@@ -30,7 +31,6 @@ dependencies {
 
     // h2
     testRuntimeOnly("com.h2database:h2")
-
 
 
 }

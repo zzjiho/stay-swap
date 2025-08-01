@@ -35,6 +35,7 @@ public class AuthController {
     private final RedisTemplate<String, String> redisTemplate;
     private final AuthUserService authUserService;
 
+    // at 만료시 rt로 요청
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = null;

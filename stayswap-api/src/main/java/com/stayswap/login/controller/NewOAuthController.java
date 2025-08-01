@@ -14,7 +14,6 @@ public class NewOAuthController {
     @Operation(summary = "카카오 로그인", description = "Authorization Server로 리다이렉트하여 카카오 로그인 시작")
     @GetMapping("/login/kakao")
     public String kakaoLogin() {
-        // Authorization Server의 카카오 로그인 엔드포인트로 리다이렉트
         return "redirect:http://localhost:8081/oauth2/authorization/kakao";
     }
 
