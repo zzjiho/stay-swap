@@ -22,12 +22,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Google Maps 초기화 함수 (전역으로 설정)
     window.initMap = function() {
-        
+
         // 강제 한국어 설정 (다국어 지원은 향후 구현)
         const currentLanguage = 'ko'; // 한국어 강제 설정
-        
+
         // Google Maps API 언어 설정 확인
-        
+
         // 강제로 기본 지도 표시 (테스트용)
         try {
             const testMap = new google.maps.Map(document.getElementById('map'), {
@@ -41,10 +41,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('❌ 지도 생성 실패:', error);
         }
-        
-                // 주소 입력 필드에 자동완성 기능 추가 (기존 Places API 사용 - 더 안정적)
+
+        // 주소 입력 필드에 자동완성 기능 추가 (기존 Places API 사용 - 더 안정적)
         const addressInput = document.getElementById('listing-address');
-        
+
         // 기존 Places API 사용 (경고 무시하고 사용)
         try {
             const autocompleteOptions = {
@@ -54,235 +54,238 @@ document.addEventListener('DOMContentLoaded', function() {
                 strictBounds: false, // 전세계 검색 허용
                 language: 'ko' // 한국어 결과 우선
             };
-            
+
             const autocomplete = new google.maps.places.Autocomplete(addressInput, autocompleteOptions);
-            
+
             // 자동완성 선택 시 이벤트
             autocomplete.addListener('place_changed', function() {
-                
+
                 const place = autocomplete.getPlace();
-                
+
                 if (!place.geometry || !place.geometry.location) {
                     alert('선택한 장소의 위치 정보를 찾을 수 없습니다.');
                     return;
                 }
 
                 // Geocoding API를 먼저 호출하여 한국어 주소를 가져오기
-                
+
                 const geocoder = new google.maps.Geocoder();
                 geocoder.geocode({
                     location: place.geometry.location,
                     language: 'ko' // 한국어 결과 요청 (전세계 주소에 대해서도 한국어 변환 시도)
                     // region 제거: 전세계 주소에 대해서도 한국어 변환 가능하도록
                 }, (results, status) => {
-                
-                if (status === 'OK' && results[0]) {
-                    // 한국어 주소로 업데이트 (Geocoding API 결과 사용)
-                    addressInput.value = results[0].formatted_address;
 
-                    // 한국어 Geocoding API 결과에서 도시, 지역구, 국가 추출
-                    let city = '';
-                    let district = '';
-                    let country = '';
+                    if (status === 'OK' && results[0]) {
+                        // 한국어 주소로 업데이트 (Geocoding API 결과 사용)
+                        addressInput.value = results[0].formatted_address;
 
-                    if (results[0].address_components) {
-                        results[0].address_components.forEach(component => {
-                            const types = component.types;
-                            
-                            // 도시 추출 (administrative_area_level_1 = 시/도)
-                            if (types.includes('administrative_area_level_1')) {
-                                let rawCity = component.long_name;
-                                // 한국어 결과에서 시/도 표기 정리
-                                city = rawCity.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
+                        // 한국어 Geocoding API 결과에서 도시, 지역구, 국가 추출
+                        let city = '';
+                        let district = '';
+                        let country = '';
+
+                        if (results[0].address_components) {
+                            results[0].address_components.forEach(component => {
+                                const types = component.types;
+
+                                // 도시 추출 (administrative_area_level_1 = 시/도)
+                                if (types.includes('administrative_area_level_1')) {
+                                    let rawCity = component.long_name;
+                                    // 한국어 결과에서 시/도 표기 정리
+                                    city = rawCity.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
+                                }
+
+                                // 지역구 추출 (sublocality_level_1 = 구/군)
+                                if (types.includes('sublocality_level_1')) {
+                                    district = component.long_name;
+                                } else if (types.includes('locality') && !district) {
+                                    district = component.long_name;
+                                }
+
+                                // 국가 추출 (country)
+                                if (types.includes('country')) {
+                                    country = component.long_name;
+                                }
+                            });
+
+                            // 한국어로 추출된 값으로 업데이트
+                            if (city) {
+                                document.getElementById('listing-city').value = city;
                             }
-                            
-                            // 지역구 추출 (sublocality_level_1 = 구/군)
-                            if (types.includes('sublocality_level_1')) {
-                                district = component.long_name;
-                            } else if (types.includes('locality') && !district) {
-                                district = component.long_name;
+                            if (district) {
+                                document.getElementById('listing-district').value = district;
                             }
-                            
-                            // 국가 추출 (country)
-                            if (types.includes('country')) {
-                                country = component.long_name;
+                            if (country) {
+                                document.getElementById('listing-country').value = country;
                             }
-                        });
 
-                        // 한국어로 추출된 값으로 업데이트
-                        if (city) {
-                            document.getElementById('listing-city').value = city;
                         }
-                        if (district) {
-                            document.getElementById('listing-district').value = district;
-                        }
-                        if (country) {
-                            document.getElementById('listing-country').value = country;
-                        }
-                        
-                    }
-                    // 지도가 없으면 생성
-                    if (!map) {
-                        
-                        const mapContainer = document.getElementById('map-container');
-                        const mapHint = document.getElementById('map-hint');
-                        mapContainer.style.display = 'block';
-                        mapHint.style.display = 'none';
+                        // 지도가 없으면 생성
+                        if (!map) {
 
-                                                    map = new google.maps.Map(document.getElementById('map'), {
+                            const mapContainer = document.getElementById('map-container');
+                            const mapHint = document.getElementById('map-hint');
+                            mapContainer.style.display = 'block';
+                            mapHint.style.display = 'none';
+
+                            map = new google.maps.Map(document.getElementById('map'), {
                                 center: place.geometry.location,
                                 zoom: 14,
                                 mapTypeControl: false,
                                 streetViewControl: false,
                                 language: 'ko' // 한국어 지도 표시
                             });
-                        
-                    }
 
-                    // 기존 마커 제거
-                    if (marker) {
-                        marker.setMap(null);
-                        marker = null;
-                    }
-
-                    // 지도에 영역 표시
-                    if (results[0].geometry && results[0].geometry.viewport) {
-                        
-                        // 기존 영역 제거
-                        if (rectangle) {
-                            rectangle.setMap(null);
                         }
-                        
-                        // 영역을 사각형으로 표시 (빨간색 반투명)
-                        rectangle = new google.maps.Rectangle({
-                            bounds: results[0].geometry.viewport,
-                            fillColor: '#FF4444',
-                            fillOpacity: 0.25,
-                            strokeColor: '#FF0000',
-                            strokeOpacity: 0.8,
-                            strokeWeight: 2,
-                            map: map
-                        });
-                        
-                        // 지도 뷰를 viewport에 맞춤
-                        map.fitBounds(results[0].geometry.viewport);
-                        
+
+                        // 기존 마커 제거
+                        if (marker) {
+                            marker.setMap(null);
+                            marker = null;
+                        }
+
+                        // 지도에 영역 표시
+                        if (results[0].geometry && results[0].geometry.viewport) {
+
+                            // viewport 정보 저장
+                            window.currentViewport = results[0].geometry.viewport;
+
+                            // 기존 영역 제거
+                            if (rectangle) {
+                                rectangle.setMap(null);
+                            }
+
+                            // 영역을 사각형으로 표시 (빨간색 반투명)
+                            rectangle = new google.maps.Rectangle({
+                                bounds: results[0].geometry.viewport,
+                                fillColor: '#FF4444',
+                                fillOpacity: 0.25,
+                                strokeColor: '#FF0000',
+                                strokeOpacity: 0.8,
+                                strokeWeight: 2,
+                                map: map
+                            });
+
+                            // 지도 뷰를 viewport에 맞춤
+                            map.fitBounds(results[0].geometry.viewport);
+
+                        } else {
+
+                            // viewport가 없으면 기존처럼 마커 표시
+                            map.setCenter(place.geometry.location);
+                            map.setZoom(16);
+
+                            marker = new google.maps.Marker({
+                                position: place.geometry.location,
+                                map: map,
+                                draggable: false,
+                                animation: google.maps.Animation.DROP
+                            });
+
+                            // viewport 정보 초기화
+                            window.currentViewport = null;
+                        }
                     } else {
-                        
-                        // viewport가 없으면 기존처럼 마커 표시
+                        console.error('❌ 한국어 Geocoding API 실패:', status);
+
+                        // Geocoding API 실패 시 주소 컴포넌트에서 한국어 주소 조합 및 도시/지역구/국가 추출 시도
+                        let koreanAddress = '';
+                        let fallbackCity = '';
+                        let fallbackDistrict = '';
+                        let fallbackCountry = '';
+
+                        if (place.address_components) {
+                            const addressParts = [];
+                            place.address_components.forEach(component => {
+                                const types = component.types;
+
+                                // 한국어 주소 구성 요소들을 순서대로 조합
+                                if (types.includes('country')) {
+                                    // 국가 정보 추출 (주소에는 포함하지 않음)
+                                    fallbackCountry = component.long_name;
+                                } else if (types.includes('administrative_area_level_1')) {
+                                    addressParts.unshift(component.long_name); // 시/도를 앞에 추가
+                                    // 도시 정보 추출
+                                    let rawCity = component.long_name;
+                                    fallbackCity = rawCity.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
+                                } else if (types.includes('sublocality_level_1')) {
+                                    addressParts.push(component.long_name); // 구를 뒤에 추가
+                                    // 지역구 정보 추출
+                                    fallbackDistrict = component.long_name;
+                                } else if (types.includes('sublocality_level_2')) {
+                                    addressParts.push(component.long_name); // 동을 뒤에 추가
+                                } else if (types.includes('street_number') || types.includes('premise')) {
+                                    addressParts.push(component.long_name); // 번지를 뒤에 추가
+                                } else if (types.includes('locality') && !fallbackDistrict) {
+                                    // 지역구가 없으면 locality 사용
+                                    fallbackDistrict = component.long_name;
+                                }
+                            });
+                            koreanAddress = addressParts.join(' ');
+                        }
+
+                        // 조합된 한국어 주소가 있으면 사용, 없으면 원본 사용
+                        addressInput.value = koreanAddress || place.formatted_address || place.name;
+
+                        // 폴백으로 추출된 도시/지역구/국가 업데이트
+                        if (fallbackCity) {
+                            document.getElementById('listing-city').value = fallbackCity;
+                        }
+                        if (fallbackDistrict) {
+                            document.getElementById('listing-district').value = fallbackDistrict;
+                        }
+                        if (fallbackCountry) {
+                            document.getElementById('listing-country').value = fallbackCountry;
+                        }
+
+                        // 지도 표시 (기존 로직)
+                        if (!map) {
+                            const mapContainer = document.getElementById('map-container');
+                            const mapHint = document.getElementById('map-hint');
+                            mapContainer.style.display = 'block';
+                            mapHint.style.display = 'none';
+
+                            map = new google.maps.Map(document.getElementById('map'), {
+                                center: place.geometry.location,
+                                zoom: 16,
+                                mapTypeControl: false,
+                                streetViewControl: false,
+                                language: 'ko' // 한국어 지도 표시
+                            });
+                        }
+
                         map.setCenter(place.geometry.location);
                         map.setZoom(16);
-                        
-                        marker = new google.maps.Marker({
-                            position: place.geometry.location,
-                            map: map,
-                            draggable: false,
-                            animation: google.maps.Animation.DROP
-                        });
-                        
-                        // viewport 정보 초기화
-                        window.currentViewport = null;
-                    }
-                } else {
-                    console.error('❌ 한국어 Geocoding API 실패:', status);
-                    
-                    // Geocoding API 실패 시 주소 컴포넌트에서 한국어 주소 조합 및 도시/지역구/국가 추출 시도
-                    let koreanAddress = '';
-                    let fallbackCity = '';
-                    let fallbackDistrict = '';
-                    let fallbackCountry = '';
-                    
-                    if (place.address_components) {
-                        const addressParts = [];
-                        place.address_components.forEach(component => {
-                            const types = component.types;
-                            
-                            // 한국어 주소 구성 요소들을 순서대로 조합
-                            if (types.includes('country')) {
-                                // 국가 정보 추출 (주소에는 포함하지 않음)
-                                fallbackCountry = component.long_name;
-                            } else if (types.includes('administrative_area_level_1')) {
-                                addressParts.unshift(component.long_name); // 시/도를 앞에 추가
-                                // 도시 정보 추출
-                                let rawCity = component.long_name;
-                                fallbackCity = rawCity.replace('특별시', '').replace('광역시', '').replace('시', '').replace('도', '');
-                            } else if (types.includes('sublocality_level_1')) {
-                                addressParts.push(component.long_name); // 구를 뒤에 추가
-                                // 지역구 정보 추출
-                                fallbackDistrict = component.long_name;
-                            } else if (types.includes('sublocality_level_2')) {
-                                addressParts.push(component.long_name); // 동을 뒤에 추가
-                            } else if (types.includes('street_number') || types.includes('premise')) {
-                                addressParts.push(component.long_name); // 번지를 뒤에 추가
-                            } else if (types.includes('locality') && !fallbackDistrict) {
-                                // 지역구가 없으면 locality 사용
-                                fallbackDistrict = component.long_name;
-                            }
-                        });
-                        koreanAddress = addressParts.join(' ');
-                    }
-                    
-                    // 조합된 한국어 주소가 있으면 사용, 없으면 원본 사용
-                    addressInput.value = koreanAddress || place.formatted_address || place.name;
 
-                    // 폴백으로 추출된 도시/지역구/국가 업데이트
-                    if (fallbackCity) {
-                        document.getElementById('listing-city').value = fallbackCity;
+                        if (marker) {
+                            marker.setPosition(place.geometry.location);
+                        } else {
+                            marker = new google.maps.Marker({
+                                position: place.geometry.location,
+                                map: map,
+                                draggable: false,
+                                animation: google.maps.Animation.DROP
+                            });
+                        }
                     }
-                    if (fallbackDistrict) {
-                        document.getElementById('listing-district').value = fallbackDistrict;
-                    }
-                    if (fallbackCountry) {
-                        document.getElementById('listing-country').value = fallbackCountry;
-                    }
-                    
-                    // 지도 표시 (기존 로직)
-                    if (!map) {
-                        const mapContainer = document.getElementById('map-container');
-                        const mapHint = document.getElementById('map-hint');
-                        mapContainer.style.display = 'block';
-                        mapHint.style.display = 'none';
+                });
 
-                        map = new google.maps.Map(document.getElementById('map'), {
-                            center: place.geometry.location,
-                            zoom: 16,
-                            mapTypeControl: false,
-                            streetViewControl: false,
-                            language: 'ko' // 한국어 지도 표시
-                        });
-                    }
-                    
-                    map.setCenter(place.geometry.location);
-                    map.setZoom(16);
-                    
-                    if (marker) {
-                        marker.setPosition(place.geometry.location);
-                    } else {
-                        marker = new google.maps.Marker({
-                            position: place.geometry.location,
-                            map: map,
-                            draggable: false,
-                            animation: google.maps.Animation.DROP
-                        });
-                    }
-                }
-            });
-
-                            // 선택된 위치 저장
+                // 선택된 위치 저장
                 selectedLocation = {
                     lat: place.geometry.location.lat(),
                     lng: place.geometry.location.lng()
                 };
 
                 // 영어 주소도 가져오기 (다국어 지원을 위해)
-                
+
                 const geocoderEn = new google.maps.Geocoder();
                 geocoderEn.geocode({
                     location: place.geometry.location,
                     language: 'en', // 영어 결과 요청
                     region: 'KR' // 한국 지역 설정
                 }, (resultsEn, statusEn) => {
-                    
+
                     if (statusEn === 'OK' && resultsEn[0]) {
                         // 영어 주소 정보를 전역 변수에 저장
                         window.currentEnglishAddress = {
@@ -295,13 +298,13 @@ document.addEventListener('DOMContentLoaded', function() {
                         // 영어 주소 컴포넌트에서 도시, 지역구, 국가 추출
                         if (resultsEn[0].address_components) {
                             resultsEn[0].address_components.forEach(component => {
-                        const types = component.types;
-                                
+                                const types = component.types;
+
                                 // 영어 도시 추출
-                        if (types.includes('administrative_area_level_1')) {
+                                if (types.includes('administrative_area_level_1')) {
                                     window.currentEnglishAddress.city = component.long_name;
-                        }
-                        
+                                }
+
                                 // 영어 지역구 추출
                                 if (types.includes('sublocality_level_1')) {
                                     window.currentEnglishAddress.district = component.long_name;
@@ -312,20 +315,20 @@ document.addEventListener('DOMContentLoaded', function() {
                                 // 영어 국가 추출
                                 if (types.includes('country')) {
                                     window.currentEnglishAddress.country = component.long_name;
-                }
+                                }
                             });
                         }
 
                     } else {
                         console.error('❌ 영어 Geocoding API 실패:', statusEn);
                         window.currentEnglishAddress = null;
-                }
+                    }
                 });
 
                 // 기존의 place.address_components 사용 로직은 제거됨
                 // 이제 한국어 Geocoding API 결과 또는 폴백 로직에서 도시/지역구를 추출함
-        });
-        
+            });
+
         } catch (error) {
             console.error('❌ Places API 초기화 실패:', error);
         }

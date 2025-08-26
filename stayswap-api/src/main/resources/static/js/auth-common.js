@@ -62,7 +62,7 @@ async function initializeAuth() {
 
     try {
         // HttpOnly 쿠키를 사용하여 인증 상태를 확인
-        const r = await fetch('http://localhost:8081/api/auth/refresh', {
+        const r = await fetch(window.location.origin + '/api/auth/refresh', {
             method: 'POST',
             credentials: 'include'
         });
@@ -124,8 +124,14 @@ async function logout() {
     localStorage.removeItem('fcmTokenExpiry');
 
     try {
+        // 환경별 로그아웃 URL 결정 - 모든 환경에서 Spring Security 기본 logout 사용
+        const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+        const logoutUrl = isLocalhost
+            ? 'http://localhost:8081/logout'  // Local 환경 - 직접 8081 포트
+            : window.location.origin + '/logout';  // PRD 환경 - Nginx 프록시로 라우팅
+
         // 서버에 로그아웃 요청
-        await fetch('http://localhost:8081/logout', {
+        await fetch(logoutUrl, {
             method: 'POST',
             credentials: 'include'
         });
