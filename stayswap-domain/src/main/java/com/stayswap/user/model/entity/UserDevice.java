@@ -10,9 +10,9 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "user_device",
-       uniqueConstraints = {
-           @UniqueConstraint(name = "uk_user_device_fcm_token", columnNames = "fcm_token")
-       })
+        uniqueConstraints = {
+                @UniqueConstraint(name = "uk_user_device_fcm_token", columnNames = "fcm_token")
+        })
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class UserDevice extends BaseTimeEntity {
@@ -57,10 +57,14 @@ public class UserDevice extends BaseTimeEntity {
         this.isActive = false;
     }
 
-    /**
-     * FCM 토큰 업데이트
-     */
-    public void updateFcmToken(String fcmToken) {
-        this.fcmToken = fcmToken;
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void updateUserAndDeviceInfo(User user, String deviceId, String deviceModel, DeviceType deviceType) {
+        this.user = user;
+        this.deviceId = deviceId;
+        this.deviceModel = deviceModel;
+        this.deviceType = deviceType;
     }
 } 
