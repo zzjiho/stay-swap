@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -32,6 +33,9 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 @Slf4j
 public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    @Value("${app.oauth.success-redirect-url:http://localhost:8080/}")
+    private String successRedirectUrl;
 
     private final UserRepository userRepository;
     private final AuthUserService authUserService;
@@ -86,20 +90,32 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         // Access Token을 쿠키에 저장
         Cookie accessTokenCookie = new Cookie("accessToken", accessToken);
         accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(true);
         accessTokenCookie.setPath("/");
+        // 프로덕션 환경에서는 도메인 및 보안 설정을 적용하고, 로컬에서는 http 통신을 위해 secure=false로 설정합니다.
+        if (!successRedirectUrl.contains("localhost")) {
+            accessTokenCookie.setDomain("www.stayzzle.com");
+            accessTokenCookie.setSecure(true);
+        } else {
+            accessTokenCookie.setSecure(false);
+        }
         accessTokenCookie.setMaxAge((int) Duration.ofMinutes(30).toSeconds());
         response.addCookie(accessTokenCookie);
 
         // Refresh Token을 쿠키에 저장
         Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
+        // 프로덕션 환경에서는 도메인 및 보안 설정을 적용하고, 로컬에서는 http 통신을 위해 secure=false로 설정합니다.
+        if (!successRedirectUrl.contains("localhost")) {
+            refreshTokenCookie.setDomain("www.stayzzle.com");
+            refreshTokenCookie.setSecure(true);
+        } else {
+            refreshTokenCookie.setSecure(false);
+        }
         refreshTokenCookie.setMaxAge((int) Duration.ofDays(14).toSeconds());
         response.addCookie(refreshTokenCookie);
 
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8080/")
+        String targetUrl = UriComponentsBuilder.fromUriString(successRedirectUrl)
                 .build().toUriString();
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);

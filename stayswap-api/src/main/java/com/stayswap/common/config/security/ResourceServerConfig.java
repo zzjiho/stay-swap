@@ -1,5 +1,6 @@
 package com.stayswap.common.config.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -22,6 +23,9 @@ import java.util.List;
 @EnableWebSecurity
 public class ResourceServerConfig {
 
+    @Value("${auth.jwk-set-uri}")
+    private String jwkSetUri;
+
     /**
      * API 엔드포인트를 위한 OAuth2 Resource Server 설정
      */
@@ -40,9 +44,15 @@ public class ResourceServerConfig {
                         )
                 )
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/oauth/**", "/api/health-check").permitAll()
-                        .requestMatchers("/api/house/**").permitAll()
-                        .requestMatchers("/api/test/**").permitAll()
+                        .requestMatchers(
+                                "/api/oauth/**",
+                                "/api/health-check",
+                                "/api/house/**",
+                                "/api/test/**",
+                                "/api/auth/**",
+                                "/api/review/**",
+                                "/api/chats/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .build();
@@ -79,7 +89,12 @@ public class ResourceServerConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:*", "https://*.stayswap.com"));
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "https://*.stayswap.com",
+                "https://*.stayzzle.com",
+                "https://stayzzle.com",
+                "https://www.stayzzle.com"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
@@ -99,7 +114,7 @@ public class ResourceServerConfig {
     public JwtDecoder jwtDecoder() {
         // Authorization Server의 JWK Set URI 사용
         return NimbusJwtDecoder
-                .withJwkSetUri("http://localhost:8081/oauth2/jwks")
+                .withJwkSetUri(jwkSetUri)
                 .build();
     }
 }

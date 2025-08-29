@@ -26,6 +26,7 @@ public class AuthController {
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setSecure(true);
         accessTokenCookie.setPath("/");
+        accessTokenCookie.setDomain("www.stayzzle.com");
         accessTokenCookie.setMaxAge(30 * 60);
         response.addCookie(accessTokenCookie);
 

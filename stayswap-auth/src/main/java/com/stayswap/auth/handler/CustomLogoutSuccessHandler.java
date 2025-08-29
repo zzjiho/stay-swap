@@ -46,6 +46,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setSecure(true);
         accessTokenCookie.setPath("/");
+        accessTokenCookie.setDomain("www.stayzzle.com");
         accessTokenCookie.setMaxAge(0);
         response.addCookie(accessTokenCookie);
 
@@ -53,6 +54,7 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setDomain("www.stayzzle.com");
         refreshTokenCookie.setMaxAge(0);
         response.addCookie(refreshTokenCookie);
 

@@ -5,9 +5,11 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.stayswap.auth.handler.OAuth2LoginSuccessHandler;
 import com.stayswap.auth.handler.CustomLogoutSuccessHandler;
+import com.stayswap.auth.handler.OAuth2AuthorizationRequestBasedOnCookieRepository;
+import com.stayswap.auth.handler.OAuth2LoginSuccessHandler;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -39,7 +41,6 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,13 +54,15 @@ import java.security.spec.X509EncodedKeySpec;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 import java.util.UUID;
 
 @Configuration
 @EnableWebSecurity
 @Slf4j
 public class AuthorizationServerConfig {
+
+    @Value("${auth.issuer-uri}")
+    private String issuerUri;
 
     // 키 파일 경로
     private static final String KEY_DIR = "stayswap-auth/src/main/resources/keys/";
@@ -96,15 +99,25 @@ public class AuthorizationServerConfig {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, OAuth2LoginSuccessHandler successHandler, CustomLogoutSuccessHandler customLogoutSuccessHandler) throws Exception {
+    public SecurityFilterChain defaultSecurityFilterChain(
+            HttpSecurity http,
+            OAuth2LoginSuccessHandler successHandler,
+            CustomLogoutSuccessHandler customLogoutSuccessHandler,
+            OAuth2AuthorizationRequestBasedOnCookieRepository oAuth2AuthorizationRequestBasedOnCookieRepository
+    ) throws Exception {
+
         http.authorizeHttpRequests((authorize) -> authorize
                         .requestMatchers("/login", "/oauth2/**", "/error", "/css/**", "/js/**",
-                                "/.well-known/**", "/test/**", "/api/auth/**").permitAll()
+                                "/.well-known/**", "/test/**", "/api/auth/**", "/logout", "/page/auth").permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")
                         .successHandler(successHandler)
+                        .authorizationEndpoint(authorizationEndpoint ->
+                                authorizationEndpoint
+                                        .authorizationRequestRepository(oAuth2AuthorizationRequestBasedOnCookieRepository)
+                        )
                 )
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/auth/**", "/logout"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -121,7 +134,7 @@ public class AuthorizationServerConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080")); // 프론트엔드 주소 허용
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080", "https://www.stayzzle.com")); // 프론트엔드 주소 허용
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메소드
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
@@ -132,6 +145,9 @@ public class AuthorizationServerConfig {
         return source;
     }
 
+    @Value("${spring.security.oauth2.client.registration.kakao.redirect-uri}")
+    private String kakaoRedirectUri;
+
     @Bean
     public RegisteredClientRepository registeredClientRepository() {
         RegisteredClient webClient = RegisteredClient.withId(UUID.randomUUID().toString())
@@ -140,9 +156,7 @@ public class AuthorizationServerConfig {
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri("http://localhost:8081/login/oauth2/code/kakao")
-                .redirectUri("http://localhost:8080/api/oauth/callback")
-                .redirectUri("https://stayswap.com/callback")
+                .redirectUri(kakaoRedirectUri) // 설정 파일에서 읽어온 값 사용
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.EMAIL)
                 .scope("user")
@@ -260,10 +274,9 @@ public class AuthorizationServerConfig {
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder()
-                .issuer("http://localhost:8081")
+                .issuer(issuerUri)
                 .build();
     }
-
 
     @Bean
     public PasswordEncoder passwordEncoder() {
