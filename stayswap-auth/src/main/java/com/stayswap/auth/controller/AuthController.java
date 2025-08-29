@@ -85,6 +85,7 @@ public class AuthController {
             accessTokenCookie.setHttpOnly(true);
             accessTokenCookie.setSecure(true);
             accessTokenCookie.setPath("/");
+            accessTokenCookie.setDomain("www.stayzzle.com");
             accessTokenCookie.setMaxAge((int) Duration.ofMinutes(30).toSeconds());
             response.addCookie(accessTokenCookie);
 
@@ -93,6 +94,7 @@ public class AuthController {
             refreshTokenCookie.setHttpOnly(true);
             refreshTokenCookie.setSecure(true);
             refreshTokenCookie.setPath("/");
+            refreshTokenCookie.setDomain("www.stayzzle.com");
             refreshTokenCookie.setMaxAge((int) Duration.ofDays(14).toSeconds());
             response.addCookie(refreshTokenCookie);
 
@@ -166,6 +168,7 @@ public class AuthController {
         accessTokenCookie.setHttpOnly(true);
         accessTokenCookie.setSecure(true);
         accessTokenCookie.setPath("/");
+        accessTokenCookie.setDomain("www.stayzzle.com");
         accessTokenCookie.setMaxAge(0);
         response.addCookie(accessTokenCookie);
 
@@ -173,6 +176,7 @@ public class AuthController {
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setDomain("www.stayzzle.com");
         refreshTokenCookie.setMaxAge(0);
         response.addCookie(refreshTokenCookie);
 

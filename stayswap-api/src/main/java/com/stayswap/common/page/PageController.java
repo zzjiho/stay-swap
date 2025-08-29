@@ -25,12 +25,12 @@ public class PageController {
     @GetMapping("/page/new")
     public String new1(Model model) {
         model.addAttribute("googleMapsApiKey", googleMapsConfig.getApiKey());
-        return "/host/listings/new";
+        return "host/listings/new";
     }
 
     @GetMapping("/page/host/listings/{houseId}/edit")
     public String editListing() {
-        return "/host/listings/edit";
+        return "host/listings/edit";
     }
 
     @GetMapping("/page/listing-detail")
@@ -46,7 +46,7 @@ public class PageController {
 
     @GetMapping("/page/exchanges")
     public String exchanges() {
-        return "/my/exchanges";
+        return "my/exchanges";
     }
 
     @GetMapping("/page/profile")

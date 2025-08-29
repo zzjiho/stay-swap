@@ -24,23 +24,25 @@ public class WebConfig implements WebMvcConfigurer {
         // 프로필에 따라 허용할 도메인 결정
         String[] activeProfiles = environment.getActiveProfiles();
         boolean isProduction = Arrays.stream(activeProfiles)
-                .anyMatch(profile -> profile.equals("prod") || profile.equals("production"));
-        
+                .anyMatch(profile -> profile.equals("prod") || profile.equals("prd"));
+
         String[] allowedOrigins;
         if (isProduction) {
             allowedOrigins = new String[]{
-                    "https://stayswap.com",
-                    "https://www.stayswap.com"
+                    "https://stayzzle.com",
+                    "https://www.stayzzle.com"
             };
         } else {
             // 개발 환경에서는 로컬호스트와 개발 서버 허용
             allowedOrigins = new String[]{
                     "http://localhost:8080",
                     "http://127.0.0.1:8080",
-                    "https://dev.stayswap.com"
+                    "https://dev.stayswap.com",
+                    "https://stayzzle.com",
+                    "https://www.stayzzle.com"
             };
         }
-        
+
         registry.addMapping("/**") // 모든 경로에 대해 CORS 설정 적용
                 .allowedOrigins(allowedOrigins)
                 .allowedMethods(
