@@ -29,29 +29,35 @@ public class UserDeviceService {
     /**
      * 사용자 디바이스 등록
      */
+    @Transactional
     public void registerDevice(Long userId, DeviceRegistrationRequest request) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
 
+        // 모든 활성 디바이스를 비활성화
+        userDeviceRepository.deactivateAllActiveDevicesByUserId(userId);
+
         Optional<UserDevice> existingDevice = userDeviceRepository.findByFcmToken(request.getFcmToken());
 
+        // FCM 토큰이 같은 디바이스가 이미 등록시
         if (existingDevice.isPresent()) {
             UserDevice device = existingDevice.get();
 
-            // 다른 사용자의 디바이스였을 경우
-            if (!device.getUser().getId().equals(userId)) {
-                device.deactivate();
-                createNewDevice(user, request);
-            }
-            // 같은 사용자의 디바이스일 경우
-            else {
-                log.info("이미 등록된 디바이스입니다. userId={}, fcmToken={}", userId, request.getFcmToken());
-            }
+            // 사용자 정보와 디바이스 정보를 업데이트하고 활성화
+            device.updateUserAndDeviceInfo(user, request.getDeviceId(), request.getDeviceModel(), request.getDeviceType());
+            device.activate();
+            userDeviceRepository.save(device);
+
+            log.info("기존 디바이스 사용자 및 정보 갱신: userId={}, deviceId={}, deviceType={}, fcmToken={}",
+                    userId, request.getDeviceId(), request.getDeviceType(), request.getFcmToken());
         } else {
-            // 새 디바이스 등록
+            // 새 디바이스를 생성합니다.
             createNewDevice(user, request);
+            log.info("새 디바이스 등록: userId={}, deviceId={}, deviceType={}, fcmToken={}",
+                    userId, request.getDeviceId(), request.getDeviceType(), request.getFcmToken());
         }
-        log.info("사용자 디바이스 등록 완료: userId={}, deviceType={}", userId, request.getDeviceType());
+
+        log.info("사용자 디바이스 등록 처리 완료: userId={}, deviceType={}", userId, request.getDeviceType());
     }
 
     /**
@@ -65,7 +71,7 @@ public class UserDeviceService {
                 .fcmToken(request.getFcmToken())
                 .deviceId(request.getDeviceId())
                 .build();
-        
+
         return userDeviceRepository.save(newDevice);
     }
 
