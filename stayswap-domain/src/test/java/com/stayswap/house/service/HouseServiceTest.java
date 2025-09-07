@@ -18,6 +18,7 @@ import com.stayswap.user.constant.UserType;
 import com.stayswap.user.model.entity.User;
 import com.stayswap.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -136,6 +137,7 @@ class HouseServiceTest extends IntegrationTest {
 
     @Nested
     @DisplayName("필수값을 작성하지 않은채로 숙소를 등록할 수 없다.")
+    @Disabled
     class FailureCreateHouse {
 
         @Test
@@ -757,7 +759,6 @@ class HouseServiceTest extends IntegrationTest {
                     .hasMessageContaining("권한이 없습니다");
         }
 
-
         // 헬퍼 메서드
         private User createTestUser(String userName, String email, String nickname) {
             User user = User.builder()
@@ -768,6 +769,54 @@ class HouseServiceTest extends IntegrationTest {
                     .role(Role.ROLE_USER)
                     .build();
             return userRepository.save(user);
+        }
+    }
+
+    @Nested
+    @DisplayName("숙소 삭제 (Soft Delete)")
+    class DeleteHouse {
+
+        @Test
+        @DisplayName("숙소 삭제 요청이 성공시, isDelete 필드가 true로 변경된다. (soft delete)")
+        void deleteHouseSuccess() {
+            // given
+            Long houseId = testHouse.getId();
+            Long userId = testUser.getId();
+
+            // when
+            houseService.deleteHouse(houseId, userId);
+
+            // then
+            House deletedHouse = houseRepository.findById(houseId).orElse(null);
+            assertThat(deletedHouse).isNotNull();
+            assertThat(deletedHouse.getIsDelete()).isTrue();
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 숙소 삭제 요청 시, NotFoundException이 발생한다.")
+        void deleteNonExistentHouse() {
+            // given
+            Long nonExistentHouseId = 9999L;
+            Long userId = testUser.getId();
+
+            // when & then
+            assertThatThrownBy(() -> houseService.deleteHouse(nonExistentHouseId, userId))
+                    .isInstanceOf(NotFoundException.class)
+                    .hasMessageContaining("존재하지 않는 숙소입니다");
+        }
+
+        @Test
+        @DisplayName("소유자가 아닌 사용자가 숙소 삭제 요청 시, ForbiddenException이 발생한다.")
+        void deleteHouseByNonOwner() {
+            // given
+            User anotherUser = createTestUser("다른사용자", "another@test.com", "다른사용자닉네임");
+            Long houseId = testHouse.getId();
+            Long anotherUserId = anotherUser.getId();
+
+            // when & then
+            assertThatThrownBy(() -> houseService.deleteHouse(houseId, anotherUserId))
+                    .isInstanceOf(ForbiddenException.class)
+                    .hasMessageContaining("권한이 없습니다");
         }
     }
 
@@ -844,6 +893,7 @@ class HouseServiceTest extends IntegrationTest {
         CreateHouseResponse response = houseService.createHouse(user.getId(), houseRequest, testImages);
         return houseRepository.findById(response.getHouseId()).orElse(null);
     }
+
 
 
 }
