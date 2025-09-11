@@ -54,12 +54,16 @@ public class ChatService {
     public ChatRoomResponse createOrGetHouseInquiryChatRoom(Long userId, Long houseId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
-        
+
         House house = houseRepository.findById(houseId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_HOUSE));
-        
+
         User host = house.getUser();
-        
+
+        if (userId.equals(host.getId())) {
+            throw new BusinessException(CANNOT_CHAT_WITH_SELF);
+        }
+
         // 게스트와 호스트 간의 1:1 채팅방이 이미 존재하는지 확인
         Optional<Chatroom> existingChatroomOptional = chatroomRepository.findDirectChatroomBetweenUsers(userId, host.getId());
 
@@ -90,7 +94,7 @@ public class ChatService {
         // 읽지 않은 메시지 수 계산
         Long unreadCount = 0L;
         boolean hasNewMessage = false;
-        
+
         Optional<ChatMember> memberOpt = chatMemberRepository.findByUserIdAndChatroomId(userId, chatroom.getId());
         if (memberOpt.isPresent()) {
             ChatMember member = memberOpt.get();
@@ -119,33 +123,33 @@ public class ChatService {
         Slice<ChatMember> chatMemberSlice = chatMemberRepository.findAllByUserId(userId, pageable);
 
         List<ChatRoomListDto> chatroomDtos = chatMemberSlice.stream()
-            .map(chatMember -> {
-                Chatroom chatroom = chatMember.getChatroom();
-                chatroom.setHasNewMessage(
-                    // 해당 채팅방의 마지막 확인 시간 이후에 새 메시지가 있는지 확인
-                    messageRepository.existsByChatroomIdAndCreatedAtAfter(chatroom.getId(), chatMember.getLastCheckedAt()));
-                
-                // DTO로 변환
-                ChatRoomListDto dto = ChatRoomListDto.from(chatroom, userId);
-                
-                // 마지막 메시지 정보 추가
-                Optional<Message> lastMessageOpt = messageRepository.findTopByChatroomIdOrderByCreatedAtDesc(chatroom.getId());
-                if (lastMessageOpt.isPresent()) {
-                    Message lastMessage = lastMessageOpt.get();
-                    dto.setLastMessage(lastMessage.getText());
-                    dto.setLastMessageCreatedAt(lastMessage.getCreatedAt());
-                }
-                
-                // 읽지 않은 메시지 수 계산
-                Long unreadCount = 0L;
-                if (chatMember.getLastCheckedAt() != null) {
-                    unreadCount = messageRepository.countByChatroomIdAndCreatedAtAfter(chatroom.getId(), chatMember.getLastCheckedAt());
-                }
-                dto.setUnreadCount(unreadCount);
-                
-                return dto;
-            })
-            .toList();
+                .map(chatMember -> {
+                    Chatroom chatroom = chatMember.getChatroom();
+                    chatroom.setHasNewMessage(
+                            // 해당 채팅방의 마지막 확인 시간 이후에 새 메시지가 있는지 확인
+                            messageRepository.existsByChatroomIdAndCreatedAtAfter(chatroom.getId(), chatMember.getLastCheckedAt()));
+
+                    // DTO로 변환
+                    ChatRoomListDto dto = ChatRoomListDto.from(chatroom, userId);
+
+                    // 마지막 메시지 정보 추가
+                    Optional<Message> lastMessageOpt = messageRepository.findTopByChatroomIdOrderByCreatedAtDesc(chatroom.getId());
+                    if (lastMessageOpt.isPresent()) {
+                        Message lastMessage = lastMessageOpt.get();
+                        dto.setLastMessage(lastMessage.getText());
+                        dto.setLastMessageCreatedAt(lastMessage.getCreatedAt());
+                    }
+
+                    // 읽지 않은 메시지 수 계산
+                    Long unreadCount = 0L;
+                    if (chatMember.getLastCheckedAt() != null) {
+                        unreadCount = messageRepository.countByChatroomIdAndCreatedAtAfter(chatroom.getId(), chatMember.getLastCheckedAt());
+                    }
+                    dto.setUnreadCount(unreadCount);
+
+                    return dto;
+                })
+                .toList();
 
         return new SliceImpl<>(chatroomDtos, pageable, chatMemberSlice.hasNext());
     }
@@ -156,11 +160,11 @@ public class ChatService {
         if (!chatMemberRepository.existsByUserIdAndChatroomId(userId, chatroomId)) {
             throw new ForbiddenException(NOT_MEMBER_OF_CHATROOM);
         }
-        
+
         if (!chatroomRepository.existsById(chatroomId)) {
             throw new NotFoundException(NOT_EXISTS_CHATROOM);
         }
-        
+
         Slice<Message> messageSlice = messageRepository.findByChatroomIdOrderByCreatedAtDesc(chatroomId, pageable);
 
         return messageSlice.map(ChatMessageResponse::of);
@@ -188,7 +192,7 @@ public class ChatService {
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_USER));
         Chatroom chatroom = chatroomRepository.findById(chatroomId)
                 .orElseThrow(() -> new NotFoundException(NOT_EXISTS_CHATROOM));
-        
+
         return saveMessage(user, chatroom, text);
     }
 
@@ -205,7 +209,7 @@ public class ChatService {
                 .build();
 
         Message savedMessage = messageRepository.save(message);
-        
+
         // Kafka로 채팅 메시지 이벤트 발행
         ChatMessageEvent event = ChatMessageEvent.builder()
                 .chatRoomId(chatroom.getId())
@@ -216,15 +220,15 @@ public class ChatService {
                 .eventType(ChatEventType.MESSAGE_SENT.name())
                 .build();
         chatMessagePublisher.sendChatMessage(event);
-        
+
         return savedMessage;
     }
 
     public Chatroom createChatroom(User user, String title) {
         Chatroom chatroom = Chatroom.builder()
-            .title(title)
-            .createdAt(LocalDateTime.now())
-            .build();
+                .title(title)
+                .createdAt(LocalDateTime.now())
+                .build();
 
         chatroom = chatroomRepository.save(chatroom);
 

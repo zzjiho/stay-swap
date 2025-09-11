@@ -37,6 +37,7 @@ public enum ErrorCode {
     NOT_MEMBER_OF_CHATROOM(FORBIDDEN, false, "BR015", "해당 채팅방의 멤버가 아닙니다."),
     ALREADY_MEMBER_OF_CHATROOM(BAD_REQUEST, false, "BR016", "이미 참여한 채팅방입니다."),
     CANNOT_LEAVE_CHATROOM(BAD_REQUEST, false, "BR017", "참여하지 않은 채팅방에서 나갈 수 없습니다."),
+    CANNOT_CHAT_WITH_SELF(BAD_REQUEST, false, "BR018", "자기 자신과는 채팅할 수 없습니다."),
 
 
     /**
@@ -44,7 +45,7 @@ public enum ErrorCode {
      */
     TOKEN_EXPIRED(UNAUTHORIZED, false, "A001", "토큰이 만료되었습니다."),
     NOT_VALID_TOKEN(UNAUTHORIZED, false, "A002", "해당 토큰은 유효한 토큰이 아닙니다."),
-    NOT_EXISTS_AUTHORIZATION(UNAUTHORIZED,false ,"A003" ,"Authorization Header가 빈값입니다." ),
+    NOT_EXISTS_AUTHORIZATION(UNAUTHORIZED,false ,"A003" ,"로그인 후 이용해 주세요." ),
     NOT_VALID_BEARER_GRANT_TYPE(UNAUTHORIZED,false ,"A004", "인증 타입이 Bearer 타입이 아닙니다." ),
     REFRESH_TOKEN_NOT_FOUND(UNAUTHORIZED, false, "A005", "해당 refresh token은 존재하지 않습니다."),
     NOT_ACCESS_TOKEN_TYPE(UNAUTHORIZED, false, "A007", "해당 토큰은 ACCESS TOKEN이 아닙니다."),
