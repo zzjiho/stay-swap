@@ -40,8 +40,6 @@ public class ReviewServiceImpl implements ReviewService {
     private final UserRepository userRepository;
     private final HouseRepository houseRepository;
     private final HouseRedisService houseRedisService;
-    private final HouseImageRepository houseImageRepository;
-    private final HouseImgService houseImgService;
 
     @Override
     public ReviewResponse createReview(Long userId, ReviewRequest request) {

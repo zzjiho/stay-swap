@@ -5,6 +5,10 @@ import com.stayswap.house.model.entity.House;
 import com.stayswap.house.model.entity.HouseOption;
 import com.stayswap.user.model.entity.User;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.Valid;
 import lombok.*;
 
 @Getter
@@ -14,21 +18,26 @@ import lombok.*;
 public class CreateHouseRequest {
 
     @Schema(description = "숙소 제목", example = "서울 강남 아늑한 아파트")
+    @NotBlank(message = "숙소 제목은 필수 입력값입니다.")
     private String title;
 
     @Schema(description = "숙소 설명", example = "강남역 5분 거리에 위치한 깨끗하고 아늑한 2베드룸 아파트입니다. 편의시설이 잘 갖추어져 있으며 주변에 맛집이 많습니다.")
+    @NotBlank(message = "숙소 설명은 필수 입력값입니다.")
     private String description;
 
     @Schema(description = "숙소 이용 규칙", example = "뛰어다니지 마세요!")
     private String rule;
 
     @Schema(description = "숙소 유형", example = "APT")
+    @NotNull(message = "숙소 유형은 필수 입력값입니다.")
     private HouseType houseType;
 
     @Schema(description = "숙소 크기(평방미터)", example = "85.5")
     private Float size;
 
     @Schema(description = "침실 수", example = "2")
+    @NotNull(message = "침실 수는 필수 입력값입니다.")
+    @Positive(message = "침실 수는 양수여야 합니다.")
     private Integer bedrooms;
 
     @Schema(description = "침대 수", example = "3")
@@ -38,9 +47,12 @@ public class CreateHouseRequest {
     private Integer bathrooms;
 
     @Schema(description = "최대 수용 인원", example = "4")
+    @NotNull(message = "최대 수용 인원은 필수 입력값입니다.")
+    @Positive(message = "최대 수용 인원은 양수여야 합니다.")
     private Integer maxGuests;
 
     @Schema(description = "한국어 상세 주소", example = "서울특별시 강남구 테헤란로 123, 456동 789호")
+    @NotBlank(message = "주소는 필수 입력값입니다.")
     private String addressKo;
 
     @Schema(description = "한국어 도시명", example = "서울")
@@ -65,9 +77,11 @@ public class CreateHouseRequest {
     private String countryEn;
 
     @Schema(description = "위도", example = "37.5665")
+    @NotNull(message = "위도는 필수 입력값입니다.")
     private Double latitude;
 
     @Schema(description = "경도", example = "126.9780")
+    @NotNull(message = "경도는 필수 입력값입니다.")
     private Double longitude;
 
     @Schema(description = "지도 영역 북동쪽 위도", example = "37.5670")
@@ -86,6 +100,7 @@ public class CreateHouseRequest {
     private Boolean petsAllowed;
     
     @Schema(description = "숙소 옵션 정보")
+    @Valid
     private HouseOptionRequest options;
     
     @Getter
