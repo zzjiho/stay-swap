@@ -7,6 +7,7 @@ import com.stayswap.util.EnvironmentUtil;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.ComponentScan;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
@@ -29,6 +30,9 @@ public abstract class IntegrationTest {
 
     @MockitoBean
     private HouseImgService houseImgService;
+    
+    @MockitoBean
+    private SimpMessagingTemplate simpMessagingTemplate;
 
 }
 
