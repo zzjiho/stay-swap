@@ -41,3 +41,12 @@ out/
 **/Q*.java
 **/Q*.class
 
+# JWT Keys
+stayswap-auth/src/main/resources/keys/
+
+# Environment variables
+.env
+
+# Configuration files
+application-local.yml
+application-prd.yml
