@@ -1,0 +1,92 @@
+import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
+import { immer } from 'zustand/middleware/immer';
+import { authApi } from '../api/auth.api';
+import type { User } from '../types/auth.types';
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isInitialized: boolean;
+  isLoading: boolean;
+}
+
+interface AuthActions {
+  initialize: () => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  setUser: (user: User | null) => void;
+}
+
+type AuthStore = AuthState & AuthActions;
+
+export const useAuthStore = create<AuthStore>()(
+  devtools(
+    immer((set) => ({
+      // State
+      user: null,
+      isAuthenticated: false,
+      isInitialized: false,
+      isLoading: false,
+
+      // Actions
+      initialize: async () => {
+        try {
+          // HttpOnly 쿠키로 인증 상태 확인
+          const user = await authApi.getMe();
+          set((state) => {
+            state.user = user;
+            state.isAuthenticated = true;
+          });
+        } catch (error) {
+          // 인증 실패 (401 등)
+          console.log('사용자가 로그인하지 않음');
+        } finally {
+          set((state) => {
+            state.isInitialized = true;
+          });
+        }
+      },
+
+      login: async (email: string, password: string) => {
+        set((state) => {
+          state.isLoading = true;
+        });
+        try {
+          const { user } = await authApi.login({ email, password });
+          set((state) => {
+            state.user = user;
+            state.isAuthenticated = true;
+          });
+        } finally {
+          set((state) => {
+            state.isLoading = false;
+          });
+        }
+      },
+
+      logout: async () => {
+        try {
+          await authApi.logout();
+        } catch (error) {
+          console.error('로그아웃 오류:', error);
+        } finally {
+          set((state) => {
+            state.user = null;
+            state.isAuthenticated = false;
+          });
+          // 로그인 페이지로 리다이렉트
+          window.location.href = '/auth';
+        }
+      },
+
+      setUser: (user) => {
+        set((state) => {
+          state.user = user;
+          state.isAuthenticated = !!user;
+        });
+      },
+    })),
+    { name: 'auth-store' }
+  )
+);
