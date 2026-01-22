@@ -19,6 +19,9 @@ export const ROUTES = {
   PROFILE: '/profile',
   SETTINGS: '/settings',
 
+  // 구독
+  SUBSCRIPTION: '/subscription',
+
   // 알림
   NOTIFICATIONS: '/notifications',
 } as const;

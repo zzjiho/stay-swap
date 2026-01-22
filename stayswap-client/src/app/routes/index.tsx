@@ -8,6 +8,7 @@ import {MainLayout} from '@/components/layout/MainLayout';
 import {HomePage} from '@/pages/HomePage';
 import {AuthPage} from '@/pages/auth/AuthPage';
 import {ListingsPage} from '@/pages/houses/ListingsPage';
+import {ListingDetailPage} from '@/pages/houses/ListingDetailPage';
 
 export function AppRoutes() {
   return (
@@ -21,6 +22,7 @@ export function AppRoutes() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/listings" element={<ListingsPage />} />
+        <Route path="/listings/:id" element={<ListingDetailPage />} />
       </Route>
 
       {/* 404 */}

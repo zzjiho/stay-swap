@@ -15,10 +15,10 @@ import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right';
 interface PopularHouse {
   houseId: number;
   title: string;
-  city: string;
-  district: string;
-  thumbnailUrl: string;
-  averageRating: number;
+  cityKo: string;
+  districtKo: string;
+  mainImageUrl: string;
+  avgRating: number;
   reviewCount: number;
 }
 
@@ -30,7 +30,7 @@ const EmptyMessage = (
 );
 
 const fetchPopularHouses = async (): Promise<PopularHouse[]> => {
-  const response = await fetch('/api/v1/house/popular');
+  const response = await fetch('/api/house/popular');
   if (!response.ok) {
     throw new Error('인기 숙소 로딩 실패');
   }
@@ -144,21 +144,21 @@ export function HomePage() {
                       >
                         <div className="relative h-[200px] overflow-hidden">
                           <img
-                            src={house.thumbnailUrl || '/images/default-house.jpg'}
+                            src={house.mainImageUrl || '/images/default-house.jpg'}
                             alt={house.title}
                             loading="lazy"
                             className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                           />
                           <div className="absolute top-3 right-3 bg-white px-2 py-1 rounded-lg text-sm font-semibold flex items-center shadow">
                             <Star className="w-4 h-4 text-amber-500 mr-1 fill-amber-500" />
-                            {house.averageRating?.toFixed(1) || '0.0'} ({house.reviewCount || 0})
+                            {house.avgRating?.toFixed(1) || '0.0'} ({house.reviewCount || 0})
                           </div>
                         </div>
                         <div className="p-6">
                           <h3 className="text-xl font-semibold mb-2 text-gray-900">{house.title}</h3>
                           <p className="text-gray-500 flex items-center">
                             <MapPin className="w-4 h-4 mr-1" />
-                            {house.city} {house.district}
+                            {house.cityKo} {house.districtKo}
                           </p>
                         </div>
                       </Link>

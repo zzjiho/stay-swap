@@ -20,22 +20,11 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response Interceptor
+// Response Interceptor - 401 에러는 그냥 reject (refresh 로직 비활성화)
 apiClient.interceptors.response.use(
   (response) => response,
-  async (error: AxiosError) => {
-    if (error.response?.status === 401) {
-      // 401 에러 시 리프레시 토큰 시도
-      try {
-        await apiClient.post('/api/auth/refresh');
-        // 원래 요청 재시도
-        return apiClient(error.config!);
-      } catch (refreshError) {
-        // 리프레시 실패 시 로그인 페이지로
-        window.location.href = '/auth';
-        return Promise.reject(refreshError);
-      }
-    }
+  (error: AxiosError) => {
+    // 401 에러는 그냥 통과시킴 (무한 루프 방지)
     return Promise.reject(error);
   }
 );

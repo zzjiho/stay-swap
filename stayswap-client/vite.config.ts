@@ -18,6 +18,13 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    hmr: {
+      overlay: true,
+    },
+    watch: {
+      usePolling: true,  // Windows에서 파일 변경 감지 문제 해결
+      interval: 100,
+    },
   },
   build: {
     outDir: 'dist',
