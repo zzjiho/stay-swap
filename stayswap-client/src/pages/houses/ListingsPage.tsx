@@ -10,6 +10,9 @@ import Star from 'lucide-react/dist/esm/icons/star';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
+import BedDouble from 'lucide-react/dist/esm/icons/bed-double';
+import Users from 'lucide-react/dist/esm/icons/users';
+import Home from 'lucide-react/dist/esm/icons/home';
 
 interface House {
   houseId: number;
@@ -20,6 +23,8 @@ interface House {
   avgRating: number;
   reviewCount: number;
   houseType: string;
+  bedrooms: number;
+  maxGuests: number;
 }
 
 interface HouseListResponse {
@@ -53,6 +58,14 @@ const HOUSE_TYPES = [
   { value: '3', label: '빌라' },
   { value: '4', label: '오피스텔' },
 ];
+
+const HOUSE_TYPE_LABEL: Record<string, string> = {
+  APT: '아파트',
+  HOUSE: '주택',
+  VILLA: '빌라',
+  OP: '오피스텔',
+  OTHER: '기타',
+};
 
 const SORT_OPTIONS = [
   { value: 'latest', label: '최신순' },
@@ -212,7 +225,7 @@ export function ListingsPage() {
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
               >
                 <option value="">모든 국가</option>
-                {countries.map((country) => (
+                {countries.filter((c) => c.code && c.name).map((country) => (
                   <option key={country.code} value={country.code}>
                     {country.name}
                   </option>
@@ -309,10 +322,24 @@ export function ListingsPage() {
                   <h3 className="text-lg font-semibold mb-2 text-gray-900 line-clamp-1">
                     {house.title}
                   </h3>
-                  <p className="text-gray-500 flex items-center text-sm">
+                  <p className="text-gray-500 flex items-center text-sm mb-2">
                     <MapPin className="w-4 h-4 mr-1" />
                     {house.cityKo} {house.districtKo}
                   </p>
+                  <div className="flex items-center gap-3 text-sm text-gray-500">
+                    <span className="flex items-center">
+                      <BedDouble className="w-4 h-4 mr-1 fill-current" />
+                      침실 {house.bedrooms || 1}개
+                    </span>
+                    <span className="flex items-center">
+                      <Users className="w-4 h-4 mr-1 fill-current" />
+                      최대 {house.maxGuests || 1}인
+                    </span>
+                    <span className="flex items-center">
+                      <Home className="w-4 h-4 mr-1 fill-current" />
+                      {HOUSE_TYPE_LABEL[house.houseType] || house.houseType}
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}

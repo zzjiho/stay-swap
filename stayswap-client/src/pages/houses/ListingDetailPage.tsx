@@ -1,3 +1,4 @@
+// Force rebuild
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -22,18 +23,35 @@ interface HouseDetail {
   houseId: number;
   title: string;
   description: string;
-  city: string;
-  district: string;
+  cityKo: string;
+  districtKo: string;
   detailAddress: string;
   latitude: number;
   longitude: number;
-  thumbnailUrl: string;
+  mainImageUrl: string;
   imageUrls: string[];
-  averageRating: number;
+  avgRating: number;
   reviewCount: number;
   houseType: string;
-  amenities: string[];
-  host: {
+  amenities: {
+    hasFreeWifi?: boolean;
+    hasAirConditioner?: boolean;
+    hasTV?: boolean;
+    hasWashingMachine?: boolean;
+    hasKitchen?: boolean;
+    hasDryer?: boolean;
+    hasIron?: boolean;
+    hasRefrigerator?: boolean;
+    hasMicrowave?: boolean;
+    hasFreeParking?: boolean;
+    hasBalconyTerrace?: boolean;
+    hasPetsAllowed?: boolean;
+    hasSmokingAllowed?: boolean;
+    hasElevator?: boolean;
+    otherAmenities?: string;
+    otherFeatures?: string;
+  };
+  host?: {
     userId: number;
     name: string;
     profileImage: string;
@@ -42,6 +60,10 @@ interface HouseDetail {
     averageRating: number;
     isSuperhost: boolean;
   };
+  // 호스트 정보가 별도 필드로 올 수도 있음
+  hostId?: number;
+  hostName?: string;
+  hostProfileImage?: string;
 }
 
 interface Review {
@@ -56,9 +78,9 @@ interface Review {
 interface MyHouse {
   houseId: number;
   title: string;
-  thumbnailUrl: string;
-  city: string;
-  district: string;
+  mainImageUrl: string;
+  cityKo: string;
+  districtKo: string;
 }
 
 const fetchHouseDetail = async (id: string): Promise<HouseDetail> => {
@@ -69,10 +91,11 @@ const fetchHouseDetail = async (id: string): Promise<HouseDetail> => {
 };
 
 const fetchReviews = async (houseId: string): Promise<Review[]> => {
-  const response = await fetch(`/api/house/${houseId}/reviews?size=5`);
+  // 리뷰 API 엔드포인트 - 404일 경우 빈 배열 반환
+  const response = await fetch(`/api/review/house/${houseId}?size=5`);
   if (!response.ok) return [];
   const data = await response.json();
-  return data.data?.content || [];
+  return data.data?.content || data.data || [];
 };
 
 const fetchMyHouses = async (): Promise<MyHouse[]> => {
@@ -83,17 +106,20 @@ const fetchMyHouses = async (): Promise<MyHouse[]> => {
 };
 
 const AMENITY_MAP: Record<string, string> = {
-  wifi: '무선 인터넷',
-  aircon: '에어컨',
-  washer: '세탁기',
-  kitchen: '주방',
-  parking: '주차장',
-  pet: '반려동물 동반 가능',
-  tv: 'TV',
-  refrigerator: '냉장고',
-  microwave: '전자레인지',
-  hairdryer: '헤어드라이어',
-  iron: '다리미',
+  hasFreeWifi: '무선 인터넷',
+  hasAirConditioner: '에어컨',
+  hasTV: 'TV',
+  hasWashingMachine: '세탁기',
+  hasKitchen: '주방',
+  hasDryer: '건조기',
+  hasIron: '다리미',
+  hasRefrigerator: '냉장고',
+  hasMicrowave: '전자레인지',
+  hasFreeParking: '무료 주차',
+  hasBalconyTerrace: '발코니/테라스',
+  hasPetsAllowed: '반려동물 동반 가능',
+  hasSmokingAllowed: '흡연 가능',
+  hasElevator: '엘리베이터',
 };
 
 const LoadingState = (
@@ -165,7 +191,12 @@ export function ListingDetailPage() {
     },
   });
 
-  const images = house?.imageUrls?.length ? house.imageUrls : [house?.thumbnailUrl || '/images/default-house.jpg'];
+  const images = house?.imageUrls?.length ? house.imageUrls : [house?.mainImageUrl || '/images/default-house.jpg'];
+
+  // 호스트 정보 (host 객체 또는 별도 필드에서)
+  const hostName = house?.host?.name || house?.hostName || '호스트';
+  const hostId = house?.host?.userId || house?.hostId;
+  const hostProfileImage = house?.host?.profileImage || house?.hostProfileImage || '/images/profile.png';
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -222,7 +253,7 @@ export function ListingDetailPage() {
       navigate(ROUTES.AUTH);
       return;
     }
-    navigate(`${ROUTES.MESSAGES}?hostId=${house?.host.userId}`);
+    navigate(`${ROUTES.MESSAGES}?hostId=${hostId}`);
   };
 
   useEffect(() => {
@@ -268,13 +299,13 @@ export function ListingDetailPage() {
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center">
               <Star className="w-4 h-4 text-amber-500 fill-amber-500 mr-1" />
-              <span className="font-semibold">{house.averageRating?.toFixed(1) || '0.0'}</span>
+              <span className="font-semibold">{house.avgRating?.toFixed(1) || '0.0'}</span>
               <span className="text-gray-500 ml-1">({house.reviewCount || 0})</span>
             </div>
             <span className="text-gray-300">·</span>
             <div className="flex items-center text-gray-600">
               <MapPin className="w-4 h-4 mr-1" />
-              {house.city} {house.district}
+              {house.cityKo} {house.districtKo}
             </div>
           </div>
           <div className="flex gap-2">
@@ -334,28 +365,40 @@ export function ListingDetailPage() {
             {/* Host Section */}
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-4">
-                {house.host.name}님이 호스팅하는 숙소
+                {hostName}님이 호스팅하는 숙소
               </h2>
               <div className="flex items-center gap-4">
                 <img
-                  src={house.host.profileImage || '/images/profile.png'}
-                  alt={house.host.name}
+                  src={hostProfileImage}
+                  alt={hostName}
                   className="w-14 h-14 rounded-full object-cover"
                 />
                 <div>
-                  <h3 className="font-semibold text-gray-900">{house.host.name}</h3>
-                  <div className="text-sm text-gray-500 space-x-2">
-                    <span>{house.host.joinedYear}년에 가입</span>
-                    <span>·</span>
-                    <span>후기 {house.host.reviewCount}개</span>
-                    <span>·</span>
-                    <span>총 평점: {house.host.averageRating?.toFixed(1) || '0.0'}</span>
-                  </div>
-                  {house.host.isSuperhost && (
-                    <div className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">
-                      <Award className="w-3 h-3" />
-                      슈퍼호스트
-                    </div>
+                  <h3 className="font-semibold text-gray-900">{hostName}</h3>
+                  {house.host && (
+                    <>
+                      <div className="text-sm text-gray-500 space-x-2">
+                        {house.host.joinedYear && <span>{house.host.joinedYear}년에 가입</span>}
+                        {house.host.reviewCount !== undefined && (
+                          <>
+                            <span>·</span>
+                            <span>후기 {house.host.reviewCount}개</span>
+                          </>
+                        )}
+                        {house.host.averageRating !== undefined && (
+                          <>
+                            <span>·</span>
+                            <span>총 평점: {house.host.averageRating?.toFixed(1) || '0.0'}</span>
+                          </>
+                        )}
+                      </div>
+                      {house.host.isSuperhost && (
+                        <div className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">
+                          <Award className="w-3 h-3" />
+                          슈퍼호스트
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -371,12 +414,14 @@ export function ListingDetailPage() {
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-4">편의시설</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {house.amenities?.map((amenity) => (
-                  <div key={amenity} className="flex items-center gap-3 text-gray-600">
-                    <Check className="w-5 h-5 text-indigo-600" />
-                    <span>{AMENITY_MAP[amenity] || amenity}</span>
-                  </div>
-                ))}
+                {house.amenities && Object.entries(house.amenities)
+                  .filter(([key, value]) => value === true && AMENITY_MAP[key])
+                  .map(([key]) => (
+                    <div key={key} className="flex items-center gap-3 text-gray-600">
+                      <Check className="w-5 h-5 text-indigo-600" />
+                      <span>{AMENITY_MAP[key]}</span>
+                    </div>
+                  ))}
               </div>
             </div>
 
@@ -384,7 +429,7 @@ export function ListingDetailPage() {
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
-                {house.averageRating?.toFixed(1) || '0.0'} · 후기 {house.reviewCount || 0}개
+                {house.avgRating?.toFixed(1) || '0.0'} · 후기 {house.reviewCount || 0}개
               </h2>
 
               {reviews.length > 0 ? (
@@ -528,13 +573,13 @@ export function ListingDetailPage() {
                         className="hidden"
                       />
                       <img
-                        src={myHouse.thumbnailUrl || '/images/default-house.jpg'}
+                        src={myHouse.mainImageUrl || '/images/default-house.jpg'}
                         alt={myHouse.title}
                         className="w-16 h-16 rounded-lg object-cover"
                       />
                       <div>
                         <h4 className="font-medium text-gray-900">{myHouse.title}</h4>
-                        <p className="text-sm text-gray-500">{myHouse.city} {myHouse.district}</p>
+                        <p className="text-sm text-gray-500">{myHouse.cityKo} {myHouse.districtKo}</p>
                       </div>
                     </label>
                   ))}

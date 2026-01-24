@@ -9,6 +9,9 @@ import {HomePage} from '@/pages/HomePage';
 import {AuthPage} from '@/pages/auth/AuthPage';
 import {ListingsPage} from '@/pages/houses/ListingsPage';
 import {ListingDetailPage} from '@/pages/houses/ListingDetailPage';
+import {NewListingPage} from '@/pages/houses/NewListingPage';
+import {ExchangesPage} from '@/pages/exchanges/ExchangesPage';
+import {ProfilePage} from '@/pages/profile/ProfilePage';
 
 export function AppRoutes() {
   return (
@@ -22,7 +25,10 @@ export function AppRoutes() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/listings" element={<ListingsPage />} />
+        <Route path="/listings/new" element={<NewListingPage />} />
         <Route path="/listings/:id" element={<ListingDetailPage />} />
+        <Route path="/exchanges" element={<ExchangesPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
       </Route>
 
       {/* 404 */}
