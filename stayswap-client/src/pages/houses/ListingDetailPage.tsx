@@ -1,11 +1,19 @@
-// Force rebuild
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/features/auth/stores/auth.store';
-import { ROUTES } from '@/constants/routes';
-import { useJsApiLoader } from '@react-google-maps/api';
+import {useEffect, useRef, useState} from 'react';
+import {Link, useNavigate, useParams} from 'react-router-dom';
+import {useMutation, useQuery} from '@tanstack/react-query';
+import {Button} from '@/components/ui/button';
+import {useAuthStore} from '@/features/auth/stores/auth.store';
+import {ROUTES} from '@/constants/routes';
+import {useJsApiLoader} from '@react-google-maps/api';
+import {
+  AMENITY_MAP,
+  fetchHouseDetail,
+  fetchMyHouses,
+  fetchReviews,
+  GOOGLE_MAPS_API_KEY,
+  GOOGLE_MAPS_LIBRARIES,
+  requestExchange,
+} from '@/features/houses';
 
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
 import Star from 'lucide-react/dist/esm/icons/star';
@@ -20,117 +28,6 @@ import MessageCircle from 'lucide-react/dist/esm/icons/message-circle';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import X from 'lucide-react/dist/esm/icons/x';
 
-// Google Maps API 설정
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
-const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places'];
-
-interface HouseDetail {
-  houseId: number;
-  title: string;
-  description: string;
-  cityKo: string;
-  districtKo: string;
-  detailAddress: string;
-  latitude: number;
-  longitude: number;
-  viewportNortheastLat?: number;
-  viewportNortheastLng?: number;
-  viewportSouthwestLat?: number;
-  viewportSouthwestLng?: number;
-  mainImageUrl: string;
-  imageUrls: string[];
-  avgRating: number;
-  reviewCount: number;
-  houseType: string;
-  amenities: {
-    hasFreeWifi?: boolean;
-    hasAirConditioner?: boolean;
-    hasTV?: boolean;
-    hasWashingMachine?: boolean;
-    hasKitchen?: boolean;
-    hasDryer?: boolean;
-    hasIron?: boolean;
-    hasRefrigerator?: boolean;
-    hasMicrowave?: boolean;
-    hasFreeParking?: boolean;
-    hasBalconyTerrace?: boolean;
-    hasPetsAllowed?: boolean;
-    hasSmokingAllowed?: boolean;
-    hasElevator?: boolean;
-    otherAmenities?: string;
-    otherFeatures?: string;
-  };
-  host?: {
-    userId: number;
-    name: string;
-    profileImage: string;
-    joinedYear: number;
-    reviewCount: number;
-    averageRating: number;
-    isSuperhost: boolean;
-  };
-  // 호스트 정보가 별도 필드로 올 수도 있음
-  hostId?: number;
-  hostName?: string;
-  hostProfileImage?: string;
-}
-
-interface Review {
-  reviewId: number;
-  authorName: string;
-  authorImage: string;
-  rating: number;
-  content: string;
-  createdAt: string;
-}
-
-interface MyHouse {
-  houseId: number;
-  title: string;
-  mainImageUrl: string;
-  cityKo: string;
-  districtKo: string;
-}
-
-const fetchHouseDetail = async (id: string): Promise<HouseDetail> => {
-  const response = await fetch(`/api/house/${id}`);
-  if (!response.ok) throw new Error('숙소 정보를 불러올 수 없습니다');
-  const data = await response.json();
-  return data.data;
-};
-
-const fetchReviews = async (houseId: string): Promise<Review[]> => {
-  // 리뷰 API 엔드포인트 - 404일 경우 빈 배열 반환
-  const response = await fetch(`/api/review/house/${houseId}?size=5`);
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.data?.content || data.data || [];
-};
-
-const fetchMyHouses = async (): Promise<MyHouse[]> => {
-  const response = await fetch('/api/house/my', { credentials: 'include' });
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.data || [];
-};
-
-const AMENITY_MAP: Record<string, string> = {
-  hasFreeWifi: '무선 인터넷',
-  hasAirConditioner: '에어컨',
-  hasTV: 'TV',
-  hasWashingMachine: '세탁기',
-  hasKitchen: '주방',
-  hasDryer: '건조기',
-  hasIron: '다리미',
-  hasRefrigerator: '냉장고',
-  hasMicrowave: '전자레인지',
-  hasFreeParking: '무료 주차',
-  hasBalconyTerrace: '발코니/테라스',
-  hasPetsAllowed: '반려동물 동반 가능',
-  hasSmokingAllowed: '흡연 가능',
-  hasElevator: '엘리베이터',
-};
-
 const LoadingState = (
   <div className="min-h-screen flex items-center justify-center">
     <div className="text-center">
@@ -143,7 +40,7 @@ const LoadingState = (
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [checkinDate, setCheckinDate] = useState('');
@@ -155,7 +52,6 @@ export function ListingDetailPage() {
   const [exchangeMessage, setExchangeMessage] = useState('');
   const mapContainerRef = useRef<HTMLDivElement>(null);
 
-  // Google Maps 로드 (한 번만 로드되도록 useJsApiLoader 사용)
   const { isLoaded: isMapLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -182,23 +78,7 @@ export function ListingDetailPage() {
   });
 
   const exchangeMutation = useMutation({
-    mutationFn: async (data: {
-      requesterHouseId: number;
-      targetHouseId: number;
-      checkinDate: string;
-      checkoutDate: string;
-      guestCount: number;
-      message: string;
-    }) => {
-      const response = await fetch('/api/exchange/request', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(data),
-      });
-      if (!response.ok) throw new Error('교환 요청에 실패했습니다');
-      return response.json();
-    },
+    mutationFn: requestExchange,
     onSuccess: () => {
       setShowExchangeModal(false);
       alert('교환 요청이 전송되었습니다.');
@@ -209,12 +89,10 @@ export function ListingDetailPage() {
     },
   });
 
-  // house 데이터와 Google Maps API가 준비되면 지도와 Rectangle 생성
   useEffect(() => {
     if (!isMapLoaded || !house || !mapContainerRef.current) return;
     if (!house.latitude || !house.longitude) return;
 
-    // 지도 생성
     const map = new google.maps.Map(mapContainerRef.current, {
       center: { lat: house.latitude, lng: house.longitude },
       zoom: 14,
@@ -223,7 +101,6 @@ export function ListingDetailPage() {
       fullscreenControl: false,
     });
 
-    // Rectangle bounds 설정
     const bounds = {
       north: house.viewportNortheastLat || house.latitude + 0.002,
       south: house.viewportSouthwestLat || house.latitude - 0.002,
@@ -231,7 +108,6 @@ export function ListingDetailPage() {
       west: house.viewportSouthwestLng || house.longitude - 0.003,
     };
 
-    // 빨간색 Rectangle 생성
     const rectangle = new google.maps.Rectangle({
       bounds: bounds,
       fillColor: '#FF4444',
@@ -248,8 +124,6 @@ export function ListingDetailPage() {
   }, [isMapLoaded, house]);
 
   const images = house?.imageUrls?.length ? house.imageUrls : [house?.mainImageUrl || '/images/default-house.jpg'];
-
-  // 호스트 정보 (host 객체 또는 별도 필드에서)
   const hostName = house?.host?.name || house?.hostName || '호스트';
   const hostId = house?.host?.userId || house?.hostId;
   const hostProfileImage = house?.host?.profileImage || house?.hostProfileImage || '/images/profile.png';
@@ -338,7 +212,6 @@ export function ListingDetailPage() {
   return (
     <main className="bg-white min-h-screen">
       <div className="container mx-auto px-4 py-8 max-w-[1200px]">
-        {/* Back Link */}
         <Link
           to={ROUTES.LISTINGS}
           className="inline-flex items-center text-gray-600 hover:text-indigo-600 mb-6 transition-colors"
@@ -347,10 +220,8 @@ export function ListingDetailPage() {
           목록으로 돌아가기
         </Link>
 
-        {/* Title */}
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-4">{house.title}</h1>
 
-        {/* Meta Info */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center">
@@ -376,7 +247,6 @@ export function ListingDetailPage() {
           </div>
         </div>
 
-        {/* Gallery */}
         <div className="relative rounded-xl overflow-hidden mb-10 bg-gray-100">
           <div className="aspect-[16/9] md:aspect-[21/9]">
             <img
@@ -414,11 +284,8 @@ export function ListingDetailPage() {
           )}
         </div>
 
-        {/* Main Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Left Column */}
           <div className="lg:col-span-2 space-y-10">
-            {/* Host Section */}
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-4">
                 {hostName}님이 호스팅하는 숙소
@@ -460,13 +327,11 @@ export function ListingDetailPage() {
               </div>
             </div>
 
-            {/* Description */}
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-4">숙소 정보</h2>
               <p className="text-gray-600 leading-relaxed whitespace-pre-line">{house.description}</p>
             </div>
 
-            {/* Amenities */}
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-4">편의시설</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -481,7 +346,6 @@ export function ListingDetailPage() {
               </div>
             </div>
 
-            {/* Location Map */}
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-4">위치</h2>
               <p className="text-gray-600 mb-4 flex items-center gap-2">
@@ -505,7 +369,6 @@ export function ListingDetailPage() {
               </p>
             </div>
 
-            {/* Reviews */}
             <div className="pb-8 border-b">
               <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
                 <Star className="w-5 h-5 text-amber-500 fill-amber-500" />
@@ -550,7 +413,6 @@ export function ListingDetailPage() {
             </div>
           </div>
 
-          {/* Right Column - Booking Sidebar */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-white rounded-xl shadow-lg border p-6">
               <div className="space-y-4 mb-6">
@@ -612,7 +474,7 @@ export function ListingDetailPage() {
                   variant="ghost"
                   className="w-full text-gray-600 hover:text-indigo-600"
                 >
-                  💬 호스트에게 메시지 보내기
+                  호스트에게 메시지 보내기
                 </Button>
               </div>
             </div>
@@ -620,7 +482,6 @@ export function ListingDetailPage() {
         </div>
       </div>
 
-      {/* Exchange Request Modal */}
       {showExchangeModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
@@ -712,7 +573,6 @@ export function ListingDetailPage() {
         </div>
       )}
 
-      {/* Stay Request Modal */}
       {showStayModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl max-w-lg w-full">

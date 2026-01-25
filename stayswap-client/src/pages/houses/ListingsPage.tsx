@@ -1,8 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import {useEffect, useState} from 'react';
+import {Link, useSearchParams} from 'react-router-dom';
+import {useQuery} from '@tanstack/react-query';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {
+  fetchCountries,
+  fetchHouses,
+  HOUSE_TYPE_LABEL,
+  LISTING_AMENITIES,
+  LISTING_HOUSE_TYPES,
+  SORT_OPTIONS,
+} from '@/features/houses';
 
 import Search from 'lucide-react/dist/esm/icons/search';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin';
@@ -13,95 +21,6 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
 import BedDouble from 'lucide-react/dist/esm/icons/bed-double';
 import Users from 'lucide-react/dist/esm/icons/users';
 import Home from 'lucide-react/dist/esm/icons/home';
-
-interface House {
-  houseId: number;
-  title: string;
-  cityKo: string;
-  districtKo: string;
-  mainImageUrl: string;
-  avgRating: number;
-  reviewCount: number;
-  houseType: string;
-  bedrooms: number;
-  maxGuests: number;
-}
-
-interface HouseListResponse {
-  data: {
-    content: House[];
-    totalElements: number;
-    totalPages: number;
-    number: number;
-    size: number;
-  };
-}
-
-interface Country {
-  code: string;
-  name: string;
-}
-
-const AMENITIES = [
-  { id: 'wifi', label: '와이파이' },
-  { id: 'aircon', label: '에어컨' },
-  { id: 'kitchen', label: '주방' },
-  { id: 'washer', label: '세탁기' },
-  { id: 'pet', label: '애완동물 가능' },
-  { id: 'parking', label: '주차장' },
-];
-
-const HOUSE_TYPES = [
-  { value: '', label: '전체' },
-  { value: '1', label: '아파트' },
-  { value: '2', label: '주택' },
-  { value: '3', label: '빌라' },
-  { value: '4', label: '오피스텔' },
-];
-
-const HOUSE_TYPE_LABEL: Record<string, string> = {
-  APT: '아파트',
-  HOUSE: '주택',
-  VILLA: '빌라',
-  OP: '오피스텔',
-  OTHER: '기타',
-};
-
-const SORT_OPTIONS = [
-  { value: 'latest', label: '최신순' },
-  { value: 'review_count', label: '리뷰순' },
-  { value: 'rating', label: '평점순' },
-];
-
-const fetchHouses = async (params: {
-  page: number;
-  size: number;
-  keyword?: string;
-  country?: string;
-  houseType?: string;
-  amenities?: string[];
-  sort?: string;
-}): Promise<HouseListResponse> => {
-  const searchParams = new URLSearchParams();
-  searchParams.set('page', String(params.page));
-  searchParams.set('size', String(params.size));
-  if (params.keyword) searchParams.set('keyword', params.keyword);
-  if (params.country) searchParams.set('country', params.country);
-  if (params.houseType) searchParams.set('houseType', params.houseType);
-  if (params.amenities?.length) searchParams.set('amenities', params.amenities.join(','));
-  if (params.sort) searchParams.set('sortBy', params.sort);
-
-  const response = await fetch(`/api/house?${searchParams.toString()}`);
-  if (!response.ok) throw new Error('숙소 목록 조회 실패');
-  return response.json();
-};
-
-const fetchCountries = async (): Promise<Country[]> => {
-  const response = await fetch('/api/house/countries');
-  if (!response.ok) return [];
-  const data = await response.json();
-  return data.data || [];
-};
 
 const LoadingSpinner = (
   <div className="flex flex-col items-center justify-center py-16">
@@ -243,7 +162,7 @@ export function ListingsPage() {
                 }}
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
               >
-                {HOUSE_TYPES.map((type) => (
+                {LISTING_HOUSE_TYPES.map((type) => (
                   <option key={type.value} value={type.value}>
                     {type.label}
                   </option>
@@ -256,7 +175,7 @@ export function ListingsPage() {
           <div>
             <h3 className="text-sm font-medium text-gray-700 mb-3">편의시설</h3>
             <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
-              {AMENITIES.map((amenity) => (
+              {LISTING_AMENITIES.map((amenity) => (
                 <label
                   key={amenity.id}
                   className="flex items-center space-x-2 cursor-pointer"

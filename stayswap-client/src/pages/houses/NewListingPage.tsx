@@ -1,33 +1,31 @@
-import { useState, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useMutation } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ROUTES } from '@/constants/routes';
-import { useJsApiLoader, GoogleMap, Marker, Rectangle, Autocomplete } from '@react-google-maps/api';
-
-import Home from 'lucide-react/dist/esm/icons/home';
+import {useCallback, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
+import {useMutation} from '@tanstack/react-query';
+import {Button} from '@/components/ui/button';
+import {Input} from '@/components/ui/input';
+import {Label} from '@/components/ui/label';
+import {ROUTES} from '@/constants/routes';
+import {Autocomplete, GoogleMap, Marker, Rectangle, useJsApiLoader} from '@react-google-maps/api';
+import type {ListingFormData} from '@/features/houses';
+import {
+  createListing,
+  FORM_AMENITIES,
+  FORM_FEATURES,
+  FORM_HOUSE_TYPES,
+  FORM_STEPS,
+  GOOGLE_MAPS_API_KEY,
+  GOOGLE_MAPS_LIBRARIES,
+} from '@/features/houses';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin';
-import Image from 'lucide-react/dist/esm/icons/image';
 import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
 import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left';
 import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
 import Upload from 'lucide-react/dist/esm/icons/upload';
 import X from 'lucide-react/dist/esm/icons/x';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
-import Building2 from 'lucide-react/dist/esm/icons/building-2';
-import Castle from 'lucide-react/dist/esm/icons/castle';
-import Building from 'lucide-react/dist/esm/icons/building';
-import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal';
 import Minus from 'lucide-react/dist/esm/icons/minus';
 import Plus from 'lucide-react/dist/esm/icons/plus';
 
-// Google Maps API 설정
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
-const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places'];
-
-// 숫자 스테퍼 컴포넌트
 interface NumberStepperProps {
   label: string;
   value: number;
@@ -87,72 +85,6 @@ function NumberStepper({ label, value, onChange, min = 0, max = 99 }: NumberStep
   );
 }
 
-// 숙소 타입 옵션 (아이콘 포함)
-const HOUSE_TYPES = [
-  { value: 'APT', label: '아파트', icon: Building2 },
-  { value: 'HOUSE', label: '주택', icon: Home },
-  { value: 'VILLA', label: '빌라', icon: Castle },
-  { value: 'OP', label: '오피스텔', icon: Building },
-  { value: 'OTHER', label: '기타', icon: MoreHorizontal },
-];
-
-// 편의시설 옵션 (레거시와 동일)
-const AMENITIES = [
-  { value: 'WIFI', label: '무선 인터넷' },
-  { value: 'AIR_CONDITIONING', label: '에어컨' },
-  { value: 'WASHER', label: '세탁기' },
-  { value: 'KITCHEN', label: '주방' },
-  { value: 'DRYER', label: '헤어드라이어' },
-  { value: 'IRON', label: '다리미' },
-  { value: 'REFRIGERATOR', label: '냉장고' },
-  { value: 'MICROWAVE', label: '전자레인지' },
-  { value: 'TV', label: 'TV' },
-];
-
-// 숙소 특징 옵션 (레거시와 동일)
-const FEATURES = [
-  { value: 'FREE_PARKING', label: '무료 주차' },
-  { value: 'PET_FRIENDLY', label: '반려동물 동반 가능' },
-  { value: 'SMOKING', label: '흡연 가능' },
-  { value: 'ELEVATOR', label: '엘리베이터' },
-  { value: 'BALCONY', label: '발코니/테라스' },
-];
-
-interface ListingFormData {
-  // Step 1: 기본 정보
-  title: string;
-  houseType: string;
-  size: number;
-  bedroomCount: number;
-  bedCount: number;
-  bathroomCount: number;
-  maxGuests: number;
-
-  // Step 2: 위치 및 특징
-  address: string;
-  country: string;
-  city: string;
-  district: string;
-  latitude: number;
-  longitude: number;
-  // viewport bounds for rectangle display
-  viewportNortheastLat: number | null;
-  viewportNortheastLng: number | null;
-  viewportSouthwestLat: number | null;
-  viewportSouthwestLng: number | null;
-  amenities: string[];
-  features: string[];
-
-  // Step 3: 사진 및 설명
-  images: File[];
-  imagePreviewUrls: string[];
-  description: string;
-  rules: string;
-
-  // Step 4: 약관 동의
-  termsAgreed: boolean;
-}
-
 const initialFormData: ListingFormData = {
   title: '',
   houseType: '',
@@ -180,57 +112,6 @@ const initialFormData: ListingFormData = {
   termsAgreed: false,
 };
 
-const STEPS = [
-  { id: 1, title: '기본 정보', icon: Home },
-  { id: 2, title: '위치 및 특징', icon: MapPin },
-  { id: 3, title: '사진 및 설명', icon: Image },
-  { id: 4, title: '검토 및 등록', icon: CheckCircle },
-];
-
-// API 호출 함수
-const createListing = async (formData: ListingFormData): Promise<{ houseId: number }> => {
-  // FormData로 변환 (이미지 포함)
-  const data = new FormData();
-
-  const houseData = {
-    title: formData.title,
-    houseType: formData.houseType,
-    size: formData.size,
-    bedroomCount: formData.bedroomCount,
-    bedCount: formData.bedCount,
-    bathroomCount: formData.bathroomCount,
-    maxGuests: formData.maxGuests,
-    address: formData.address,
-    country: formData.country,
-    city: formData.city,
-    district: formData.district,
-    latitude: formData.latitude,
-    longitude: formData.longitude,
-    amenities: formData.amenities,
-    features: formData.features,
-    description: formData.description,
-    rules: formData.rules,
-  };
-
-  data.append('house', new Blob([JSON.stringify(houseData)], { type: 'application/json' }));
-
-  formData.images.forEach((file) => {
-    data.append('images', file);
-  });
-
-  const response = await fetch('/api/house', {
-    method: 'POST',
-    body: data,
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.message || '숙소 등록에 실패했습니다.');
-  }
-
-  return response.json();
-};
-
 export function NewListingPage() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
@@ -240,7 +121,6 @@ export function NewListingPage() {
   const [mapCenter, setMapCenter] = useState({ lat: 37.5665, lng: 126.978 });
   const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
 
-  // Google Maps 로드 (한 번만 로드되도록 useJsApiLoader 사용)
   const { isLoaded: isMapLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: GOOGLE_MAPS_API_KEY,
@@ -259,13 +139,11 @@ export function NewListingPage() {
     },
   });
 
-  // 폼 데이터 업데이트
   const updateFormData = useCallback(<K extends keyof ListingFormData>(
     field: K,
     value: ListingFormData[K]
   ) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // 에러 클리어
     if (errors[field]) {
       setErrors(prev => {
         const next = { ...prev };
@@ -275,7 +153,6 @@ export function NewListingPage() {
     }
   }, [errors]);
 
-  // 체크박스 토글 (amenities, features)
   const toggleArrayItem = useCallback((field: 'amenities' | 'features', value: string) => {
     setFormData(prev => {
       const arr = prev[field];
@@ -286,7 +163,6 @@ export function NewListingPage() {
     });
   }, []);
 
-  // 이미지 추가
   const handleImageAdd = useCallback((files: FileList | null) => {
     if (!files) return;
 
@@ -300,7 +176,6 @@ export function NewListingPage() {
     }));
   }, []);
 
-  // 이미지 제거
   const handleImageRemove = useCallback((index: number) => {
     setFormData(prev => {
       URL.revokeObjectURL(prev.imagePreviewUrls[index]);
@@ -312,18 +187,15 @@ export function NewListingPage() {
     });
   }, []);
 
-  // Autocomplete 로드 완료
   const onAutocompleteLoad = useCallback((autocomplete: google.maps.places.Autocomplete) => {
     autocompleteRef.current = autocomplete;
   }, []);
 
-  // 주소 선택 시 처리
   const handlePlaceSelect = useCallback(() => {
     if (!autocompleteRef.current) return;
 
     const place = autocompleteRef.current.getPlace();
 
-    // place 객체가 없거나 geometry가 없으면 (사용자가 직접 타이핑만 한 경우)
     if (!place || !place.geometry || !place.geometry.location) {
       console.log('주소를 자동완성 목록에서 선택해주세요.');
       return;
@@ -332,7 +204,6 @@ export function NewListingPage() {
     const lat = place.geometry.location.lat();
     const lng = place.geometry.location.lng();
 
-    // 주소 컴포넌트에서 정보 추출
     let country = '';
     let city = '';
     let district = '';
@@ -344,7 +215,6 @@ export function NewListingPage() {
           country = component.long_name;
         }
         if (types.includes('administrative_area_level_1')) {
-          // 시/도에서 '특별시', '광역시', '도' 등 제거
           city = component.long_name
             .replace('특별시', '')
             .replace('광역시', '')
@@ -359,7 +229,6 @@ export function NewListingPage() {
       });
     }
 
-    // viewport bounds 추출
     let viewportNE = null;
     let viewportSW = null;
     if (place.geometry.viewport) {
@@ -367,7 +236,6 @@ export function NewListingPage() {
       viewportSW = place.geometry.viewport.getSouthWest();
     }
 
-    // formData 업데이트
     setFormData(prev => ({
       ...prev,
       address: place.formatted_address || '',
@@ -382,11 +250,9 @@ export function NewListingPage() {
       viewportSouthwestLng: viewportSW ? viewportSW.lng() : null,
     }));
 
-    // 지도 표시
     setMapCenter({ lat, lng });
     setShowMap(true);
 
-    // 에러 클리어
     setErrors(prev => {
       const next = { ...prev };
       delete next.address;
@@ -394,7 +260,6 @@ export function NewListingPage() {
     });
   }, []);
 
-  // 단계별 유효성 검사
   const validateStep = useCallback((step: number): boolean => {
     const newErrors: Record<string, string> = {};
 
@@ -423,19 +288,16 @@ export function NewListingPage() {
     return Object.keys(newErrors).length === 0;
   }, [formData]);
 
-  // 다음 단계
   const handleNext = useCallback(() => {
     if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, 4));
     }
   }, [currentStep, validateStep]);
 
-  // 이전 단계
   const handlePrev = useCallback(() => {
     setCurrentStep(prev => Math.max(prev - 1, 1));
   }, []);
 
-  // 제출
   const handleSubmit = useCallback(() => {
     if (validateStep(4)) {
       mutation.mutate(formData);
@@ -445,16 +307,14 @@ export function NewListingPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-[900px]">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">숙소 등록</h1>
           <p className="text-gray-500">숙소를 등록하고 교환을 시작하세요</p>
         </div>
 
-        {/* Progress Steps */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-4">
-            {STEPS.map((step, index) => {
+            {FORM_STEPS.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.id;
               const isCompleted = currentStep > step.id;
@@ -474,7 +334,7 @@ export function NewListingPage() {
                     <span className="font-medium hidden sm:inline">{step.title}</span>
                     <span className="font-medium sm:hidden">{step.id}</span>
                   </div>
-                  {index < STEPS.length - 1 && (
+                  {index < FORM_STEPS.length - 1 && (
                     <div
                       className={`w-8 h-0.5 mx-2 ${
                         isCompleted ? 'bg-indigo-600' : 'bg-gray-300'
@@ -487,9 +347,7 @@ export function NewListingPage() {
           </div>
         </div>
 
-        {/* Form Card */}
         <div className="bg-white rounded-xl shadow-lg p-8">
-          {/* Step 1: 기본 정보 */}
           {currentStep === 1 && (
             <div className="space-y-6">
               <div>
@@ -513,7 +371,7 @@ export function NewListingPage() {
               <div>
                 <Label>숙소 유형 *</Label>
                 <div className="grid grid-cols-5 gap-3 mt-2">
-                  {HOUSE_TYPES.map(type => {
+                  {FORM_HOUSE_TYPES.map(type => {
                     const Icon = type.icon;
                     const isSelected = formData.houseType === type.value;
                     return (
@@ -588,7 +446,6 @@ export function NewListingPage() {
             </div>
           )}
 
-          {/* Step 2: 위치 및 특징 */}
           {currentStep === 2 && (
             <div className="space-y-6">
               <div>
@@ -618,21 +475,19 @@ export function NewListingPage() {
                       />
                     </Autocomplete>
                     <p className="text-gray-500 text-sm mt-1">
-                      💡 <strong>주소 검색 팁:</strong> '동' 단위나 구체적인 주소로 검색하면 더 정확하고 빠릅니다!
+                      <strong>주소 검색 팁:</strong> '동' 단위나 구체적인 주소로 검색하면 더 정확하고 빠릅니다!
                     </p>
                     {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
                   </div>
 
-                  {/* 개인정보 보호 안내 */}
                   <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
                     <p className="text-sm text-indigo-700">
-                      <strong>🔒 개인정보 보호</strong><br />
-                      정확한 주소는 게스트에게 체크인 당일 알림으로 보내드려요 📬<br />
-                      신중하게 입력해주세요! 등록 후에는 위치를 변경할 수 없답니다 🏠
+                      <strong>개인정보 보호</strong><br />
+                      정확한 주소는 게스트에게 체크인 당일 알림으로 보내드려요<br />
+                      신중하게 입력해주세요! 등록 후에는 위치를 변경할 수 없답니다
                     </p>
                   </div>
 
-                  {/* 지도 영역 */}
                   <div className="rounded-lg h-[300px] overflow-hidden border border-gray-300">
                     {showMap ? (
                       <GoogleMap
@@ -644,7 +499,6 @@ export function NewListingPage() {
                           streetViewControl: false,
                         }}
                       >
-                        {/* 사각형 바운더리 */}
                         {formData.viewportNortheastLat && formData.viewportSouthwestLat && (
                           <Rectangle
                             bounds={{
@@ -662,7 +516,6 @@ export function NewListingPage() {
                             }}
                           />
                         )}
-                        {/* 마커 */}
                         <Marker
                           position={{ lat: formData.latitude, lng: formData.longitude }}
                           animation={google.maps.Animation.DROP}
@@ -726,7 +579,7 @@ export function NewListingPage() {
               <div>
                 <Label className="block mb-3">편의시설</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {AMENITIES.map(amenity => (
+                  {FORM_AMENITIES.map(amenity => (
                     <label
                       key={amenity.value}
                       className="flex items-center gap-2 cursor-pointer"
@@ -746,7 +599,7 @@ export function NewListingPage() {
               <div>
                 <Label className="block mb-3">특징</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                  {FEATURES.map(feature => (
+                  {FORM_FEATURES.map(feature => (
                     <label
                       key={feature.value}
                       className="flex items-center gap-2 cursor-pointer"
@@ -765,7 +618,6 @@ export function NewListingPage() {
             </div>
           )}
 
-          {/* Step 3: 사진 및 설명 */}
           {currentStep === 3 && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-6">사진 및 설명</h2>
@@ -848,7 +700,6 @@ export function NewListingPage() {
             </div>
           )}
 
-          {/* Step 4: 검토 및 등록 */}
           {currentStep === 4 && (
             <div className="space-y-6">
               <h2 className="text-xl font-semibold mb-6">검토 및 등록</h2>
@@ -863,12 +714,12 @@ export function NewListingPage() {
                   <div>
                     <span className="text-gray-500">숙소 유형:</span>
                     <span className="ml-2 font-medium">
-                      {HOUSE_TYPES.find(t => t.value === formData.houseType)?.label}
+                      {FORM_HOUSE_TYPES.find(t => t.value === formData.houseType)?.label}
                     </span>
                   </div>
                   <div>
                     <span className="text-gray-500">면적:</span>
-                    <span className="ml-2 font-medium">{formData.size}㎡</span>
+                    <span className="ml-2 font-medium">{formData.size}평</span>
                   </div>
                   <div>
                     <span className="text-gray-500">최대 게스트:</span>
@@ -904,12 +755,12 @@ export function NewListingPage() {
                 <div className="flex flex-wrap gap-2">
                   {formData.amenities.map(a => (
                     <span key={a} className="px-3 py-1 bg-indigo-100 text-indigo-600 rounded-full text-sm">
-                      {AMENITIES.find(am => am.value === a)?.label}
+                      {FORM_AMENITIES.find(am => am.value === a)?.label}
                     </span>
                   ))}
                   {formData.features.map(f => (
                     <span key={f} className="px-3 py-1 bg-green-100 text-green-600 rounded-full text-sm">
-                      {FEATURES.find(fe => fe.value === f)?.label}
+                      {FORM_FEATURES.find(fe => fe.value === f)?.label}
                     </span>
                   ))}
                 </div>
@@ -960,7 +811,6 @@ export function NewListingPage() {
             </div>
           )}
 
-          {/* Navigation Buttons */}
           <div className="flex justify-between mt-8 pt-6 border-t">
             <Button
               variant="outline"
