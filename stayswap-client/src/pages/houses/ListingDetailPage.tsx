@@ -1,10 +1,11 @@
 // Force rebuild
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { ROUTES } from '@/constants/routes';
+import { useJsApiLoader } from '@react-google-maps/api';
 
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
 import Star from 'lucide-react/dist/esm/icons/star';
@@ -19,6 +20,10 @@ import MessageCircle from 'lucide-react/dist/esm/icons/message-circle';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import X from 'lucide-react/dist/esm/icons/x';
 
+// Google Maps API 설정
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places'];
+
 interface HouseDetail {
   houseId: number;
   title: string;
@@ -28,6 +33,10 @@ interface HouseDetail {
   detailAddress: string;
   latitude: number;
   longitude: number;
+  viewportNortheastLat?: number;
+  viewportNortheastLng?: number;
+  viewportSouthwestLat?: number;
+  viewportSouthwestLng?: number;
   mainImageUrl: string;
   imageUrls: string[];
   avgRating: number;
@@ -144,6 +153,15 @@ export function ListingDetailPage() {
   const [showStayModal, setShowStayModal] = useState(false);
   const [selectedMyHouse, setSelectedMyHouse] = useState<number | null>(null);
   const [exchangeMessage, setExchangeMessage] = useState('');
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+
+  // Google Maps 로드 (한 번만 로드되도록 useJsApiLoader 사용)
+  const { isLoaded: isMapLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+    language: 'ko',
+  });
 
   const { data: house, isLoading, error } = useQuery({
     queryKey: ['house', id],
@@ -190,6 +208,44 @@ export function ListingDetailPage() {
       alert(error.message);
     },
   });
+
+  // house 데이터와 Google Maps API가 준비되면 지도와 Rectangle 생성
+  useEffect(() => {
+    if (!isMapLoaded || !house || !mapContainerRef.current) return;
+    if (!house.latitude || !house.longitude) return;
+
+    // 지도 생성
+    const map = new google.maps.Map(mapContainerRef.current, {
+      center: { lat: house.latitude, lng: house.longitude },
+      zoom: 14,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    });
+
+    // Rectangle bounds 설정
+    const bounds = {
+      north: house.viewportNortheastLat || house.latitude + 0.002,
+      south: house.viewportSouthwestLat || house.latitude - 0.002,
+      east: house.viewportNortheastLng || house.longitude + 0.003,
+      west: house.viewportSouthwestLng || house.longitude - 0.003,
+    };
+
+    // 빨간색 Rectangle 생성
+    const rectangle = new google.maps.Rectangle({
+      bounds: bounds,
+      fillColor: '#FF4444',
+      fillOpacity: 0.25,
+      strokeColor: '#FF0000',
+      strokeOpacity: 0.8,
+      strokeWeight: 2,
+      map: map,
+    });
+
+    return () => {
+      rectangle.setMap(null);
+    };
+  }, [isMapLoaded, house]);
 
   const images = house?.imageUrls?.length ? house.imageUrls : [house?.mainImageUrl || '/images/default-house.jpg'];
 
@@ -423,6 +479,30 @@ export function ListingDetailPage() {
                     </div>
                   ))}
               </div>
+            </div>
+
+            {/* Location Map */}
+            <div className="pb-8 border-b">
+              <h2 className="text-xl font-semibold mb-4">위치</h2>
+              <p className="text-gray-600 mb-4 flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                {house.cityKo} {house.districtKo}
+              </p>
+              {house.latitude && house.longitude && GOOGLE_MAPS_API_KEY && isMapLoaded ? (
+                <div className="rounded-xl overflow-hidden h-[300px] border border-gray-200">
+                  <div ref={mapContainerRef} style={{ width: '100%', height: '100%' }} />
+                </div>
+              ) : (
+                <div className="rounded-xl bg-gray-100 h-[300px] flex items-center justify-center border border-gray-200">
+                  <div className="text-center text-gray-500">
+                    <MapPin className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                    <p>지도를 표시할 수 없습니다.</p>
+                  </div>
+                </div>
+              )}
+              <p className="text-sm text-gray-500 mt-3">
+                정확한 주소는 예약 확정 후 제공됩니다.
+              </p>
             </div>
 
             {/* Reviews */}

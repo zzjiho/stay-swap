@@ -1,10 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ROUTES } from '@/constants/routes';
+import { useJsApiLoader, GoogleMap, Marker, Rectangle, Autocomplete } from '@react-google-maps/api';
 
 import Home from 'lucide-react/dist/esm/icons/home';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin';
@@ -15,52 +16,106 @@ import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
 import Upload from 'lucide-react/dist/esm/icons/upload';
 import X from 'lucide-react/dist/esm/icons/x';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
+import Building2 from 'lucide-react/dist/esm/icons/building-2';
+import Castle from 'lucide-react/dist/esm/icons/castle';
+import Building from 'lucide-react/dist/esm/icons/building';
+import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal';
+import Minus from 'lucide-react/dist/esm/icons/minus';
+import Plus from 'lucide-react/dist/esm/icons/plus';
 
-// 숙소 타입 옵션
+// Google Maps API 설정
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+const GOOGLE_MAPS_LIBRARIES: ('places')[] = ['places'];
+
+// 숫자 스테퍼 컴포넌트
+interface NumberStepperProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+}
+
+function NumberStepper({ label, value, onChange, min = 0, max = 99 }: NumberStepperProps) {
+  const handleDecrement = () => {
+    if (value > min) onChange(value - 1);
+  };
+
+  const handleIncrement = () => {
+    if (value < max) onChange(value + 1);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = parseInt(e.target.value, 10);
+    if (!isNaN(newValue) && newValue >= min && newValue <= max) {
+      onChange(newValue);
+    } else if (e.target.value === '') {
+      onChange(min);
+    }
+  };
+
+  return (
+    <div>
+      <Label className="block mb-2">{label}</Label>
+      <div className="flex items-center border border-gray-300 rounded-lg">
+        <button
+          type="button"
+          onClick={handleDecrement}
+          disabled={value <= min}
+          className="p-3 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-l-lg"
+        >
+          <Minus className="w-4 h-4" />
+        </button>
+        <input
+          type="number"
+          value={value}
+          onChange={handleInputChange}
+          min={min}
+          max={max}
+          className="w-full text-center py-2 border-0 focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          onClick={handleIncrement}
+          disabled={value >= max}
+          className="p-3 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors rounded-r-lg"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// 숙소 타입 옵션 (아이콘 포함)
 const HOUSE_TYPES = [
-  { value: 'APARTMENT', label: '아파트' },
-  { value: 'HOUSE', label: '주택' },
-  { value: 'VILLA', label: '빌라' },
-  { value: 'OFFICETEL', label: '오피스텔' },
-  { value: 'STUDIO', label: '원룸' },
-  { value: 'OTHER', label: '기타' },
+  { value: 'APT', label: '아파트', icon: Building2 },
+  { value: 'HOUSE', label: '주택', icon: Home },
+  { value: 'VILLA', label: '빌라', icon: Castle },
+  { value: 'OP', label: '오피스텔', icon: Building },
+  { value: 'OTHER', label: '기타', icon: MoreHorizontal },
 ];
 
-// 국가 옵션
-const COUNTRIES = [
-  { value: 'KOREA', label: '대한민국' },
-  { value: 'JAPAN', label: '일본' },
-  { value: 'USA', label: '미국' },
-  { value: 'UK', label: '영국' },
-  { value: 'FRANCE', label: '프랑스' },
-];
-
-// 편의시설 옵션
+// 편의시설 옵션 (레거시와 동일)
 const AMENITIES = [
-  { value: 'WIFI', label: '와이파이' },
-  { value: 'TV', label: 'TV' },
-  { value: 'KITCHEN', label: '주방' },
-  { value: 'WASHER', label: '세탁기' },
-  { value: 'DRYER', label: '건조기' },
+  { value: 'WIFI', label: '무선 인터넷' },
   { value: 'AIR_CONDITIONING', label: '에어컨' },
-  { value: 'HEATING', label: '난방' },
-  { value: 'PARKING', label: '주차장' },
-  { value: 'ELEVATOR', label: '엘리베이터' },
-  { value: 'POOL', label: '수영장' },
-  { value: 'GYM', label: '헬스장' },
-  { value: 'PET_FRIENDLY', label: '반려동물 허용' },
+  { value: 'WASHER', label: '세탁기' },
+  { value: 'KITCHEN', label: '주방' },
+  { value: 'DRYER', label: '헤어드라이어' },
+  { value: 'IRON', label: '다리미' },
+  { value: 'REFRIGERATOR', label: '냉장고' },
+  { value: 'MICROWAVE', label: '전자레인지' },
+  { value: 'TV', label: 'TV' },
 ];
 
-// 숙소 특징 옵션
+// 숙소 특징 옵션 (레거시와 동일)
 const FEATURES = [
-  { value: 'OCEAN_VIEW', label: '오션뷰' },
-  { value: 'MOUNTAIN_VIEW', label: '마운틴뷰' },
-  { value: 'CITY_VIEW', label: '시티뷰' },
-  { value: 'GARDEN', label: '정원' },
-  { value: 'BALCONY', label: '발코니' },
-  { value: 'TERRACE', label: '테라스' },
-  { value: 'FIREPLACE', label: '벽난로' },
-  { value: 'BBQ', label: '바베큐' },
+  { value: 'FREE_PARKING', label: '무료 주차' },
+  { value: 'PET_FRIENDLY', label: '반려동물 동반 가능' },
+  { value: 'SMOKING', label: '흡연 가능' },
+  { value: 'ELEVATOR', label: '엘리베이터' },
+  { value: 'BALCONY', label: '발코니/테라스' },
 ];
 
 interface ListingFormData {
@@ -80,6 +135,11 @@ interface ListingFormData {
   district: string;
   latitude: number;
   longitude: number;
+  // viewport bounds for rectangle display
+  viewportNortheastLat: number | null;
+  viewportNortheastLng: number | null;
+  viewportSouthwestLat: number | null;
+  viewportSouthwestLng: number | null;
   amenities: string[];
   features: string[];
 
@@ -97,16 +157,20 @@ const initialFormData: ListingFormData = {
   title: '',
   houseType: '',
   size: 0,
-  bedroomCount: 1,
-  bedCount: 1,
-  bathroomCount: 1,
-  maxGuests: 1,
+  bedroomCount: 0,
+  bedCount: 0,
+  bathroomCount: 0,
+  maxGuests: 0,
   address: '',
-  country: 'KOREA',
+  country: '',
   city: '',
   district: '',
   latitude: 37.5665,
   longitude: 126.978,
+  viewportNortheastLat: null,
+  viewportNortheastLng: null,
+  viewportSouthwestLat: null,
+  viewportSouthwestLng: null,
   amenities: [],
   features: [],
   images: [],
@@ -172,6 +236,17 @@ export function NewListingPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<ListingFormData>(initialFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showMap, setShowMap] = useState(false);
+  const [mapCenter, setMapCenter] = useState({ lat: 37.5665, lng: 126.978 });
+  const autocompleteRef = useRef<google.maps.places.Autocomplete | null>(null);
+
+  // Google Maps 로드 (한 번만 로드되도록 useJsApiLoader 사용)
+  const { isLoaded: isMapLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
+    libraries: GOOGLE_MAPS_LIBRARIES,
+    language: 'ko',
+  });
 
   const mutation = useMutation({
     mutationFn: createListing,
@@ -234,6 +309,88 @@ export function NewListingPage() {
         images: prev.images.filter((_, i) => i !== index),
         imagePreviewUrls: prev.imagePreviewUrls.filter((_, i) => i !== index),
       };
+    });
+  }, []);
+
+  // Autocomplete 로드 완료
+  const onAutocompleteLoad = useCallback((autocomplete: google.maps.places.Autocomplete) => {
+    autocompleteRef.current = autocomplete;
+  }, []);
+
+  // 주소 선택 시 처리
+  const handlePlaceSelect = useCallback(() => {
+    if (!autocompleteRef.current) return;
+
+    const place = autocompleteRef.current.getPlace();
+
+    // place 객체가 없거나 geometry가 없으면 (사용자가 직접 타이핑만 한 경우)
+    if (!place || !place.geometry || !place.geometry.location) {
+      console.log('주소를 자동완성 목록에서 선택해주세요.');
+      return;
+    }
+
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+
+    // 주소 컴포넌트에서 정보 추출
+    let country = '';
+    let city = '';
+    let district = '';
+
+    if (place.address_components) {
+      place.address_components.forEach(component => {
+        const types = component.types;
+        if (types.includes('country')) {
+          country = component.long_name;
+        }
+        if (types.includes('administrative_area_level_1')) {
+          // 시/도에서 '특별시', '광역시', '도' 등 제거
+          city = component.long_name
+            .replace('특별시', '')
+            .replace('광역시', '')
+            .replace('특별자치시', '')
+            .replace('특별자치도', '')
+            .replace('시', '')
+            .replace('도', '');
+        }
+        if (types.includes('sublocality_level_1') || types.includes('locality')) {
+          if (!district) district = component.long_name;
+        }
+      });
+    }
+
+    // viewport bounds 추출
+    let viewportNE = null;
+    let viewportSW = null;
+    if (place.geometry.viewport) {
+      viewportNE = place.geometry.viewport.getNorthEast();
+      viewportSW = place.geometry.viewport.getSouthWest();
+    }
+
+    // formData 업데이트
+    setFormData(prev => ({
+      ...prev,
+      address: place.formatted_address || '',
+      latitude: lat,
+      longitude: lng,
+      country: country || prev.country,
+      city: city || prev.city,
+      district: district || prev.district,
+      viewportNortheastLat: viewportNE ? viewportNE.lat() : null,
+      viewportNortheastLng: viewportNE ? viewportNE.lng() : null,
+      viewportSouthwestLat: viewportSW ? viewportSW.lat() : null,
+      viewportSouthwestLng: viewportSW ? viewportSW.lng() : null,
+    }));
+
+    // 지도 표시
+    setMapCenter({ lat, lng });
+    setShowMap(true);
+
+    // 에러 클리어
+    setErrors(prev => {
+      const next = { ...prev };
+      delete next.address;
+      return next;
     });
   }, []);
 
@@ -335,7 +492,10 @@ export function NewListingPage() {
           {/* Step 1: 기본 정보 */}
           {currentStep === 1 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-6">기본 정보</h2>
+              <div>
+                <h2 className="text-xl font-semibold">기본 정보</h2>
+                <p className="text-gray-500 mt-1">숙소의 기본 정보를 입력해주세요.</p>
+              </div>
 
               <div>
                 <Label htmlFor="title">숙소 이름 *</Label>
@@ -343,85 +503,86 @@ export function NewListingPage() {
                   id="title"
                   value={formData.title}
                   onChange={(e) => updateFormData('title', e.target.value)}
-                  placeholder="예: 강남역 5분, 아늑한 원룸"
+                  placeholder="예: 서울 강남 모던 아파트"
                   className={errors.title ? 'border-red-500' : ''}
                 />
+                <p className="text-gray-500 text-sm mt-1">게스트들이 쉽게 기억할 수 있는 이름을 입력해주세요.</p>
                 {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
               </div>
 
               <div>
-                <Label htmlFor="houseType">숙소 유형 *</Label>
-                <select
-                  id="houseType"
-                  value={formData.houseType}
-                  onChange={(e) => updateFormData('houseType', e.target.value)}
-                  className={`w-full h-10 px-3 border rounded-md ${errors.houseType ? 'border-red-500' : 'border-gray-300'}`}
-                >
-                  <option value="">선택하세요</option>
-                  {HOUSE_TYPES.map(type => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
-                  ))}
-                </select>
+                <Label>숙소 유형 *</Label>
+                <div className="grid grid-cols-5 gap-3 mt-2">
+                  {HOUSE_TYPES.map(type => {
+                    const Icon = type.icon;
+                    const isSelected = formData.houseType === type.value;
+                    return (
+                      <button
+                        key={type.value}
+                        type="button"
+                        onClick={() => updateFormData('houseType', type.value)}
+                        className={`flex flex-col items-center justify-center p-4 border-2 rounded-lg transition-all ${
+                          isSelected
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-600'
+                            : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                        }`}
+                      >
+                        <Icon className="w-6 h-6 mb-2" />
+                        <span className="text-sm font-medium">{type.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
                 {errors.houseType && <p className="text-red-500 text-sm mt-1">{errors.houseType}</p>}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="size">면적 (㎡) *</Label>
+              <div>
+                <Label htmlFor="size">숙소 크기 *</Label>
+                <div className="flex items-center gap-2">
                   <Input
                     id="size"
                     type="number"
                     min="0"
                     value={formData.size || ''}
                     onChange={(e) => updateFormData('size', Number(e.target.value))}
-                    className={errors.size ? 'border-red-500' : ''}
+                    className={`flex-1 ${errors.size ? 'border-red-500' : ''}`}
                   />
-                  {errors.size && <p className="text-red-500 text-sm mt-1">{errors.size}</p>}
+                  <span className="text-gray-500 font-medium">평</span>
                 </div>
-                <div>
-                  <Label htmlFor="maxGuests">최대 게스트 *</Label>
-                  <Input
-                    id="maxGuests"
-                    type="number"
-                    min="1"
-                    value={formData.maxGuests}
-                    onChange={(e) => updateFormData('maxGuests', Number(e.target.value))}
-                    className={errors.maxGuests ? 'border-red-500' : ''}
-                  />
-                  {errors.maxGuests && <p className="text-red-500 text-sm mt-1">{errors.maxGuests}</p>}
-                </div>
+                {errors.size && <p className="text-red-500 text-sm mt-1">{errors.size}</p>}
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <NumberStepper
+                  label="침실 수"
+                  value={formData.bedroomCount}
+                  onChange={(v) => updateFormData('bedroomCount', v)}
+                  min={0}
+                  max={10}
+                />
+                <NumberStepper
+                  label="침대 수"
+                  value={formData.bedCount}
+                  onChange={(v) => updateFormData('bedCount', v)}
+                  min={0}
+                  max={10}
+                />
+                <NumberStepper
+                  label="욕실 수"
+                  value={formData.bathroomCount}
+                  onChange={(v) => updateFormData('bathroomCount', v)}
+                  min={0}
+                  max={10}
+                />
                 <div>
-                  <Label htmlFor="bedroomCount">침실 수</Label>
-                  <Input
-                    id="bedroomCount"
-                    type="number"
-                    min="0"
-                    value={formData.bedroomCount}
-                    onChange={(e) => updateFormData('bedroomCount', Number(e.target.value))}
+                  <NumberStepper
+                    label="최대 수용 인원 *"
+                    value={formData.maxGuests}
+                    onChange={(v) => updateFormData('maxGuests', v)}
+                    min={1}
+                    max={20}
                   />
-                </div>
-                <div>
-                  <Label htmlFor="bedCount">침대 수</Label>
-                  <Input
-                    id="bedCount"
-                    type="number"
-                    min="0"
-                    value={formData.bedCount}
-                    onChange={(e) => updateFormData('bedCount', Number(e.target.value))}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="bathroomCount">욕실 수</Label>
-                  <Input
-                    id="bathroomCount"
-                    type="number"
-                    min="0"
-                    value={formData.bathroomCount}
-                    onChange={(e) => updateFormData('bathroomCount', Number(e.target.value))}
-                  />
+                  {errors.maxGuests && <p className="text-red-500 text-sm mt-1">{errors.maxGuests}</p>}
                 </div>
               </div>
             </div>
@@ -430,23 +591,112 @@ export function NewListingPage() {
           {/* Step 2: 위치 및 특징 */}
           {currentStep === 2 && (
             <div className="space-y-6">
-              <h2 className="text-xl font-semibold mb-6">위치 및 특징</h2>
-
               <div>
-                <Label htmlFor="country">국가 *</Label>
-                <select
-                  id="country"
-                  value={formData.country}
-                  onChange={(e) => updateFormData('country', e.target.value)}
-                  className="w-full h-10 px-3 border border-gray-300 rounded-md"
-                >
-                  {COUNTRIES.map(country => (
-                    <option key={country.value} value={country.value}>{country.label}</option>
-                  ))}
-                </select>
+                <h2 className="text-xl font-semibold">위치 및 특징</h2>
+                <p className="text-gray-500 mt-1">숙소의 위치와 특징을 입력해주세요.</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              {isMapLoaded ? (
+                <>
+                  <div>
+                    <Label htmlFor="address">주소 *</Label>
+                    <Autocomplete
+                      onLoad={onAutocompleteLoad}
+                      onPlaceChanged={handlePlaceSelect}
+                      options={{
+                        types: ['address'],
+                        fields: ['formatted_address', 'geometry', 'address_components'],
+                      }}
+                    >
+                      <input
+                        id="address"
+                        type="text"
+                        placeholder="예: 화양동 17, 강남역 2번출구 ('동' 단위로 구체적으로 검색해주세요)"
+                        className={`w-full h-10 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+                          errors.address ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                    </Autocomplete>
+                    <p className="text-gray-500 text-sm mt-1">
+                      💡 <strong>주소 검색 팁:</strong> '동' 단위나 구체적인 주소로 검색하면 더 정확하고 빠릅니다!
+                    </p>
+                    {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
+                  </div>
+
+                  {/* 개인정보 보호 안내 */}
+                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <p className="text-sm text-indigo-700">
+                      <strong>🔒 개인정보 보호</strong><br />
+                      정확한 주소는 게스트에게 체크인 당일 알림으로 보내드려요 📬<br />
+                      신중하게 입력해주세요! 등록 후에는 위치를 변경할 수 없답니다 🏠
+                    </p>
+                  </div>
+
+                  {/* 지도 영역 */}
+                  <div className="rounded-lg h-[300px] overflow-hidden border border-gray-300">
+                    {showMap ? (
+                      <GoogleMap
+                        mapContainerStyle={{ width: '100%', height: '100%' }}
+                        center={mapCenter}
+                        zoom={15}
+                        options={{
+                          mapTypeControl: false,
+                          streetViewControl: false,
+                        }}
+                      >
+                        {/* 사각형 바운더리 */}
+                        {formData.viewportNortheastLat && formData.viewportSouthwestLat && (
+                          <Rectangle
+                            bounds={{
+                              north: formData.viewportNortheastLat,
+                              south: formData.viewportSouthwestLat,
+                              east: formData.viewportNortheastLng!,
+                              west: formData.viewportSouthwestLng!,
+                            }}
+                            options={{
+                              fillColor: '#4F46E5',
+                              fillOpacity: 0.1,
+                              strokeColor: '#4F46E5',
+                              strokeOpacity: 0.8,
+                              strokeWeight: 2,
+                            }}
+                          />
+                        )}
+                        {/* 마커 */}
+                        <Marker
+                          position={{ lat: formData.latitude, lng: formData.longitude }}
+                          animation={google.maps.Animation.DROP}
+                        />
+                      </GoogleMap>
+                    ) : (
+                      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+                        <div className="text-center text-gray-500">
+                          <MapPin className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                          <p>주소를 선택하면 지도가 표시됩니다.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] bg-gray-100 rounded-lg">
+                  <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+                  <span className="ml-2 text-gray-500">지도를 로딩중...</span>
+                </div>
+              )}
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="country">국가</Label>
+                  <Input
+                    id="country"
+                    value={formData.country}
+                    onChange={(e) => updateFormData('country', e.target.value)}
+                    placeholder="예: 대한민국"
+                    readOnly
+                    className="bg-gray-50"
+                  />
+                </div>
                 <div>
                   <Label htmlFor="city">도시 *</Label>
                   <Input
@@ -454,33 +704,23 @@ export function NewListingPage() {
                     value={formData.city}
                     onChange={(e) => updateFormData('city', e.target.value)}
                     placeholder="예: 서울"
-                    className={errors.city ? 'border-red-500' : ''}
+                    readOnly
+                    className={`bg-gray-50 ${errors.city ? 'border-red-500' : ''}`}
                   />
                   {errors.city && <p className="text-red-500 text-sm mt-1">{errors.city}</p>}
                 </div>
                 <div>
-                  <Label htmlFor="district">구/군 *</Label>
+                  <Label htmlFor="district">지역구 *</Label>
                   <Input
                     id="district"
                     value={formData.district}
                     onChange={(e) => updateFormData('district', e.target.value)}
                     placeholder="예: 강남구"
-                    className={errors.district ? 'border-red-500' : ''}
+                    readOnly
+                    className={`bg-gray-50 ${errors.district ? 'border-red-500' : ''}`}
                   />
                   {errors.district && <p className="text-red-500 text-sm mt-1">{errors.district}</p>}
                 </div>
-              </div>
-
-              <div>
-                <Label htmlFor="address">상세 주소 *</Label>
-                <Input
-                  id="address"
-                  value={formData.address}
-                  onChange={(e) => updateFormData('address', e.target.value)}
-                  placeholder="예: 강남대로 123, 101동 1001호"
-                  className={errors.address ? 'border-red-500' : ''}
-                />
-                {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
               </div>
 
               <div>
@@ -489,43 +729,35 @@ export function NewListingPage() {
                   {AMENITIES.map(amenity => (
                     <label
                       key={amenity.value}
-                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${
-                        formData.amenities.includes(amenity.value)
-                          ? 'border-indigo-600 bg-indigo-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className="flex items-center gap-2 cursor-pointer"
                     >
                       <input
                         type="checkbox"
                         checked={formData.amenities.includes(amenity.value)}
                         onChange={() => toggleArrayItem('amenities', amenity.value)}
-                        className="sr-only"
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                       />
-                      <span className="text-sm">{amenity.label}</span>
+                      <span className="text-sm text-gray-700">{amenity.label}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <Label className="block mb-3">숙소 특징</Label>
+                <Label className="block mb-3">특징</Label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {FEATURES.map(feature => (
                     <label
                       key={feature.value}
-                      className={`flex items-center gap-2 p-3 border rounded-lg cursor-pointer transition-all ${
-                        formData.features.includes(feature.value)
-                          ? 'border-indigo-600 bg-indigo-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                      }`}
+                      className="flex items-center gap-2 cursor-pointer"
                     >
                       <input
                         type="checkbox"
                         checked={formData.features.includes(feature.value)}
                         onChange={() => toggleArrayItem('features', feature.value)}
-                        className="sr-only"
+                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
                       />
-                      <span className="text-sm">{feature.label}</span>
+                      <span className="text-sm text-gray-700">{feature.label}</span>
                     </label>
                   ))}
                 </div>
@@ -657,7 +889,7 @@ export function NewListingPage() {
                   <p>
                     <span className="text-gray-500">주소:</span>
                     <span className="ml-2 font-medium">
-                      {COUNTRIES.find(c => c.value === formData.country)?.label} {formData.city} {formData.district}
+                      {formData.country} {formData.city} {formData.district}
                     </span>
                   </p>
                   <p className="mt-1">
