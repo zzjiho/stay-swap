@@ -195,6 +195,9 @@ public class AuthorizationServerConfig {
         return new InMemoryRegisteredClientRepository(webClient, mobileClient);
     }
 
+    // 고정된 Key ID (서버 재시작해도 동일하게 유지)
+    private static final String JWT_KEY_ID = "stayswap-jwt-key-1";
+
     /**
      * JWT 서명을 위한 JWK Source
      */
@@ -206,7 +209,7 @@ public class AuthorizationServerConfig {
 
         RSAKey rsaKey = new RSAKey.Builder(publicKey)
                 .privateKey(privateKey)
-                .keyID(UUID.randomUUID().toString())
+                .keyID(JWT_KEY_ID)  // 고정 keyID 사용
                 .build();
 
         JWKSet jwkSet = new JWKSet(rsaKey);

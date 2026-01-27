@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthStore>()(
       // Actions
       initialize: async () => {
         try {
-          // HttpOnly 쿠키로 인증 상태 확인
+          // 사용자 정보 조회로 인증 상태 확인
           const user = await authApi.getMe();
           set((state) => {
             state.user = user;
@@ -40,7 +40,10 @@ export const useAuthStore = create<AuthStore>()(
           });
         } catch (error) {
           // 인증 실패 (401 등)
-          console.log('사용자가 로그인하지 않음');
+          set((state) => {
+            state.user = null;
+            state.isAuthenticated = false;
+          });
         } finally {
           set((state) => {
             state.isInitialized = true;

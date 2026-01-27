@@ -32,7 +32,7 @@ export const authApi = {
 
   // 현재 사용자 정보 조회
   getMe: async (): Promise<User> => {
-    const response = await apiClient.get<ApiResponse<User>>('/users/me', {
+    const response = await apiClient.get<ApiResponse<User>>('/user/me', {
       withCredentials: true,
     });
     return response.data.data;

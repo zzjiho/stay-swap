@@ -28,7 +28,7 @@ public class CookieUtil {
         Cookie cookie = new Cookie(name, value);
         cookie.setPath("/");
         cookie.setHttpOnly(true);
-        cookie.setSecure(true);
+        cookie.setSecure(false); // 로컬 개발 환경(HTTP)에서는 false
         cookie.setMaxAge(maxAge);
 
         response.addCookie(cookie);
@@ -42,7 +42,7 @@ public class CookieUtil {
                 if (name.equals(cookie.getName())) {
                     cookie.setValue("");
                     cookie.setPath("/");
-                    cookie.setSecure(true);
+                    cookie.setSecure(false); // 로컬 개발 환경(HTTP)에서는 false
                     cookie.setMaxAge(0);
                     response.addCookie(cookie);
                 }
