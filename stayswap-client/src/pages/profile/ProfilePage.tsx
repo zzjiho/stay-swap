@@ -19,6 +19,9 @@ import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import Bell from 'lucide-react/dist/esm/icons/bell';
 import LogOut from 'lucide-react/dist/esm/icons/log-out';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
+import Eye from 'lucide-react/dist/esm/icons/eye';
+import EyeOff from 'lucide-react/dist/esm/icons/eye-off';
+import Pencil from 'lucide-react/dist/esm/icons/pencil';
 
 // 탭 타입
 type TabType = 'intro' | 'listings' | 'favorites' | 'reviews' | 'settings';
@@ -43,6 +46,7 @@ interface House {
   mainImageUrl: string;
   avgRating: number;
   reviewCount: number;
+  active?: boolean;
 }
 
 // 리뷰 타입
@@ -67,40 +71,52 @@ const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
   { id: 'settings', label: '설정', icon: Settings },
 ];
 
+// 공통 API 응답 파서 - 배열 데이터 안전 추출
+const parseArrayResponse = async <T>(response: Response): Promise<T[]> => {
+  try {
+    const json = await response.json();
+    const data = json.data;
+    // 배열 직접 반환: { data: [...] }
+    if (Array.isArray(data)) return data;
+    // Page/Slice 구조: { data: { content: [...] } }
+    if (data?.content && Array.isArray(data.content)) return data.content;
+    return [];
+  } catch {
+    return [];
+  }
+};
+
 // API 함수들
 const fetchUserProfile = async (): Promise<UserProfile> => {
-  const response = await fetch('/api/user/me');
+  const response = await fetch('/api/user/me', { credentials: 'include' });
   if (!response.ok) throw new Error('프로필을 불러오는데 실패했습니다.');
-  const data = await response.json();
-  return data.data;
+  const json = await response.json();
+  if (!json.data) throw new Error('프로필을 불러오는데 실패했습니다.');
+  return json.data;
 };
 
 const fetchMyListings = async (): Promise<House[]> => {
-  const response = await fetch('/api/house/my');
+  const response = await fetch('/api/house/my', { credentials: 'include' });
   if (!response.ok) throw new Error('내 숙소 목록을 불러오는데 실패했습니다.');
-  const data = await response.json();
-  return data.data || [];
+  return parseArrayResponse<House>(response);
 };
 
 const fetchFavorites = async (): Promise<House[]> => {
-  const response = await fetch('/api/house/liked');
+  const response = await fetch('/api/house/liked', { credentials: 'include' });
   if (!response.ok) throw new Error('찜 목록을 불러오는데 실패했습니다.');
-  const data = await response.json();
-  return data.data || [];
+  return parseArrayResponse<House>(response);
 };
 
 const fetchReceivedReviews = async (): Promise<Review[]> => {
-  const response = await fetch('/api/review/received');
+  const response = await fetch('/api/review/received', { credentials: 'include' });
   if (!response.ok) throw new Error('받은 후기를 불러오는데 실패했습니다.');
-  const data = await response.json();
-  return data.data || [];
+  return parseArrayResponse<Review>(response);
 };
 
 const fetchWrittenReviews = async (): Promise<Review[]> => {
-  const response = await fetch('/api/review/written');
+  const response = await fetch('/api/review/written', { credentials: 'include' });
   if (!response.ok) throw new Error('작성한 후기를 불러오는데 실패했습니다.');
-  const data = await response.json();
-  return data.data || [];
+  return parseArrayResponse<Review>(response);
 };
 
 export function ProfilePage() {
@@ -155,6 +171,7 @@ export function ProfilePage() {
       const response = await fetch('/api/user/introduction', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ introduction }),
       });
       if (!response.ok) throw new Error('소개 수정에 실패했습니다.');
@@ -175,6 +192,7 @@ export function ProfilePage() {
       const response = await fetch('/api/user/push', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ pushEnabled: enabled }),
       });
       if (!response.ok) throw new Error('설정 변경에 실패했습니다.');
@@ -190,11 +208,33 @@ export function ProfilePage() {
   // 찜 삭제 뮤테이션
   const unlikeMutation = useMutation({
     mutationFn: async (houseId: number) => {
-      const response = await fetch(`/api/house/${houseId}/like`, { method: 'DELETE' });
+      const response = await fetch(`/api/house/${houseId}/like`, { method: 'DELETE', credentials: 'include' });
       if (!response.ok) throw new Error('찜 삭제에 실패했습니다.');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['favorites'] });
+    },
+  });
+
+  // 숙소 활성화/비활성화 뮤테이션
+  const toggleHouseStatusMutation = useMutation({
+    mutationFn: async ({ houseId, active }: { houseId: number; active: boolean }) => {
+      const response = await fetch(`/api/house/${houseId}/status`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ active }),
+      });
+      if (!response.ok) throw new Error('상태 변경에 실패했습니다.');
+      const json = await response.json();
+      return json.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['myListings'] });
+      alert(`숙소가 ${data.active ? '활성화' : '비활성화'}되었습니다.`);
+    },
+    onError: (error: Error) => {
+      alert(error.message);
     },
   });
 
@@ -341,31 +381,93 @@ export function ProfilePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {myListings.map(house => (
-                    <Link
-                      key={house.houseId}
-                      to={`/listings/${house.houseId}`}
-                      className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow"
-                    >
-                      <img
-                        src={house.mainImageUrl || '/images/default-house.jpg'}
-                        alt={house.title}
-                        className="w-full h-40 object-cover"
-                      />
-                      <div className="p-4">
-                        <h3 className="font-semibold text-gray-900 mb-1">{house.title}</h3>
-                        <p className="text-sm text-gray-500 flex items-center">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {house.cityKo} {house.districtKo}
-                        </p>
-                        <div className="flex items-center gap-1 mt-2 text-sm">
-                          <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                          <span>{house.avgRating?.toFixed(1) || '0.0'}</span>
-                          <span className="text-gray-400">({house.reviewCount || 0})</span>
+                  {myListings.map(house => {
+                    const isActive = house.active !== false;
+                    return (
+                      <div
+                        key={house.houseId}
+                        className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow"
+                      >
+                        <Link to={`/listings/${house.houseId}`} className="block relative">
+                          <img
+                            src={house.mainImageUrl || '/images/default-house.jpg'}
+                            alt={house.title}
+                            className={`w-full h-40 object-cover ${!isActive ? 'opacity-50' : ''}`}
+                          />
+                          <span
+                            className={`absolute top-2 left-2 px-2 py-1 text-xs font-medium rounded ${
+                              isActive
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {isActive ? '활성화' : '비활성화'}
+                          </span>
+                        </Link>
+                        <div className="p-4">
+                          <Link to={`/listings/${house.houseId}`}>
+                            <h3 className="font-semibold text-gray-900 mb-1 hover:text-indigo-600">
+                              {house.title}
+                            </h3>
+                          </Link>
+                          <p className="text-sm text-gray-500 flex items-center">
+                            <MapPin className="w-4 h-4 mr-1" />
+                            {house.cityKo} {house.districtKo}
+                          </p>
+                          <div className="flex items-center gap-1 mt-2 text-sm">
+                            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                            <span>{house.avgRating?.toFixed(1) || '0.0'}</span>
+                            <span className="text-gray-400">({house.reviewCount || 0})</span>
+                          </div>
+
+                          {/* 액션 버튼 */}
+                          <div className="flex gap-2 mt-4 pt-3 border-t">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              asChild
+                              className="flex-1"
+                            >
+                              <Link to={`/listings/${house.houseId}/edit`}>
+                                <Pencil className="w-4 h-4 mr-1" />
+                                수정
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (confirm(`숙소를 ${isActive ? '비활성화' : '활성화'}하시겠습니까?`)) {
+                                  toggleHouseStatusMutation.mutate({
+                                    houseId: house.houseId,
+                                    active: !isActive,
+                                  });
+                                }
+                              }}
+                              disabled={toggleHouseStatusMutation.isPending}
+                              className={`flex-1 ${
+                                isActive
+                                  ? 'text-gray-600 hover:text-gray-800'
+                                  : 'text-green-600 hover:text-green-700'
+                              }`}
+                            >
+                              {isActive ? (
+                                <>
+                                  <EyeOff className="w-4 h-4 mr-1" />
+                                  비활성화
+                                </>
+                              ) : (
+                                <>
+                                  <Eye className="w-4 h-4 mr-1" />
+                                  활성화
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
-                    </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

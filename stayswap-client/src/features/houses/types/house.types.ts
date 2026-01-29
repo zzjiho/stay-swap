@@ -99,6 +99,12 @@ export interface MyHouse {
   districtKo: string;
 }
 
+export interface HouseImage {
+  imageId: number;
+  imageUrl: string;
+  houseId: number;
+}
+
 // House Form Types (NewListingPage)
 export interface ListingFormData {
   title: string;

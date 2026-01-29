@@ -71,18 +71,19 @@ const fetchExchanges = async (tab: TabType, status: ExchangeStatus): Promise<Exc
 
   const params = new URLSearchParams();
   if (status !== 'ALL') {
-    params.set('status', status);
+    params.set('swapStatus', status);
   }
 
   const url = params.toString() ? `${endpoint}?${params}` : endpoint;
-  const response = await fetch(url);
+  const response = await fetch(url, { credentials: 'include' });
 
   if (!response.ok) {
     throw new Error('교환 목록을 불러오는데 실패했습니다.');
   }
 
   const data = await response.json();
-  return data.data || [];
+  // API 응답이 Slice 구조: { data: { content: [...], last: boolean, ... } }
+  return data.data?.content || [];
 };
 
 const updateExchangeStatus = async ({
@@ -93,7 +94,7 @@ const updateExchangeStatus = async ({
   action: 'accept' | 'reject' | 'cancel';
 }): Promise<void> => {
   const endpoint = `/api/house/swap/${swapId}/${action}`;
-  const response = await fetch(endpoint, { method: 'POST' });
+  const response = await fetch(endpoint, { method: 'POST', credentials: 'include' });
 
   if (!response.ok) {
     throw new Error('요청 처리에 실패했습니다.');
@@ -134,6 +135,7 @@ export function ExchangesPage() {
       const response = await fetch('/api/review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ swapId, rating, content }),
       });
       if (!response.ok) throw new Error('리뷰 작성에 실패했습니다.');

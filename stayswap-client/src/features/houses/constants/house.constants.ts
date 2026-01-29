@@ -8,21 +8,23 @@ import Building from 'lucide-react/dist/esm/icons/building';
 import MoreHorizontal from 'lucide-react/dist/esm/icons/more-horizontal';
 
 // ListingsPage Constants
+// 백엔드 HouseRepositoryImpl의 amenitiesContains 메서드와 일치해야 함
 export const LISTING_AMENITIES = [
-  { id: 'wifi', label: '와이파이' },
-  { id: 'aircon', label: '에어컨' },
-  { id: 'kitchen', label: '주방' },
-  { id: 'washer', label: '세탁기' },
-  { id: 'pet', label: '애완동물 가능' },
-  { id: 'parking', label: '주차장' },
+  { id: 'WIFI', label: '와이파이' },
+  { id: 'AIRCON', label: '에어컨' },
+  { id: 'KITCHEN', label: '주방' },
+  { id: 'WASHER', label: '세탁기' },
+  { id: 'PETS', label: '애완동물 가능' },
+  { id: 'PARKING', label: '주차장' },
 ] as const;
 
+// 백엔드 HouseType enum과 일치해야 함
 export const LISTING_HOUSE_TYPES = [
   { value: '', label: '전체' },
-  { value: '1', label: '아파트' },
-  { value: '2', label: '주택' },
-  { value: '3', label: '빌라' },
-  { value: '4', label: '오피스텔' },
+  { value: 'APT', label: '아파트' },
+  { value: 'HOUSE', label: '주택' },
+  { value: 'VILLA', label: '빌라' },
+  { value: 'OP', label: '오피스텔' },
 ] as const;
 
 export const HOUSE_TYPE_LABEL: Record<string, string> = {

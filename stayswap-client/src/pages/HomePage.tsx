@@ -34,8 +34,16 @@ const fetchPopularHouses = async (): Promise<PopularHouse[]> => {
   if (!response.ok) {
     throw new Error('인기 숙소 로딩 실패');
   }
-  const data = await response.json();
-  return data.data || [];
+  try {
+    const json = await response.json();
+    const data = json.data;
+    // 배열 직접: { data: [...] } 또는 Page 구조: { data: { content: [...] } }
+    if (Array.isArray(data)) return data;
+    if (data?.content && Array.isArray(data.content)) return data.content;
+    return [];
+  } catch {
+    return [];
+  }
 };
 
 export function HomePage() {

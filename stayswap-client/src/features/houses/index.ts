@@ -8,6 +8,7 @@ export type {
   HouseHost,
   Review,
   MyHouse,
+  HouseImage,
   ListingFormData,
   FetchHousesParams,
 } from './types/house.types';
@@ -32,10 +33,12 @@ export {
   fetchHouses,
   fetchCountries,
   fetchHouseDetail,
+  fetchHouseImages,
   fetchReviews,
   fetchMyHouses,
   createListing,
+  updateListing,
   requestExchange,
 } from './api/house.api';
 
-export type { ExchangeRequestData } from './api/house.api';
+export type { ExchangeRequestData, UpdateListingData } from './api/house.api';

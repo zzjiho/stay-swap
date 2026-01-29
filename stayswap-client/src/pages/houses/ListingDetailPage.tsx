@@ -8,6 +8,7 @@ import {useJsApiLoader} from '@react-google-maps/api';
 import {
   AMENITY_MAP,
   fetchHouseDetail,
+  fetchHouseImages,
   fetchMyHouses,
   fetchReviews,
   GOOGLE_MAPS_API_KEY,
@@ -43,6 +44,7 @@ export function ListingDetailPage() {
   const { isAuthenticated } = useAuthStore();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [showLightbox, setShowLightbox] = useState(false);
   const [checkinDate, setCheckinDate] = useState('');
   const [checkoutDate, setCheckoutDate] = useState('');
   const [guestCount, setGuestCount] = useState(1);
@@ -68,6 +70,12 @@ export function ListingDetailPage() {
   const { data: reviews = [] } = useQuery({
     queryKey: ['reviews', id],
     queryFn: () => fetchReviews(id!),
+    enabled: !!id,
+  });
+
+  const { data: houseImages = [] } = useQuery({
+    queryKey: ['houseImages', id],
+    queryFn: () => fetchHouseImages(id!),
     enabled: !!id,
   });
 
@@ -123,7 +131,9 @@ export function ListingDetailPage() {
     };
   }, [isMapLoaded, house]);
 
-  const images = house?.imageUrls?.length ? house.imageUrls : [house?.mainImageUrl || '/images/default-house.jpg'];
+  const images = houseImages.length > 0
+    ? houseImages.map(img => img.imageUrl)
+    : ['/images/default-house.jpg'];
   const hostName = house?.host?.name || house?.hostName || '호스트';
   const hostId = house?.host?.userId || house?.hostId;
   const hostProfileImage = house?.host?.profileImage || house?.hostProfileImage || '/images/profile.png';
@@ -135,6 +145,30 @@ export function ListingDetailPage() {
   const handleNextImage = () => {
     setCurrentImageIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1));
   };
+
+  const openLightbox = (index: number) => {
+    setCurrentImageIndex(index);
+    setShowLightbox(true);
+  };
+
+  // 라이트박스 키보드 이벤트 처리
+  useEffect(() => {
+    if (!showLightbox) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowLightbox(false);
+      if (e.key === 'ArrowLeft') handlePrevImage();
+      if (e.key === 'ArrowRight') handleNextImage();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [showLightbox, images.length]);
 
   const handleExchangeRequest = () => {
     if (!isAuthenticated) {
@@ -247,33 +281,42 @@ export function ListingDetailPage() {
           </div>
         </div>
 
-        <div className="relative rounded-xl overflow-hidden mb-10 bg-gray-100">
+        <div className="relative rounded-xl overflow-hidden mb-10 bg-gray-100 group">
           <div className="aspect-[16/9] md:aspect-[21/9]">
             <img
               src={images[currentImageIndex]}
               alt={`${house.title} - 이미지 ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-[1.02]"
+              onClick={() => openLightbox(currentImageIndex)}
             />
+          </div>
+          <div
+            className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors cursor-pointer flex items-center justify-center"
+            onClick={() => openLightbox(currentImageIndex)}
+          >
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white px-4 py-2 rounded-lg text-sm font-medium">
+              클릭하여 크게 보기
+            </span>
           </div>
           {images.length > 1 && (
             <>
               <button
-                onClick={handlePrevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors"
+                onClick={(e) => { e.stopPropagation(); handlePrevImage(); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors z-10"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <button
-                onClick={handleNextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors"
+                onClick={(e) => { e.stopPropagation(); handleNextImage(); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow hover:bg-white transition-colors z-10"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
                 {images.map((_, idx) => (
                   <button
                     key={idx}
-                    onClick={() => setCurrentImageIndex(idx)}
+                    onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(idx); }}
                     className={`w-2 h-2 rounded-full transition-colors ${
                       idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
                     }`}
@@ -281,6 +324,11 @@ export function ListingDetailPage() {
                 ))}
               </div>
             </>
+          )}
+          {images.length > 1 && (
+            <div className="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1 rounded-lg text-sm z-10">
+              {currentImageIndex + 1} / {images.length}
+            </div>
           )}
         </div>
 
@@ -599,6 +647,87 @@ export function ListingDetailPage() {
                 숙박 요청 보내기
               </Button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showLightbox && (
+        <div
+          className="fixed inset-0 bg-black/95 z-50 flex flex-col"
+          onClick={() => setShowLightbox(false)}
+        >
+          {/* 헤더 */}
+          <div className="flex items-center justify-between p-4 text-white">
+            <span className="text-sm font-medium">
+              {currentImageIndex + 1} / {images.length}
+            </span>
+            <button
+              onClick={() => setShowLightbox(false)}
+              className="p-2 hover:bg-white/10 rounded-full transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* 메인 이미지 영역 */}
+          <div
+            className="flex-1 flex items-center justify-center px-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {images.length > 1 && (
+              <button
+                onClick={handlePrevImage}
+                className="absolute left-4 md:left-8 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+              >
+                <ChevronLeft className="w-6 h-6 text-white" />
+              </button>
+            )}
+
+            <img
+              src={images[currentImageIndex]}
+              alt={`${house.title} - 이미지 ${currentImageIndex + 1}`}
+              className="max-h-[70vh] max-w-full object-contain rounded-lg"
+            />
+
+            {images.length > 1 && (
+              <button
+                onClick={handleNextImage}
+                className="absolute right-4 md:right-8 w-12 h-12 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center transition-colors"
+              >
+                <ChevronRight className="w-6 h-6 text-white" />
+              </button>
+            )}
+          </div>
+
+          {/* 썸네일 스트립 */}
+          {images.length > 1 && (
+            <div
+              className="p-4 flex justify-center gap-2 overflow-x-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {images.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden transition-all ${
+                    idx === currentImageIndex
+                      ? 'ring-2 ring-white opacity-100'
+                      : 'opacity-50 hover:opacity-75'
+                  }`}
+                >
+                  <img
+                    src={img}
+                    alt={`썸네일 ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* 키보드 힌트 */}
+          <div className="text-center pb-4 text-white/50 text-xs">
+            <span className="hidden md:inline">ESC 닫기 · 방향키로 이동</span>
           </div>
         </div>
       )}
