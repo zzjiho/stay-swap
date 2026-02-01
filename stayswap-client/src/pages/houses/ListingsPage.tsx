@@ -144,9 +144,9 @@ export function ListingsPage() {
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white"
               >
                 <option value="">모든 국가</option>
-                {countries.filter((c) => c.code && c.name).map((country) => (
-                  <option key={country.code} value={country.code}>
-                    {country.name}
+                {[...new Set(countries.filter((c) => c.countryKo).map((c) => c.countryKo))].map((countryName) => (
+                  <option key={countryName} value={countryName}>
+                    {countryName}
                   </option>
                 ))}
               </select>

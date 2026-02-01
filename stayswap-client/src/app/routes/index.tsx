@@ -14,6 +14,9 @@ import {NewListingPage} from '@/pages/houses/NewListingPage';
 import {EditListingPage} from '@/pages/houses/EditListingPage';
 import {ExchangesPage} from '@/pages/exchanges/ExchangesPage';
 import {ProfilePage} from '@/pages/profile/ProfilePage';
+import {MySubscriptionPage} from '@/pages/profile/MySubscriptionPage';
+import {MessagesPage} from '@/pages/messages/MessagesPage';
+import {SubscriptionPage} from '@/pages/subscription/SubscriptionPage';
 
 export function AppRoutes() {
   return (
@@ -29,13 +32,16 @@ export function AppRoutes() {
         <Route path="/" element={<HomePage />} />
         <Route path="/listings" element={<ListingsPage />} />
         <Route path="/listings/:id" element={<ListingDetailPage />} />
+        <Route path="/subscription" element={<SubscriptionPage />} />
 
         {/* Protected - 로그인 필요 */}
         <Route element={<ProtectedRoute />}>
           <Route path="/listings/new" element={<NewListingPage />} />
           <Route path="/listings/:id/edit" element={<EditListingPage />} />
           <Route path="/exchanges" element={<ExchangesPage />} />
+          <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/profile/subscription" element={<MySubscriptionPage />} />
         </Route>
       </Route>
 

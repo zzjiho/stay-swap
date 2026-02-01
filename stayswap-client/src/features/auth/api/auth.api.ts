@@ -38,10 +38,10 @@ export const authApi = {
     return response.data.data;
   },
 
-  // 로그아웃
+  // 로그아웃 (메인 API 서버에서 쿠키 삭제)
   logout: async (): Promise<void> => {
     await apiClient.post(
-      '/auth/logout',
+      '/user/logout',
       {},
       {
         withCredentials: true,

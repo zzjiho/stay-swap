@@ -99,7 +99,8 @@ public class ChatService {
         if (memberOpt.isPresent()) {
             ChatMember member = memberOpt.get();
             if (member.getLastCheckedAt() != null) {
-                unreadCount = messageRepository.countByChatroomIdAndCreatedAtAfter(chatroom.getId(), member.getLastCheckedAt());
+                // 내가 보낸 메시지 제외하고 읽지 않은 메시지 수 계산
+                unreadCount = messageRepository.countByChatroomIdAndCreatedAtAfterAndUserIdNot(chatroom.getId(), member.getLastCheckedAt(), userId);
             }
             hasNewMessage = unreadCount > 0;
         }
@@ -126,8 +127,8 @@ public class ChatService {
                 .map(chatMember -> {
                     Chatroom chatroom = chatMember.getChatroom();
                     chatroom.setHasNewMessage(
-                            // 해당 채팅방의 마지막 확인 시간 이후에 새 메시지가 있는지 확인
-                            messageRepository.existsByChatroomIdAndCreatedAtAfter(chatroom.getId(), chatMember.getLastCheckedAt()));
+                            // 해당 채팅방의 마지막 확인 시간 이후에 상대방의 새 메시지가 있는지 확인 (내 메시지 제외)
+                            messageRepository.existsByChatroomIdAndCreatedAtAfterAndUserIdNot(chatroom.getId(), chatMember.getLastCheckedAt(), userId));
 
                     // DTO로 변환
                     ChatRoomListDto dto = ChatRoomListDto.from(chatroom, userId);
@@ -140,10 +141,10 @@ public class ChatService {
                         dto.setLastMessageCreatedAt(lastMessage.getCreatedAt());
                     }
 
-                    // 읽지 않은 메시지 수 계산
+                    // 읽지 않은 메시지 수 계산 (내가 보낸 메시지 제외)
                     Long unreadCount = 0L;
                     if (chatMember.getLastCheckedAt() != null) {
-                        unreadCount = messageRepository.countByChatroomIdAndCreatedAtAfter(chatroom.getId(), chatMember.getLastCheckedAt());
+                        unreadCount = messageRepository.countByChatroomIdAndCreatedAtAfterAndUserIdNot(chatroom.getId(), chatMember.getLastCheckedAt(), userId);
                     }
                     dto.setUnreadCount(unreadCount);
 

@@ -23,8 +23,8 @@ export interface HouseListResponse {
 }
 
 export interface Country {
-  code: string;
-  name: string;
+  countryKo: string;
+  countryEn: string | null;
 }
 
 // House Detail Types (ListingDetailPage)

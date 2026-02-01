@@ -17,6 +17,7 @@ export const ROUTES = {
 
   // 프로필
   PROFILE: '/profile',
+  MY_SUBSCRIPTION: '/profile/subscription',
   SETTINGS: '/settings',
 
   // 구독

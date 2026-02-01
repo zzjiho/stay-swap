@@ -13,6 +13,7 @@ import Heart from 'lucide-react/dist/esm/icons/heart';
 import Star from 'lucide-react/dist/esm/icons/star';
 import Settings from 'lucide-react/dist/esm/icons/settings';
 import MapPin from 'lucide-react/dist/esm/icons/map-pin';
+import Calendar from 'lucide-react/dist/esm/icons/calendar';
 import Edit2 from 'lucide-react/dist/esm/icons/edit-2';
 import Plus from 'lucide-react/dist/esm/icons/plus';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
@@ -35,18 +36,25 @@ interface UserProfile {
   introduction: string | null;
   createdAt: string;
   pushEnabled: boolean;
+  joinYear?: number;
+  reviewCount?: number;
 }
 
 // 숙소 타입
 interface House {
-  houseId: number;
+  id: number;
+  houseId?: number; // 일부 API에서 사용
   title: string;
-  cityKo: string;
-  districtKo: string;
-  mainImageUrl: string;
-  avgRating: number;
+  cityKo?: string;
+  districtKo?: string;
+  thumbnailUrl?: string;
+  mainImageUrl?: string;
+  averageRating?: number;
+  avgRating?: number;
   reviewCount: number;
   active?: boolean;
+  createdAt?: string;
+  houseType?: string;
 }
 
 // 리뷰 타입
@@ -72,7 +80,7 @@ const TABS: { id: TabType; label: string; icon: React.ElementType }[] = [
 ];
 
 // 공통 API 응답 파서 - 배열 데이터 안전 추출
-const parseArrayResponse = async <T>(response: Response): Promise<T[]> => {
+const parseArrayResponse = async <T,>(response: Response): Promise<T[]> => {
   try {
     const json = await response.json();
     const data = json.data;
@@ -301,9 +309,24 @@ export function ProfilePage() {
             <div className="flex-1">
               <h1 className="text-2xl font-bold text-gray-900">{profile?.name}</h1>
               <p className="text-gray-500">{profile?.email}</p>
-              <p className="text-sm text-gray-400 mt-1">
-                가입일: {profile?.createdAt ? formatDate(profile.createdAt) : '-'}
-              </p>
+
+              {/* 프로필 메타 정보 */}
+              <div className="flex flex-wrap gap-4 mt-3 text-sm text-gray-500">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    {profile?.joinYear
+                      ? `${profile.joinYear}년에 가입`
+                      : profile?.createdAt
+                        ? `${new Date(profile.createdAt).getFullYear()}년에 가입`
+                        : '-'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Star className="w-4 h-4" />
+                  <span>후기 {profile?.reviewCount ?? 0}개</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -382,15 +405,18 @@ export function ProfilePage() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {myListings.map(house => {
+                    const houseId = house.id || house.houseId;
                     const isActive = house.active !== false;
+                    const imageUrl = house.thumbnailUrl || house.mainImageUrl || '/images/default-house.jpg';
+                    const rating = house.averageRating ?? house.avgRating ?? 0;
                     return (
                       <div
-                        key={house.houseId}
+                        key={houseId}
                         className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow"
                       >
-                        <Link to={`/listings/${house.houseId}`} className="block relative">
+                        <Link to={`/listings/${houseId}`} className="block relative">
                           <img
-                            src={house.mainImageUrl || '/images/default-house.jpg'}
+                            src={imageUrl}
                             alt={house.title}
                             className={`w-full h-40 object-cover ${!isActive ? 'opacity-50' : ''}`}
                           />
@@ -405,18 +431,36 @@ export function ProfilePage() {
                           </span>
                         </Link>
                         <div className="p-4">
-                          <Link to={`/listings/${house.houseId}`}>
+                          <Link to={`/listings/${houseId}`}>
                             <h3 className="font-semibold text-gray-900 mb-1 hover:text-indigo-600">
                               {house.title}
                             </h3>
                           </Link>
-                          <p className="text-sm text-gray-500 flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {house.cityKo} {house.districtKo}
+                          <p className="text-sm text-gray-500 flex items-center gap-2">
+                            <span className="flex items-center">
+                              <Calendar className="w-4 h-4 mr-1" />
+                              {house.createdAt
+                                ? new Date(house.createdAt).toLocaleDateString('ko-KR', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                  }) + ' 등록'
+                                : '-'}
+                            </span>
+                            {house.houseType && (
+                              <span className="bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                {house.houseType === 'APT' ? '아파트' :
+                                 house.houseType === 'HOUSE' ? '주택' :
+                                 house.houseType === 'VILLA' ? '빌라' :
+                                 house.houseType === 'OP' ? '오피스텔' :
+                                 house.houseType === 'OTHER' ? '기타' :
+                                 house.houseType}
+                              </span>
+                            )}
                           </p>
                           <div className="flex items-center gap-1 mt-2 text-sm">
                             <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                            <span>{house.avgRating?.toFixed(1) || '0.0'}</span>
+                            <span>{rating.toFixed(1)}</span>
                             <span className="text-gray-400">({house.reviewCount || 0})</span>
                           </div>
 
@@ -428,7 +472,7 @@ export function ProfilePage() {
                               asChild
                               className="flex-1"
                             >
-                              <Link to={`/listings/${house.houseId}/edit`}>
+                              <Link to={`/listings/${houseId}/edit`}>
                                 <Pencil className="w-4 h-4 mr-1" />
                                 수정
                               </Link>
@@ -439,7 +483,7 @@ export function ProfilePage() {
                               onClick={() => {
                                 if (confirm(`숙소를 ${isActive ? '비활성화' : '활성화'}하시겠습니까?`)) {
                                   toggleHouseStatusMutation.mutate({
-                                    houseId: house.houseId,
+                                    houseId: houseId!,
                                     active: !isActive,
                                   });
                                 }
@@ -492,39 +536,44 @@ export function ProfilePage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {favorites.map(house => (
-                    <div
-                      key={house.houseId}
-                      className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow relative group"
-                    >
-                      <Link to={`/listings/${house.houseId}`}>
-                        <img
-                          src={house.mainImageUrl || '/images/default-house.jpg'}
-                          alt={house.title}
-                          className="w-full h-40 object-cover"
-                        />
-                        <div className="p-4">
-                          <h3 className="font-semibold text-gray-900 mb-1">{house.title}</h3>
-                          <p className="text-sm text-gray-500 flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {house.cityKo} {house.districtKo}
-                          </p>
-                          <div className="flex items-center gap-1 mt-2 text-sm">
-                            <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                            <span>{house.avgRating?.toFixed(1) || '0.0'}</span>
-                            <span className="text-gray-400">({house.reviewCount || 0})</span>
-                          </div>
-                        </div>
-                      </Link>
-                      <button
-                        onClick={() => unlikeMutation.mutate(house.houseId)}
-                        className="absolute top-2 right-2 p-2 bg-white rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
-                        title="찜 삭제"
+                  {favorites.map(house => {
+                    const houseId = house.id || house.houseId;
+                    const imageUrl = house.thumbnailUrl || house.mainImageUrl || '/images/default-house.jpg';
+                    const rating = house.averageRating ?? house.avgRating ?? 0;
+                    return (
+                      <div
+                        key={houseId}
+                        className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow relative group"
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
-                      </button>
-                    </div>
-                  ))}
+                        <Link to={`/listings/${houseId}`}>
+                          <img
+                            src={imageUrl}
+                            alt={house.title}
+                            className="w-full h-40 object-cover"
+                          />
+                          <div className="p-4">
+                            <h3 className="font-semibold text-gray-900 mb-1">{house.title}</h3>
+                            <p className="text-sm text-gray-500 flex items-center">
+                              <MapPin className="w-4 h-4 mr-1" />
+                              {house.cityKo || ''} {house.districtKo || ''}
+                            </p>
+                            <div className="flex items-center gap-1 mt-2 text-sm">
+                              <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                              <span>{rating.toFixed(1)}</span>
+                              <span className="text-gray-400">({house.reviewCount || 0})</span>
+                            </div>
+                          </div>
+                        </Link>
+                        <button
+                          onClick={() => unlikeMutation.mutate(houseId!)}
+                          className="absolute top-2 right-2 p-2 bg-white rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                          title="찜 삭제"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

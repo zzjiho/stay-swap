@@ -134,7 +134,7 @@ public class AuthorizationServerConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:8080", "https://www.stayzzle.com")); // 프론트엔드 주소 허용
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:8080", "https://www.stayzzle.com")); // 프론트엔드 주소 허용
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS")); // 허용할 HTTP 메소드
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
@@ -163,7 +163,7 @@ public class AuthorizationServerConfig {
                 .scope("profile_nickname")
                 .scope("account_email")
                 .tokenSettings(TokenSettings.builder()
-                        .accessTokenTimeToLive(Duration.ofMinutes(30))
+                        .accessTokenTimeToLive(Duration.ofHours(3))
                         .refreshTokenTimeToLive(Duration.ofDays(14))
                         .reuseRefreshTokens(false)
                         .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED)
@@ -185,7 +185,7 @@ public class AuthorizationServerConfig {
                         .requireProofKey(true)
                         .build())
                 .tokenSettings(TokenSettings.builder()
-                        .accessTokenTimeToLive(Duration.ofMinutes(30))
+                        .accessTokenTimeToLive(Duration.ofHours(3))
                         .refreshTokenTimeToLive(Duration.ofDays(14))
                         .reuseRefreshTokens(false)
                         .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED)

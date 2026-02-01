@@ -256,7 +256,9 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                                 .where(review.targetHouse.id.eq(house.id)),
                         house.regTime,
                         house.isActive.as("active"),
-                        house.houseType
+                        house.houseType,
+                        house.cityKo,
+                        house.districtKo
                 ))
                 .from(house)
                 .leftJoin(houseImage).on(houseImage.house.id.eq(house.id))
@@ -296,7 +298,9 @@ public class HouseRepositoryImpl implements HouseRepositoryCustom {
                                 .where(review.targetHouse.id.eq(house.id)),
                         house.regTime,
                         house.isActive.as("active"),
-                        house.houseType
+                        house.houseType,
+                        house.cityKo,
+                        house.districtKo
                 ))
                 .from(house)
                 .innerJoin(houseLike).on(houseLike.house.id.eq(house.id))

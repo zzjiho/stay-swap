@@ -40,15 +40,17 @@ export const registerSchema = z
 export type LoginRequest = z.infer<typeof loginSchema>;
 export type RegisterRequest = z.infer<typeof registerSchema>;
 
-// Response Types
+// Response Types (백엔드 UserInfoResponse와 일치)
 export interface User {
-  id: string;
+  id: number;
   email: string;
   name: string;
-  profileImage?: string;
-  role: 'USER' | 'HOST' | 'ADMIN';
-  createdAt: string;
-  updatedAt: string;
+  nickname?: string;
+  profile?: string;
+  introduction?: string;
+  userType?: 'KAKAO' | 'NAVER' | 'GOOGLE' | 'LOCAL';
+  joinYear?: number;
+  reviewCount?: number;
 }
 
 export interface LoginResponse {

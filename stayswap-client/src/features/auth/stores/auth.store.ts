@@ -69,18 +69,21 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
+        // 상태 초기화
+        set((state) => {
+          state.user = null;
+          state.isAuthenticated = false;
+        });
+
         try {
+          // 로그아웃 API 호출 (쿠키 삭제)
           await authApi.logout();
         } catch (error) {
-          console.error('로그아웃 오류:', error);
-        } finally {
-          set((state) => {
-            state.user = null;
-            state.isAuthenticated = false;
-          });
-          // 로그인 페이지로 리다이렉트
-          window.location.href = '/auth';
+          console.warn('로그아웃 API 호출 실패:', error);
         }
+
+        // 홈으로 이동 (React Router 사용)
+        window.location.href = '/';
       },
 
       setUser: (user) => {

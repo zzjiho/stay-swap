@@ -84,6 +84,12 @@ export function Header() {
             >
               교환 관리
             </Link>
+            <Link
+              to={ROUTES.SUBSCRIPTION}
+              className="px-4 py-2 rounded text-gray-900 font-medium transition-all hover:text-violet-600 hover:bg-gray-50"
+            >
+              구독 플랜
+            </Link>
           </nav>
 
           {/* User Actions */}
@@ -116,7 +122,7 @@ export function Header() {
                         마이페이지
                       </Link>
                       <Link
-                        to={ROUTES.SUBSCRIPTION}
+                        to={ROUTES.MY_SUBSCRIPTION}
                         className="block px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                         onClick={() => setIsProfileOpen(false)}
                       >

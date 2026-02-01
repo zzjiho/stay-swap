@@ -9,6 +9,8 @@ import com.stayswap.common.resolver.userinfo.UserInfo;
 import com.stayswap.common.resolver.userinfo.UserInfoDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -89,16 +91,27 @@ public class UserController {
                 userService.updateProfileImage(profileImage, userInfo.getUserId()));
     }
 
-//    @Operation(
-//            summary = "사용자 로그아웃 API",
-//            description = "리프레시 토큰을 만료시켜 로그아웃합니다."
-//    )
-//    @PostMapping("/logout")
-//    public RestApiResponse<LogoutResponse> logout(
-//            @UserInfo UserInfoDto userInfo) {
-//
-//        return RestApiResponse.success(
-//                userService.logout(userInfo.getUserId()));
-//    }
+    @Operation(
+            summary = "사용자 로그아웃 API",
+            description = "액세스 토큰과 리프레시 토큰 쿠키를 삭제하여 로그아웃합니다."
+    )
+    @PostMapping("/logout")
+    public RestApiResponse<String> logout(HttpServletResponse response) {
+        // Access Token 쿠키 삭제
+        Cookie accessTokenCookie = new Cookie("accessToken", "");
+        accessTokenCookie.setHttpOnly(true);
+        accessTokenCookie.setPath("/");
+        accessTokenCookie.setMaxAge(0);
+        response.addCookie(accessTokenCookie);
+
+        // Refresh Token 쿠키 삭제
+        Cookie refreshTokenCookie = new Cookie("refreshToken", "");
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(0);
+        response.addCookie(refreshTokenCookie);
+
+        return RestApiResponse.success("로그아웃 성공");
+    }
 
 }

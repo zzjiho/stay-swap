@@ -163,20 +163,16 @@ public class AuthController {
             }
         }
 
-        // 쿠키 삭제
+        // 쿠키 삭제 (도메인 설정 없이 - localhost에서도 작동하도록)
         Cookie accessTokenCookie = new Cookie("accessToken", null);
         accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(true);
         accessTokenCookie.setPath("/");
-        accessTokenCookie.setDomain("www.stayzzle.com");
         accessTokenCookie.setMaxAge(0);
         response.addCookie(accessTokenCookie);
 
         Cookie refreshTokenCookie = new Cookie("refreshToken", null);
         refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setDomain("www.stayzzle.com");
         refreshTokenCookie.setMaxAge(0);
         response.addCookie(refreshTokenCookie);
 

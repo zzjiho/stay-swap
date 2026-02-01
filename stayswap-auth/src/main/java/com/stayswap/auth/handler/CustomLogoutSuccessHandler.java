@@ -41,26 +41,26 @@ public class CustomLogoutSuccessHandler implements LogoutSuccessHandler {
             log.warn("인증 객체에서 사용자 ID를 추출할 수 없거나 JWT Principal이 아님. Redis에서 Refresh Token 삭제 건너뜀.");
         }
 
-        // 2. Access Token 및 Refresh Token 쿠키 만료
+        // 2. Access Token 및 Refresh Token 쿠키 만료 (도메인 설정 없이 - localhost에서도 작동)
         Cookie accessTokenCookie = new Cookie("accessToken", "");
         accessTokenCookie.setHttpOnly(true);
-        accessTokenCookie.setSecure(true);
         accessTokenCookie.setPath("/");
-        accessTokenCookie.setDomain("www.stayzzle.com");
         accessTokenCookie.setMaxAge(0);
         response.addCookie(accessTokenCookie);
 
         Cookie refreshTokenCookie = new Cookie("refreshToken", "");
         refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
         refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setDomain("www.stayzzle.com");
         refreshTokenCookie.setMaxAge(0);
         response.addCookie(refreshTokenCookie);
 
         log.info("Access Token 및 Refresh Token 쿠키 만료 처리 완료");
 
-        // 3. 클라이언트를 로그인 페이지 또는 메인 페이지로 리다이렉트
-        response.sendRedirect("/page/auth");
+        // 3. 클라이언트를 프론트엔드 로그인 페이지로 리다이렉트
+        String frontendUrl = System.getenv("FRONTEND_URL");
+        if (frontendUrl == null || frontendUrl.isEmpty()) {
+            frontendUrl = "http://localhost:5173";
+        }
+        response.sendRedirect(frontendUrl + "/auth");
     }
 }

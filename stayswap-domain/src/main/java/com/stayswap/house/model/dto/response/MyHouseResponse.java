@@ -21,6 +21,8 @@ public class MyHouseResponse {
     private LocalDateTime createdAt;
     private boolean active;
     private String houseType;
+    private String cityKo;
+    private String districtKo;
     
     public static MyHouseResponse of(Long id, String title, String thumbnailUrl, 
                                     Double averageRating, Long reviewCount, LocalDateTime createdAt) {
@@ -34,8 +36,9 @@ public class MyHouseResponse {
                 .build();
     }
     
-    public MyHouseResponse(Long id, String title, String thumbnailUrl, Double averageRating, 
-                          Long reviewCount, LocalDateTime createdAt, Boolean active, HouseType houseType) {
+    public MyHouseResponse(Long id, String title, String thumbnailUrl, Double averageRating,
+                          Long reviewCount, LocalDateTime createdAt, Boolean active, HouseType houseType,
+                          String cityKo, String districtKo) {
         this.id = id;
         this.title = title;
         this.thumbnailUrl = thumbnailUrl;
@@ -44,5 +47,7 @@ public class MyHouseResponse {
         this.createdAt = createdAt;
         this.active = active != null ? active : false;
         this.houseType = houseType != null ? houseType.name() : null;
+        this.cityKo = cityKo;
+        this.districtKo = districtKo;
     }
 } 
