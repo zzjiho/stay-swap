@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants/routes';
 
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
-import MapPin from 'lucide-react/dist/esm/icons/map-pin';
 import Calendar from 'lucide-react/dist/esm/icons/calendar';
 import MessageCircle from 'lucide-react/dist/esm/icons/message-circle';
 import Check from 'lucide-react/dist/esm/icons/check';
@@ -13,6 +12,9 @@ import X from 'lucide-react/dist/esm/icons/x';
 import Star from 'lucide-react/dist/esm/icons/star';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import Home from 'lucide-react/dist/esm/icons/home';
+import ArrowLeftRight from 'lucide-react/dist/esm/icons/arrow-left-right';
+import BedDouble from 'lucide-react/dist/esm/icons/bed-double';
+import FileText from 'lucide-react/dist/esm/icons/file-text';
 
 // 교환 상태 타입
 type ExchangeStatus = 'ALL' | 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'REJECTED';
@@ -20,26 +22,28 @@ type ExchangeStatus = 'ALL' | 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'REJECTED';
 // 탭 타입
 type TabType = 'requester' | 'host';
 
-// 교환 아이템 타입
+// 교환 아이템 타입 (API 응답에 맞춤)
 interface Exchange {
   swapId: number;
-  houseId: number;
-  houseTitle: string;
-  houseImageUrl: string;
-  houseCityKo: string;
-  houseDistrictKo: string;
-  otherUserId: number;
-  otherUserName: string;
-  otherUserProfileImage: string | null;
+  requesterId: number;
   startDate: string;
   endDate: string;
-  status: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'REJECTED';
-  createdAt: string;
+  swapType: 'SWAP' | 'STAY';
+  swapStatus: 'PENDING' | 'ACCEPTED' | 'COMPLETED' | 'REJECTED';
+  message: string;
+  responseAt: string | null;
+  hostHouseId: number;
+  houseTitle: string;
+  requesterHouseId: number | null;
+  houseType: string;
+  imageUrl: string;
   hasReview: boolean;
+  // Host 응답에만 있는 필드
+  requesterName?: string;
 }
 
 // 상태 라벨 맵핑
-const STATUS_LABELS: Record<Exchange['status'], string> = {
+const STATUS_LABELS: Record<Exchange['swapStatus'], string> = {
   PENDING: '대기중',
   ACCEPTED: '확정됨',
   COMPLETED: '완료됨',
@@ -47,7 +51,7 @@ const STATUS_LABELS: Record<Exchange['status'], string> = {
 };
 
 // 상태 스타일 맵핑
-const STATUS_STYLES: Record<Exchange['status'], string> = {
+const STATUS_STYLES: Record<Exchange['swapStatus'], string> = {
   PENDING: 'bg-yellow-100 text-yellow-800',
   ACCEPTED: 'bg-green-100 text-green-800',
   COMPLETED: 'bg-blue-100 text-blue-800',
@@ -286,59 +290,90 @@ export function ExchangesPage() {
                 <div className="flex flex-col md:flex-row">
                   {/* 숙소 이미지 */}
                   <Link
-                    to={`/listings/${exchange.houseId}`}
-                    className="md:w-48 h-36 md:h-auto flex-shrink-0"
+                    to={`/listings/${exchange.hostHouseId}`}
+                    className="md:w-56 w-full h-44 md:h-48 flex-shrink-0 relative"
                   >
                     <img
-                      src={exchange.houseImageUrl || '/images/default-house.jpg'}
+                      src={exchange.imageUrl || '/images/default-house.jpg'}
                       alt={exchange.houseTitle}
                       className="w-full h-full object-cover"
                     />
+                    {/* 교환/숙박 타입 배지 - 이미지 위에 표시 */}
+                    <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-md text-xs font-semibold flex items-center gap-1 ${
+                      exchange.swapType === 'SWAP'
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-emerald-600 text-white'
+                    }`}>
+                      {exchange.swapType === 'SWAP' ? (
+                        <>
+                          <ArrowLeftRight className="w-3.5 h-3.5" />
+                          교환
+                        </>
+                      ) : (
+                        <>
+                          <BedDouble className="w-3.5 h-3.5" />
+                          숙박
+                        </>
+                      )}
+                    </div>
                   </Link>
 
                   {/* 내용 */}
-                  <div className="flex-1 p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <Link
-                          to={`/listings/${exchange.houseId}`}
-                          className="text-lg font-semibold text-gray-900 hover:text-indigo-600"
+                  <div className="flex-1 p-5 flex flex-col justify-between">
+                    {/* 상단: 제목 + 상태 */}
+                    <div>
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1 min-w-0">
+                          <Link
+                            to={`/listings/${exchange.hostHouseId}`}
+                            className="text-lg font-semibold text-gray-900 hover:text-indigo-600 block truncate"
+                          >
+                            {exchange.houseTitle}
+                          </Link>
+                          {/* 교환인 경우 내 숙소 정보 */}
+                          {exchange.swapType === 'SWAP' && exchange.requesterHouseId && (
+                            <Link
+                              to={`/listings/${exchange.requesterHouseId}`}
+                              className="text-sm text-indigo-600 hover:text-indigo-700 flex items-center gap-1 mt-1"
+                            >
+                              <ArrowLeftRight className="w-3.5 h-3.5" />
+                              내 숙소로 교환 요청
+                            </Link>
+                          )}
+                          {exchange.requesterName && (
+                            <p className="text-sm text-gray-500 mt-1">요청자: {exchange.requesterName}</p>
+                          )}
+                        </div>
+                        <span
+                          className={`ml-3 px-3 py-1 rounded-full text-sm font-medium whitespace-nowrap ${
+                            STATUS_STYLES[exchange.swapStatus]
+                          }`}
                         >
-                          {exchange.houseTitle}
-                        </Link>
-                        <p className="text-sm text-gray-500 flex items-center mt-1">
-                          <MapPin className="w-4 h-4 mr-1" />
-                          {exchange.houseCityKo} {exchange.houseDistrictKo}
-                        </p>
+                          {STATUS_LABELS[exchange.swapStatus]}
+                        </span>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium ${
-                          STATUS_STYLES[exchange.status]
-                        }`}
-                      >
-                        {STATUS_LABELS[exchange.status]}
-                      </span>
-                    </div>
 
-                    <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
+                      {/* 날짜 정보 */}
+                      <div className="flex items-center gap-1.5 text-sm text-gray-600 mb-2">
+                        <Calendar className="w-4 h-4 text-gray-400" />
                         <span>
                           {formatDate(exchange.startDate)} ~ {formatDate(exchange.endDate)}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <img
-                          src={exchange.otherUserProfileImage || '/images/default-avatar.png'}
-                          alt={exchange.otherUserName}
-                          className="w-6 h-6 rounded-full"
-                        />
-                        <span>{exchange.otherUserName}</span>
-                      </div>
+
+                      {/* 요청 메시지 - 별도 영역으로 분리 */}
+                      {exchange.message && (
+                        <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                          <div className="flex items-start gap-2">
+                            <FileText className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" />
+                            <p className="text-sm text-gray-600 line-clamp-2">{exchange.message}</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* 액션 버튼들 */}
-                    <div className="flex gap-2 flex-wrap">
+                    {/* 하단: 액션 버튼들 */}
+                    <div className="flex gap-2 flex-wrap pt-2 border-t border-gray-100">
                       {/* 메시지 보내기 */}
                       <Button
                         variant="outline"
@@ -346,14 +381,14 @@ export function ExchangesPage() {
                         asChild
                         className="text-gray-600"
                       >
-                        <Link to={`${ROUTES.MESSAGES}?userId=${exchange.otherUserId}`}>
+                        <Link to={`${ROUTES.MESSAGES}?houseId=${exchange.hostHouseId}`}>
                           <MessageCircle className="w-4 h-4 mr-1" />
-                          메시지
+                          호스트에게 메시지
                         </Link>
                       </Button>
 
                       {/* 요청자 탭 - 대기중일 때 취소 가능 */}
-                      {activeTab === 'requester' && exchange.status === 'PENDING' && (
+                      {activeTab === 'requester' && exchange.swapStatus === 'PENDING' && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -362,12 +397,12 @@ export function ExchangesPage() {
                           className="text-red-600 hover:bg-red-50"
                         >
                           <X className="w-4 h-4 mr-1" />
-                          취소
+                          요청 취소
                         </Button>
                       )}
 
                       {/* 호스트 탭 - 대기중일 때 수락/거절 가능 */}
-                      {activeTab === 'host' && exchange.status === 'PENDING' && (
+                      {activeTab === 'host' && exchange.swapStatus === 'PENDING' && (
                         <>
                           <Button
                             size="sm"
@@ -392,7 +427,7 @@ export function ExchangesPage() {
                       )}
 
                       {/* 완료된 교환 - 리뷰 작성 가능 */}
-                      {exchange.status === 'COMPLETED' && !exchange.hasReview && (
+                      {exchange.swapStatus === 'COMPLETED' && !exchange.hasReview && (
                         <Button
                           size="sm"
                           onClick={() => handleOpenReviewModal(exchange)}
@@ -403,7 +438,7 @@ export function ExchangesPage() {
                         </Button>
                       )}
 
-                      {exchange.status === 'COMPLETED' && exchange.hasReview && (
+                      {exchange.swapStatus === 'COMPLETED' && exchange.hasReview && (
                         <span className="text-sm text-gray-500 flex items-center">
                           <Check className="w-4 h-4 mr-1 text-green-500" />
                           리뷰 작성 완료

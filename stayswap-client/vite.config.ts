@@ -16,9 +16,14 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Auth API는 auth 서버(8081)로 프록시
-      '/api/auth': {
-        target: 'http://localhost:8081',
+      // /api/auth/token은 메인 API 서버(8080)로 프록시 (WebSocket 인증용)
+      '/api/auth/token': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      // /api/auth/refresh도 메인 API 서버(8080)로 프록시
+      '/api/auth/refresh': {
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
       // 나머지 API는 메인 서버(8080)로 프록시

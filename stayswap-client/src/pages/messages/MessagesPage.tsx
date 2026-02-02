@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
-import { fetchChatRooms, fetchMessages, markAsRead } from '@/features/chat/api/chat.api';
+import { fetchChatRooms, fetchMessages, markAsRead, createOrGetChatRoom } from '@/features/chat/api/chat.api';
 import { useWebSocket } from '@/features/chat/hooks/useWebSocket';
 import type { ChatRoom, Message } from '@/features/chat/types/chat.types';
 
@@ -46,6 +47,7 @@ function escapeHtml(text: string): string {
 export function MessagesPage() {
   const { user } = useAuthStore();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
 
   const [selectedChatRoom, setSelectedChatRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -54,9 +56,11 @@ export function MessagesPage() {
   const [hasMoreMessages, setHasMoreMessages] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isMobileListView, setIsMobileListView] = useState(true);
+  const [isInitializingFromHouseId, setIsInitializingFromHouseId] = useState(false);
 
   const messageListRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const initializedHouseIdRef = useRef<string | null>(null);
 
   // 채팅방 목록 조회
   const { data: chatRoomsData, isLoading: chatRoomsLoading } = useQuery({
@@ -65,6 +69,49 @@ export function MessagesPage() {
   });
 
   const chatRooms = chatRoomsData?.content ?? [];
+
+  // URL의 houseId 파라미터로 채팅방 자동 선택
+  useEffect(() => {
+    const houseIdParam = searchParams.get('houseId');
+    if (!houseIdParam || chatRoomsLoading) return;
+
+    // 이미 처리한 houseId면 무시
+    if (initializedHouseIdRef.current === houseIdParam) return;
+
+    const houseId = parseInt(houseIdParam, 10);
+    if (isNaN(houseId)) return;
+
+    const initializeChatRoom = async () => {
+      initializedHouseIdRef.current = houseIdParam;
+      setIsInitializingFromHouseId(true);
+      try {
+        // 해당 숙소의 채팅방 생성 또는 조회
+        const result = await createOrGetChatRoom(houseId);
+
+        // 채팅방 목록 새로고침
+        const updatedRooms = await queryClient.fetchQuery({
+          queryKey: ['chatRooms'],
+          queryFn: () => fetchChatRooms(0, 50),
+        });
+
+        // 생성된 채팅방 찾아서 선택
+        const targetRoom = updatedRooms?.content?.find(
+          (room: ChatRoom) => room.id === result.chatRoomId
+        );
+
+        if (targetRoom) {
+          setSelectedChatRoom(targetRoom);
+          setIsMobileListView(false);
+        }
+      } catch (error) {
+        console.error('Failed to initialize chat room from houseId:', error);
+      } finally {
+        setIsInitializingFromHouseId(false);
+      }
+    };
+
+    initializeChatRoom();
+  }, [searchParams, chatRoomsLoading, queryClient]);
 
   // WebSocket 연결
   const handleNewMessage = useCallback(
@@ -206,7 +253,7 @@ export function MessagesPage() {
   }, []);
 
   // 로딩 상태
-  if (chatRoomsLoading) {
+  if (chatRoomsLoading || isInitializingFromHouseId) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <Loader2 className="w-8 h-8 animate-spin text-violet-600" />

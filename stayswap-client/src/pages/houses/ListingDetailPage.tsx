@@ -2,6 +2,7 @@ import {useEffect, useRef, useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 import {useMutation, useQuery} from '@tanstack/react-query';
 import {Button} from '@/components/ui/button';
+import {DateRangePicker} from '@/components/ui/date-range-picker';
 import {useAuthStore} from '@/features/auth/stores/auth.store';
 import {ROUTES} from '@/constants/routes';
 import {useJsApiLoader} from '@react-google-maps/api';
@@ -9,11 +10,13 @@ import {
   AMENITY_MAP,
   fetchHouseDetail,
   fetchHouseImages,
+  fetchHostDetail,
   fetchMyHouses,
   fetchReviews,
   GOOGLE_MAPS_API_KEY,
   GOOGLE_MAPS_LIBRARIES,
   requestExchange,
+  requestStay,
 } from '@/features/houses';
 
 import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left';
@@ -41,7 +44,7 @@ const LoadingState = (
 export function ListingDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showLightbox, setShowLightbox] = useState(false);
@@ -79,6 +82,12 @@ export function ListingDetailPage() {
     enabled: !!id,
   });
 
+  const { data: hostInfo } = useQuery({
+    queryKey: ['hostDetail', id],
+    queryFn: () => fetchHostDetail(id!),
+    enabled: !!id,
+  });
+
   const { data: myHouses = [] } = useQuery({
     queryKey: ['myHouses'],
     queryFn: fetchMyHouses,
@@ -96,6 +105,27 @@ export function ListingDetailPage() {
       alert(error.message);
     },
   });
+
+  const stayMutation = useMutation({
+    mutationFn: requestStay,
+    onSuccess: () => {
+      setShowStayModal(false);
+      alert('숙박 요청이 전송되었습니다.');
+      navigate(ROUTES.EXCHANGES);
+    },
+    onError: (error: Error) => {
+      alert(error.message);
+    },
+  });
+
+  const handleStayConfirm = () => {
+    stayMutation.mutate({
+      targetHouseId: house!.houseId,
+      checkinDate,
+      checkoutDate,
+      guestCount,
+    });
+  };
 
   useEffect(() => {
     if (!isMapLoaded || !house || !mapContainerRef.current) return;
@@ -134,9 +164,12 @@ export function ListingDetailPage() {
   const images = houseImages.length > 0
     ? houseImages.map(img => img.imageUrl)
     : ['/images/default-house.jpg'];
-  const hostName = house?.host?.name || house?.hostName || '호스트';
-  const hostId = house?.host?.userId || house?.hostId;
-  const hostProfileImage = house?.host?.profileImage || house?.hostProfileImage || '/images/profile.png';
+  const hostName = hostInfo?.name || '호스트';
+  const hostId = hostInfo?.userId || house?.hostId;
+  const hostProfileImage = hostInfo?.profileImage || '/images/profile.png';
+
+  // 내 숙소인지 확인 (호스트 ID와 현재 로그인한 사용자 ID 비교)
+  const isMyHouse = isAuthenticated && user && hostId && user.id === hostId;
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1));
@@ -220,14 +253,6 @@ export function ListingDetailPage() {
     navigate(`${ROUTES.MESSAGES}?hostId=${hostId}`);
   };
 
-  useEffect(() => {
-    const today = new Date();
-    const minDate = today.toISOString().split('T')[0];
-    const checkinInput = document.getElementById('checkin-date') as HTMLInputElement;
-    const checkoutInput = document.getElementById('checkout-date') as HTMLInputElement;
-    if (checkinInput) checkinInput.min = minDate;
-    if (checkoutInput) checkoutInput.min = minDate;
-  }, []);
 
   if (isLoading) return LoadingState;
 
@@ -346,24 +371,24 @@ export function ListingDetailPage() {
                 />
                 <div>
                   <h3 className="font-semibold text-gray-900">{hostName}</h3>
-                  {house.host && (
+                  {hostInfo && (
                     <>
                       <div className="text-sm text-gray-500 space-x-2">
-                        {house.host.joinedYear && <span>{house.host.joinedYear}년에 가입</span>}
-                        {house.host.reviewCount !== undefined && (
+                        {hostInfo.joinedYear && <span>{hostInfo.joinedYear}년에 가입</span>}
+                        {hostInfo.reviewCount !== undefined && (
                           <>
                             <span>·</span>
-                            <span>후기 {house.host.reviewCount}개</span>
+                            <span>후기 {hostInfo.reviewCount}개</span>
                           </>
                         )}
-                        {house.host.averageRating !== undefined && (
+                        {hostInfo.averageRating !== undefined && (
                           <>
                             <span>·</span>
-                            <span>총 평점: {house.host.averageRating?.toFixed(1) || '0.0'}</span>
+                            <span>총 평점: {hostInfo.averageRating?.toFixed(1) || '0.0'}</span>
                           </>
                         )}
                       </div>
-                      {house.host.isSuperhost && (
+                      {hostInfo.isSuperhost && (
                         <div className="inline-flex items-center gap-1 mt-2 px-2 py-1 bg-amber-100 text-amber-700 rounded text-xs font-medium">
                           <Award className="w-3 h-3" />
                           슈퍼호스트
@@ -464,26 +489,12 @@ export function ListingDetailPage() {
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-white rounded-xl shadow-lg border p-6">
               <div className="space-y-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">체크인</label>
-                  <input
-                    type="date"
-                    id="checkin-date"
-                    value={checkinDate}
-                    onChange={(e) => setCheckinDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">체크아웃</label>
-                  <input
-                    type="date"
-                    id="checkout-date"
-                    value={checkoutDate}
-                    onChange={(e) => setCheckoutDate(e.target.value)}
-                    className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
+                <DateRangePicker
+                  checkinDate={checkinDate}
+                  checkoutDate={checkoutDate}
+                  onCheckinChange={setCheckinDate}
+                  onCheckoutChange={setCheckoutDate}
+                />
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">게스트</label>
                   <select
@@ -500,31 +511,45 @@ export function ListingDetailPage() {
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <Button
-                  onClick={handleExchangeRequest}
-                  className="w-full bg-indigo-600 hover:bg-indigo-700 h-12"
-                >
-                  교환 요청
-                </Button>
-                <Button
-                  onClick={handleStayRequest}
-                  variant="outline"
-                  className="w-full h-12 border-indigo-600 text-indigo-600 hover:bg-indigo-50"
-                >
-                  숙박 요청
-                </Button>
-              </div>
+              {isMyHouse ? (
+                <div className="text-center py-4 px-3 bg-gray-50 rounded-lg">
+                  <p className="text-gray-500 text-sm">내가 등록한 숙소입니다</p>
+                  <Link
+                    to={`/listings/${id}/edit`}
+                    className="text-indigo-600 hover:underline text-sm mt-1 inline-block"
+                  >
+                    숙소 수정하기
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleExchangeRequest}
+                      className="w-full bg-indigo-600 hover:bg-indigo-700 h-12"
+                    >
+                      교환 요청
+                    </Button>
+                    <Button
+                      onClick={handleStayRequest}
+                      variant="outline"
+                      className="w-full h-12 border-indigo-600 text-indigo-600 hover:bg-indigo-50"
+                    >
+                      숙박 요청
+                    </Button>
+                  </div>
 
-              <div className="mt-4 pt-4 border-t">
-                <Button
-                  onClick={handleMessageHost}
-                  variant="ghost"
-                  className="w-full text-gray-600 hover:text-indigo-600"
-                >
-                  호스트에게 메시지 보내기
-                </Button>
-              </div>
+                  <div className="mt-4 pt-4 border-t">
+                    <Button
+                      onClick={handleMessageHost}
+                      variant="ghost"
+                      className="w-full text-gray-600 hover:text-indigo-600"
+                    >
+                      호스트에게 메시지 보내기
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -542,9 +567,10 @@ export function ListingDetailPage() {
             <div className="p-4">
               <p className="mb-4 text-gray-600">교환할 내 숙소를 선택해주세요.</p>
 
-              {myHouses.length > 0 ? (
+              {/* 현재 보고 있는 숙소는 목록에서 제외 */}
+              {myHouses.filter((h) => h.houseId !== house?.houseId).length > 0 ? (
                 <div className="space-y-3 mb-4">
-                  {myHouses.map((myHouse) => (
+                  {myHouses.filter((h) => h.houseId !== house?.houseId).map((myHouse) => (
                     <label
                       key={myHouse.houseId}
                       className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
@@ -643,8 +669,16 @@ export function ListingDetailPage() {
               <Button variant="outline" onClick={() => setShowStayModal(false)} className="flex-1">
                 취소
               </Button>
-              <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700">
-                숙박 요청 보내기
+              <Button
+                onClick={handleStayConfirm}
+                disabled={stayMutation.isPending}
+                className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+              >
+                {stayMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  '숙박 요청 보내기'
+                )}
               </Button>
             </div>
           </div>

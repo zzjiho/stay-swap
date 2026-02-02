@@ -7,6 +7,7 @@ import type {
   ListingFormData,
   FetchHousesParams,
   HouseImage,
+  HouseHost,
 } from '../types/house.types';
 
 // API 응답 타입 (백엔드 RestApiResponse 구조)
@@ -83,10 +84,79 @@ export const fetchHouseImages = async (houseId: string): Promise<HouseImage[]> =
   return parseApiResponse<HouseImage[]>(response, []);
 };
 
+// 호스트 상세 정보 API 응답 타입 (백엔드 HostDetailResponse와 매핑)
+interface HostDetailApiResponse {
+  hostId: number;
+  hostName: string;
+  profile: string;
+  joinedAt: number;
+  reviewCount: number;
+  avgRating: number;
+}
+
+export const fetchHostDetail = async (houseId: string): Promise<HouseHost | null> => {
+  const response = await fetch(`/api/house/${houseId}/host`);
+  if (!response.ok) return null;
+
+  try {
+    const json: ApiResponse<HostDetailApiResponse> = await response.json();
+    if (!json.data) return null;
+
+    // 백엔드 응답을 프론트엔드 타입으로 변환
+    return {
+      userId: json.data.hostId,
+      name: json.data.hostName,
+      profileImage: json.data.profile,
+      joinedYear: json.data.joinedAt,
+      reviewCount: json.data.reviewCount,
+      averageRating: json.data.avgRating,
+      isSuperhost: false, // 백엔드에서 아직 미제공
+    };
+  } catch {
+    return null;
+  }
+};
+
+// 백엔드 MyHouseResponse 타입
+interface MyHouseApiResponse {
+  id: number;
+  title: string;
+  thumbnailUrl: string;
+  cityKo: string;
+  districtKo: string;
+  averageRating: number;
+  reviewCount: number;
+  active: boolean;
+  houseType: string;
+}
+
 export const fetchMyHouses = async (): Promise<MyHouse[]> => {
   const response = await fetch('/api/house/my', { credentials: 'include' });
   if (!response.ok) return [];
-  return parseApiResponse<MyHouse[]>(response, []);
+
+  try {
+    const json = await response.json();
+    // Slice 구조: { data: { content: [...], hasNext: ... } }
+    const data = json.data;
+    let items: MyHouseApiResponse[] = [];
+
+    if (Array.isArray(data)) {
+      items = data;
+    } else if (data?.content && Array.isArray(data.content)) {
+      items = data.content;
+    }
+
+    // 백엔드 응답을 프론트엔드 타입으로 변환
+    return items.map((item) => ({
+      houseId: item.id,
+      title: item.title,
+      mainImageUrl: item.thumbnailUrl,
+      cityKo: item.cityKo,
+      districtKo: item.districtKo,
+    }));
+  } catch {
+    return [];
+  }
 };
 
 // amenities 배열을 options 객체로 변환 (모든 필드에 기본값 false 설정)
@@ -261,13 +331,62 @@ export interface ExchangeRequestData {
 }
 
 export const requestExchange = async (data: ExchangeRequestData): Promise<{ swapId: number }> => {
-  const response = await fetch('/api/exchange/request', {
+  // 백엔드 SwapRequest 형식으로 변환
+  const swapRequest = {
+    requesterHouseId: data.requesterHouseId,
+    targetHouseId: data.targetHouseId,
+    startDate: data.checkinDate,  // checkinDate → startDate
+    endDate: data.checkoutDate,   // checkoutDate → endDate
+    guest: data.guestCount,       // guestCount → guest
+    message: data.message,
+  };
+
+  const response = await fetch('/api/house/swap', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
-    body: JSON.stringify(data),
+    body: JSON.stringify(swapRequest),
   });
-  if (!response.ok) throw new Error('교환 요청에 실패했습니다');
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.errorMessage || '교환 요청에 실패했습니다');
+  }
+
+  const json: ApiResponse<{ swapId: number }> = await response.json();
+  return json.data;
+};
+
+// Stay Request API
+export interface StayRequestData {
+  targetHouseId: number;
+  checkinDate: string;
+  checkoutDate: string;
+  guestCount: number;
+  message?: string;
+}
+
+export const requestStay = async (data: StayRequestData): Promise<{ swapId: number }> => {
+  // 백엔드 StayRequest 형식으로 변환
+  const stayRequest = {
+    targetHouseId: data.targetHouseId,
+    startDate: data.checkinDate,   // checkinDate → startDate
+    endDate: data.checkoutDate,    // checkoutDate → endDate
+    guest: data.guestCount,        // guestCount → guest
+    message: data.message || '',
+  };
+
+  const response = await fetch('/api/house/stay', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(stayRequest),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    throw new Error(error.errorMessage || '숙박 요청에 실패했습니다');
+  }
 
   const json: ApiResponse<{ swapId: number }> = await response.json();
   return json.data;

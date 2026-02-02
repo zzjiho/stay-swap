@@ -34,11 +34,13 @@ export {
   fetchCountries,
   fetchHouseDetail,
   fetchHouseImages,
+  fetchHostDetail,
   fetchReviews,
   fetchMyHouses,
   createListing,
   updateListing,
   requestExchange,
+  requestStay,
 } from './api/house.api';
 
-export type { ExchangeRequestData, UpdateListingData } from './api/house.api';
+export type { ExchangeRequestData, StayRequestData, UpdateListingData } from './api/house.api';

@@ -11,15 +11,16 @@ import Users from 'lucide-react/dist/esm/icons/users';
 import Star from 'lucide-react/dist/esm/icons/star';
 import ArrowRight from 'lucide-react/dist/esm/icons/arrow-right';
 
-// 인기 숙소 타입 정의
-interface PopularHouse {
-  houseId: number;
+// 숙소 타입 정의 (인기/최근 공용)
+interface HouseItem {
+  houseId?: number;
+  id?: number;
   title: string;
   cityKo: string;
   districtKo: string;
-  mainImageUrl: string;
-  avgRating: number;
-  reviewCount: number;
+  thumbnailUrl: string;
+  rating?: number;
+  reviewCount?: number;
 }
 
 const LoadingMessage = (
@@ -29,27 +30,39 @@ const EmptyMessage = (
   <div className="text-center py-12 text-gray-500">등록된 숙소가 없습니다.</div>
 );
 
-const fetchPopularHouses = async (): Promise<PopularHouse[]> => {
-  const response = await fetch('/api/house/popular');
-  if (!response.ok) {
-    throw new Error('인기 숙소 로딩 실패');
-  }
+const fetchHouses = async (): Promise<HouseItem[]> => {
+  // 1. 먼저 인기 숙소 시도
   try {
-    const json = await response.json();
-    const data = json.data;
-    // 배열 직접: { data: [...] } 또는 Page 구조: { data: { content: [...] } }
-    if (Array.isArray(data)) return data;
-    if (data?.content && Array.isArray(data.content)) return data.content;
-    return [];
+    const popularRes = await fetch('/api/house/popular?limit=6');
+    if (popularRes.ok) {
+      const json = await popularRes.json();
+      const data = json.data;
+      const houses = Array.isArray(data) ? data : (data?.content || []);
+      if (houses.length > 0) return houses;
+    }
   } catch {
-    return [];
+    // 인기 숙소 실패 시 다음으로
   }
+
+  // 2. 인기 숙소 없으면 최근 숙소로 fallback
+  try {
+    const recentRes = await fetch('/api/house/recent?limit=6');
+    if (recentRes.ok) {
+      const json = await recentRes.json();
+      const data = json.data;
+      return Array.isArray(data) ? data : (data?.content || []);
+    }
+  } catch {
+    // 최근 숙소도 실패
+  }
+
+  return [];
 };
 
 export function HomePage() {
-  const { data: popularHouses = [], isLoading } = useQuery({
-    queryKey: ['popularHouses'],
-    queryFn: fetchPopularHouses,
+  const { data: houses = [], isLoading } = useQuery({
+    queryKey: ['homeHouses'],
+    queryFn: fetchHouses,
     staleTime: 5 * 60 * 1000, // 5분간 캐시 유지
     gcTime: 10 * 60 * 1000, // 10분간 가비지 컬렉션 방지
   });
@@ -141,36 +154,41 @@ export function HomePage() {
 
           {isLoading
             ? LoadingMessage
-            : popularHouses.length > 0
+            : houses.length > 0
               ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {popularHouses.slice(0, 6).map((house) => (
-                      <Link
-                        key={house.houseId}
-                        to={`/listings/${house.houseId}`}
-                        className="bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
-                      >
-                        <div className="relative h-[200px] overflow-hidden">
-                          <img
-                            src={house.mainImageUrl || '/images/default-house.jpg'}
-                            alt={house.title}
-                            loading="lazy"
-                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-                          />
-                          <div className="absolute top-3 right-3 bg-white px-2 py-1 rounded-lg text-sm font-semibold flex items-center shadow">
-                            <Star className="w-4 h-4 text-amber-500 mr-1 fill-amber-500" />
-                            {house.avgRating?.toFixed(1) || '0.0'} ({house.reviewCount || 0})
+                    {houses.slice(0, 6).map((house) => {
+                      const houseId = house.houseId || house.id;
+                      return (
+                        <Link
+                          key={houseId}
+                          to={`/listings/${houseId}`}
+                          className="bg-white rounded-xl overflow-hidden shadow hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                        >
+                          <div className="relative h-[200px] overflow-hidden">
+                            <img
+                              src={house.thumbnailUrl || '/images/default-house.jpg'}
+                              alt={house.title}
+                              loading="lazy"
+                              className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                            />
+                            {(house.rating !== undefined || house.reviewCount !== undefined) && (
+                              <div className="absolute top-3 right-3 bg-white px-2 py-1 rounded-lg text-sm font-semibold flex items-center shadow">
+                                <Star className="w-4 h-4 text-amber-500 mr-1 fill-amber-500" />
+                                {house.rating?.toFixed(1) || '0.0'} ({house.reviewCount || 0})
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <div className="p-6">
-                          <h3 className="text-xl font-semibold mb-2 text-gray-900">{house.title}</h3>
-                          <p className="text-gray-500 flex items-center">
-                            <MapPin className="w-4 h-4 mr-1" />
-                            {house.cityKo} {house.districtKo}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
+                          <div className="p-6">
+                            <h3 className="text-xl font-semibold mb-2 text-gray-900">{house.title}</h3>
+                            <p className="text-gray-500 flex items-center">
+                              <MapPin className="w-4 h-4 mr-1" />
+                              {house.cityKo} {house.districtKo}
+                            </p>
+                          </div>
+                        </Link>
+                      );
+                    })}
                   </div>
                 )
               : EmptyMessage}

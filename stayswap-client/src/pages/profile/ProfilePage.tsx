@@ -683,7 +683,7 @@ export function ProfilePage() {
                   <p className="text-sm text-gray-500">현재 구독 상태를 확인하고 관리합니다.</p>
                 </div>
                 <Button variant="outline" asChild>
-                  <Link to={ROUTES.SUBSCRIPTION}>관리하기</Link>
+                  <Link to={ROUTES.MY_SUBSCRIPTION}>관리하기</Link>
                 </Button>
               </div>
 

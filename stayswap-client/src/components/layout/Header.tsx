@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/stores/auth.store';
 import { ROUTES } from '@/constants/routes';
@@ -9,10 +9,54 @@ import Home from 'lucide-react/dist/esm/icons/home';
 import Bell from 'lucide-react/dist/esm/icons/bell';
 
 interface Notification {
-  id: number;
-  message: string;
+  id: string;
+  title: string;
+  content: string;
+  senderName: string;
+  senderProfile: string | null;
+  referenceId: number | null;
+  type: string;
+  read: boolean;  // API 응답 필드명과 일치
+  occurredAt: string;
   createdAt: string;
-  read: boolean;
+}
+
+// 알림 타입별 이동 URL 반환
+function getNotificationUrl(type: string, referenceId: number | null): string {
+  switch (type) {
+    case 'SWAP_REQUEST':
+    case 'SWAP_ACCEPTED':
+    case 'SWAP_REJECTED':
+    case 'SWAP_EXPIRED':
+    case 'BOOKING_REQUEST':
+    case 'BOOKING_ACCEPTED':
+    case 'BOOKING_REJECTED':
+    case 'BOOKING_EXPIRED':
+    case 'CHECK_IN':
+    case 'CHECK_OUT':
+      return ROUTES.EXCHANGES;
+    case 'LIKE_ADDED':
+    case 'LIKE_REMOVED':
+      return referenceId ? `/listings/${referenceId}` : ROUTES.LISTINGS;
+    case 'CHAT_MESSAGE':
+      return ROUTES.MESSAGES;
+    default:
+      return ROUTES.HOME;
+  }
+}
+
+// 알림 읽음 처리 API
+async function markNotificationAsRead(notificationId: string): Promise<void> {
+  await fetch(`/api/notifications/${notificationId}/read`, {
+    method: 'POST',
+    credentials: 'include',
+  });
+}
+
+interface NotificationListResponse {
+  notifications: Notification[];
+  hasNext: boolean;
+  pivot: string | null;
 }
 
 const fetchNotifications = async (): Promise<Notification[]> => {
@@ -21,7 +65,8 @@ const fetchNotifications = async (): Promise<Notification[]> => {
   });
   if (!response.ok) return [];
   const data = await response.json();
-  return data.data || [];
+  const listResponse: NotificationListResponse = data.data;
+  return listResponse?.notifications || [];
 };
 
 export function Header() {
@@ -30,6 +75,8 @@ export function Header() {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const { data: notifications = [] } = useQuery({
     queryKey: ['notifications'],
@@ -39,6 +86,22 @@ export function Header() {
   });
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // 알림 클릭 핸들러
+  const handleNotificationClick = useCallback(async (notification: Notification) => {
+    // 읽음 처리
+    if (!notification.read) {
+      await markNotificationAsRead(notification.id);
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    }
+
+    // 드롭다운 닫기
+    setIsNotificationOpen(false);
+
+    // 해당 페이지로 이동
+    const url = getNotificationUrl(notification.type, notification.referenceId);
+    navigate(url);
+  }, [navigate, queryClient]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -168,13 +231,15 @@ export function Header() {
                           notifications.slice(0, 10).map((notification) => (
                             <div
                               key={notification.id}
-                              className={`px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer ${
+                              onClick={() => handleNotificationClick(notification)}
+                              className={`px-4 py-3 border-b last:border-b-0 hover:bg-gray-50 cursor-pointer transition-colors ${
                                 !notification.read ? 'bg-indigo-50' : ''
                               }`}
                             >
-                              <p className="text-sm text-gray-700">{notification.message}</p>
+                              <p className="text-sm font-medium text-gray-900">{notification.title}</p>
+                              <p className="text-sm text-gray-600 mt-0.5 line-clamp-2">{notification.content}</p>
                               <p className="text-xs text-gray-400 mt-1">
-                                {new Date(notification.createdAt).toLocaleDateString('ko-KR')}
+                                {new Date(notification.occurredAt).toLocaleDateString('ko-KR')}
                               </p>
                             </div>
                           ))
